@@ -18,7 +18,7 @@ export default function Landing() {
       <section className="hero">
         <div className="hero__copy">
           <p className="eyebrow">OPINIONS INTO VALUE</p>
-          <h1>당신의 의견이<br /><em>가치</em>가 되는 곳</h1>
+          <h1><span className="hero__headline-line">당신의 의견이</span><span className="hero__headline-line"><em>가치</em>가 되는 곳</span></h1>
           <p className="hero__description">설문에 참여해 포인트를 얻고, 꼭 필요한 사람들의 솔직한 응답을 더 빠르게 모아보세요.</p>
           <div className="hero__actions"><Link className="button" to="/surveys">설문 참여하기</Link><Link className="button button--ghost" to="/surveys/create">설문 만들기</Link></div>
           <div className="hero__proof" aria-label="서비스 특징"><span><strong>3분</strong> 평균 참여 시간</span><span><strong>실시간</strong> 응답 현황 반영</span><span><strong>100%</strong> 투명한 포인트 원장</span></div>

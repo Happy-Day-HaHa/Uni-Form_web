@@ -10,7 +10,7 @@
 
 /* Cross-platform typography and responsive normalization */
 @font-face{font-family:"Pretendard Variable";font-style:normal;font-weight:45 920;font-display:swap;src:url("/fonts/PretendardVariable.woff2") format("woff2")}
-:root{font-family:"Pretendard Variable",Pretendard,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-optical-sizing:auto;font-kerning:normal}
+:root{font-family:"Pretendard Variable",Pretendard,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-optical-sizing:auto;font-kerning:normal;text-rendering:auto}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:86px}
 body{line-height:1.5;overflow-x:hidden}
 button,input,select,textarea{min-width:0;border-radius:0;color:inherit;letter-spacing:inherit}
@@ -19,16 +19,18 @@ input,select,textarea{-webkit-appearance:none;appearance:none}
 select{padding-right:42px!important;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%)!important;background-position:calc(100% - 18px) 52%,calc(100% - 13px) 52%!important;background-size:5px 5px,5px 5px!important;background-repeat:no-repeat!important}
 :where(a,button,input,select,textarea):focus-visible{outline:3px solid rgba(255,107,61,.38);outline-offset:3px}
 :where(h1,h2,h3,p,li,legend,label){word-break:keep-all;overflow-wrap:break-word}
-.hero h1{max-width:760px;font-size:clamp(3.2rem,6.65vw,6.25rem);font-weight:820;line-height:1.02;letter-spacing:-.055em;text-wrap:balance}
-.hero h1 em{display:inline-block;color:var(--orange);font-family:inherit;font-style:normal;font-weight:620;letter-spacing:-.035em;text-decoration:underline;text-decoration-color:rgba(255,107,61,.22);text-decoration-thickness:.13em;text-underline-offset:.1em}
+.hero__copy{min-width:0}
+.hero h1{width:100%;max-width:100%;font-size:clamp(3.1rem,5.4vw,5rem);font-weight:800;line-height:1.06;letter-spacing:-.04em;text-wrap:wrap}
+.hero__headline-line{display:block;white-space:nowrap}
+.hero h1 em{display:inline-block;color:var(--orange);font-family:inherit;font-style:normal;font-weight:600;letter-spacing:-.025em;text-decoration:underline;text-decoration-color:rgba(255,107,61,.22);text-decoration-thickness:.13em;text-underline-offset:.1em}
 .page-heading h1,.survey-intro h1,.section-heading h2,.audience-copy h2,.landing-cta h2,.steps h2{font-weight:800;line-height:1.08;letter-spacing:-.045em;text-wrap:balance}
 .brand{font-weight:900;letter-spacing:-.035em}
 .button{touch-action:manipulation}
 .landing-shell{min-height:100dvh}
 .landing-nav,.app-header{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
 .landing-footer{padding-bottom:max(48px,env(safe-area-inset-bottom))}
-@media(max-width:1100px){.hero{gap:38px}.hero h1{font-size:clamp(3.05rem,7.6vw,5.4rem)}.hero__proof{gap:20px}.hero__visual::before{width:min(47vw,500px);height:min(47vw,500px)}}
-@media(max-width:860px){.hero{grid-template-columns:minmax(0,1fr)}.hero h1{max-width:680px;font-size:clamp(3.2rem,11vw,5.5rem)}.hero__visual::before{width:min(76vw,520px);height:min(76vw,520px)}}
-@media(max-width:560px){.landing-nav,.app-header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}.hero h1{font-size:clamp(2.75rem,14.5vw,4.15rem);line-height:1.04;letter-spacing:-.045em}.hero h1 em{letter-spacing:-.025em}.hero__description{font-size:1rem;line-height:1.7}.section-heading h2,.audience-copy h2,.landing-cta h2{font-size:clamp(2.25rem,11vw,3.35rem);letter-spacing:-.04em}.hero__proof span{min-width:calc(50% - 12px)}.button{min-height:50px}.landing-nav{min-height:74px}}
+@media(max-width:1100px){.hero{gap:38px}.hero h1{font-size:clamp(3rem,6.5vw,4.5rem)}.hero__proof{gap:20px}.hero__visual::before{width:min(47vw,500px);height:min(47vw,500px)}}
+@media(max-width:860px){.hero{grid-template-columns:minmax(0,1fr)}.hero h1{font-size:clamp(3rem,9.5vw,5rem)}.hero__visual::before{width:min(76vw,520px);height:min(76vw,520px)}}
+@media(max-width:560px){.landing-nav,.app-header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}.hero h1{font-size:clamp(2.5rem,13.5vw,3.65rem);line-height:1.08;letter-spacing:-.035em}.hero h1 em{letter-spacing:-.02em}.hero__description{font-size:1rem;line-height:1.7}.section-heading h2,.audience-copy h2,.landing-cta h2{font-size:clamp(2.25rem,11vw,3.35rem);letter-spacing:-.04em}.hero__proof span{min-width:calc(50% - 12px)}.button{min-height:50px}.landing-nav{min-height:74px}}
 @media(hover:none){.button:hover,.survey-card:hover,.audience-cards article:hover{transform:none}}
 @media(forced-colors:active){.button,.tag,.point-badge{border:1px solid currentColor}.progress__track span,.progress-track span{forced-color-adjust:none}}
