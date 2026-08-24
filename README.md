@@ -27,6 +27,8 @@ Cloudflare Pages 설정은 다음 값을 사용합니다.
 
 GitHub의 production branch에 push하면 Cloudflare Pages가 자동으로 새 빌드를 배포합니다. `.env`는 커밋하지 않으며 실제 Supabase 값은 Cloudflare Pages의 Variables and Secrets에 별도로 등록합니다.
 
+현재와 과거 랜딩페이지는 사이트의 `/versions` 또는 [VERSIONS.md](./VERSIONS.md)에서 각각 열람할 수 있습니다. 의미 있는 디자인 변경은 Git 태그와 Cloudflare 고유 배포 주소로 함께 보존합니다.
+
 ## 주요 명령
 
 ```bash

@@ -77,7 +77,7 @@ export default function Landing() {
 
       <section className="unf-final-cta" aria-labelledby="unf-final-title"><p>YOUR OPINION HAS VALUE</p><h2 id="unf-final-title">첫 답변부터<br />시작해볼까요?</h2><Link to="/signup" aria-label="UNI-FORM 회원가입으로 이동">학생 인증하고 시작하기 <span>↗</span></Link><div className="unf-final-shapes" aria-hidden="true"><i /><i /><i /><i /></div></section>
 
-      <footer className="unf-footer"><Link className="unf-logo unf-logo--light" to="/">UNI<span>•</span>FORM</Link><p>질문과 사람 사이를 더 가치 있게.</p><div><Link to="/login">로그인</Link><Link to="/signup">회원가입</Link><Link to="/dashboard">대시보드</Link></div><small>© 2026 UNI-FORM · UNIVERSITY SURVEY NETWORK</small></footer>
+      <footer className="unf-footer"><Link className="unf-logo unf-logo--light" to="/">UNI<span>•</span>FORM</Link><p>질문과 사람 사이를 더 가치 있게.</p><div><Link to="/login">로그인</Link><Link to="/signup">회원가입</Link><Link to="/dashboard">대시보드</Link><Link to="/versions">버전 기록</Link></div><small>© 2026 UNI-FORM · UNIVERSITY SURVEY NETWORK</small></footer>
     </main>
   )
 }
