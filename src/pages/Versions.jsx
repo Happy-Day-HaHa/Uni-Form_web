@@ -5,7 +5,7 @@ const versions = [
   {
     state: 'CURRENT',
     name: '현재 랜딩페이지',
-    description: '서비스 여정을 중심으로 구성한 최신 에디토리얼 디자인',
+    description: '블랙·크림 팔레트와 풍경형 글라스 패널을 적용한 댄디 디자인',
     url: '/',
     commit: 'latest',
     current: true,

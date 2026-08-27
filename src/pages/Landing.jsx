@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
+import BrandMark from '../components/BrandMark'
 import '../styles/landing.css'
 import '../styles/landing-sections.css'
+import '../styles/dandy.css'
 
 const journey = [
   { number: '01', label: 'VERIFY', title: '학생으로 시작해요', description: '대학 이메일로 인증하고, 믿을 수 있는 설문 네트워크에 들어와요.', steps: ['회원가입', '대학 이메일 인증', '로그인'], tone: 'peach' },
@@ -19,7 +21,7 @@ export default function Landing() {
   return (
     <main className="unf-landing">
       <nav className="unf-nav" aria-label="주요 메뉴">
-        <Link className="unf-logo" to="/" aria-label="UNI-FORM 홈">UNI<span>•</span>FORM</Link>
+        <BrandMark className="unf-brand" light />
         <div className="unf-nav__links"><a href="#journey">서비스 흐름</a><a href="#points">포인트</a><a href="#results">결과 확인</a></div>
         <div className="unf-nav__actions"><Link to="/login">로그인</Link><Link to="/signup">학생 인증하기 <span aria-hidden="true">↗</span></Link></div>
       </nav>
@@ -77,7 +79,7 @@ export default function Landing() {
 
       <section className="unf-final-cta" aria-labelledby="unf-final-title"><p>YOUR OPINION HAS VALUE</p><h2 id="unf-final-title">첫 답변부터<br />시작해볼까요?</h2><Link to="/signup" aria-label="UNI-FORM 회원가입으로 이동">학생 인증하고 시작하기 <span>↗</span></Link><div className="unf-final-shapes" aria-hidden="true"><i /><i /><i /><i /></div></section>
 
-      <footer className="unf-footer"><Link className="unf-logo unf-logo--light" to="/">UNI<span>•</span>FORM</Link><p>질문과 사람 사이를 더 가치 있게.</p><div><Link to="/login">로그인</Link><Link to="/signup">회원가입</Link><Link to="/dashboard">대시보드</Link><Link to="/versions">버전 기록</Link></div><small>© 2026 UNI-FORM · UNIVERSITY SURVEY NETWORK</small></footer>
+      <footer className="unf-footer"><BrandMark light /><p>질문과 사람 사이를 더 가치 있게.</p><div><Link to="/login">로그인</Link><Link to="/signup">회원가입</Link><Link to="/dashboard">대시보드</Link><Link to="/versions">버전 기록</Link></div><small>© 2026 UNI-FORM · UNIVERSITY SURVEY NETWORK</small></footer>
     </main>
   )
 }

@@ -4,7 +4,7 @@
 
 | 버전 | Git 커밋 | 화면 열기 |
 | --- | --- | --- |
-| 최신 버전 | `codex/live-work` | <https://uni-form-go.pages.dev/> |
+| Dandy Landing | `landing-v4-dandy` | <https://uni-form-go.pages.dev/> |
 | Journey Landing | `e7cf0cc` | <https://32f4eea9.uni-form-go.pages.dev/> |
 | Playful Landing | `6c54f93` | <https://677882ca.uni-form-go.pages.dev/> |
 
