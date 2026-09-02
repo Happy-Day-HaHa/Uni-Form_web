@@ -52,3 +52,24 @@
 @media(max-width:980px){.uf26-archive{flex-direction:column-reverse;text-align:center;gap:40px}.uf26-archive__folder{margin:0 0 20px}.uf26-archive__copy{max-width:100%}}
 @media(max-width:620px){.uf26-archive{padding:80px 20px}.uf26-archive__folder{transform:scale(.85)}.uf26-final__particle{height:clamp(130px,44vw,220px)}}
 @media(prefers-reduced-motion:reduce){.uf26-archive__folder .folder{transition:none}}
+
+/* Testimonials, drawn from copy.md, placed as a quiet beat before the final CTA */
+.uf26-quotes{padding:clamp(90px,10vw,150px) max(22px,calc((100vw - 1320px)/2));background:#f4f1f4}
+.uf26-quotes .uf26-section-label{margin-bottom:55px}
+.uf26-quotes .uf26-section-label span{border-color:#18181b;color:#18181b}
+.uf26-quotes .uf26-section-label p{color:#18181b}
+.uf26-quotes__grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.uf26-quote{position:relative;padding:44px 34px 34px;border-radius:22px;background:#fff;box-shadow:0 20px 55px rgba(24,24,27,.08);transition:transform .4s cubic-bezier(.16,1,.3,1),box-shadow .4s cubic-bezier(.16,1,.3,1)}
+.uf26-quote::before{content:"\201C";position:absolute;top:0;left:26px;color:#ff3d94;font-size:4.4rem;font-weight:900;line-height:1;opacity:.5}
+.uf26-quote{transform:rotate(-2deg)}
+.uf26-quote.alt{transform:rotate(2deg);margin-top:26px}
+.uf26-quote:hover{transform:translateY(-6px) rotate(0deg);box-shadow:0 30px 70px rgba(24,24,27,.14)}
+.uf26-quote p{position:relative;z-index:1;margin:18px 0 26px;color:#18181b;font-size:1rem;line-height:1.7;letter-spacing:-.01em}
+.uf26-quote div{display:flex;flex-direction:column;gap:2px}
+.uf26-quote b{font-size:.85rem;letter-spacing:-.02em}
+.uf26-quote span{color:#6c6a72;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.62rem;letter-spacing:.04em}
+.uf26-quotes__grid [data-reveal]:nth-child(2){transition-delay:.1s}
+.uf26-features article:nth-child(2){transition-delay:.08s}
+.uf26-features article:nth-child(3){transition-delay:.16s}
+@media(max-width:760px){.uf26-quotes{padding:80px 20px}.uf26-quotes__grid{grid-template-columns:1fr;gap:18px}.uf26-quote{transform:none!important;margin-top:0!important}}
+@media(prefers-reduced-motion:reduce){.uf26-quote{transition:none}}
