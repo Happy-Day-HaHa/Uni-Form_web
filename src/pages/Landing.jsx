@@ -3,12 +3,6 @@ import { Link } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
 import '../styles/landing.css'
 
-const surveys = [
-  { tag: '논문', title: 'Z세대의 숏폼 콘텐츠 소비 습관', meta: '약 3분 · 82/100명', reward: '+300 P', color: 'violet' },
-  { tag: '프로젝트', title: '대학생의 카페 이용과 공간 선호도', meta: '약 5분 · 41/80명', reward: '+450 P', color: 'coral' },
-  { tag: '동아리', title: '이번 학기 축제, 뭐가 제일 기대돼?', meta: '약 2분 · 116/150명', reward: '+200 P', color: 'lime' },
-]
-
 const flow = [
   { no: '01', eyebrow: 'JOIN', title: '나답게 가입하기', copy: '이름과 이메일은 기본. 직업, 나이, 생년월일, 관심 분야까지 차근차근 물어봐요.', chips: ['기본 정보', '상세 프로필', '관심 분야'], tone: 'peach' },
   { no: '02', eyebrow: 'DISCOVER', title: '내게 맞는 설문 발견', copy: '로그인하면 다른 사용자가 올린 설문을 한눈에 보고, 조건과 보상을 확인해 바로 참여해요.', chips: ['맞춤 설문', '예상 시간', '참여 가능 여부'], tone: 'yellow' },
@@ -24,6 +18,7 @@ const features = [
 
 export default function Landing() {
   const [chatApplied, setChatApplied] = useState(false)
+  const [isHolding, setIsHolding] = useState(false)
 
   useEffect(() => {
     const nodes = document.querySelectorAll('[data-reveal]')
@@ -36,7 +31,7 @@ export default function Landing() {
   }, [])
 
   return (
-    <main className="uf26">
+    <main className={`uf26 ${isHolding ? 'is-holding' : ''}`}>
       <nav className="uf26-nav" aria-label="주요 메뉴">
         <BrandMark className="uf26-brand" />
         <div className="uf26-nav__links"><a href="#how">이용 방법</a><a href="#create">Uni-Chat</a><a href="#result">결과 분석</a></div>
@@ -45,17 +40,14 @@ export default function Landing() {
 
       <section className="uf26-hero" aria-labelledby="hero-title">
         <div className="uf26-hero__copy" data-reveal>
-          <p className="uf26-kicker"><i /> SURVEY, BUT MAKE IT EASY</p>
-          <h1 id="hero-title">설문 정리에<br /><em>밤새지 마세요.</em></h1>
-          <p>구글폼 붙여넣고, 카톡으로 리마인드 돌리고, 엑셀에 응답 옮기고…<br />그 시간에 과제 하나 더 하세요.</p>
-          <div className="uf26-hero__actions"><Link to="/signup">무료로 첫 설문 만들기 <span>→</span></Link><a href="#create"><i>▶</i> 3분 데모 보기</a></div>
-          <small><b>✓</b> 카드 등록 없이 바로 시작 가능</small>
+          <p className="uf26-kicker">AI SURVEY WORKSPACE</p>
+          <h1 id="hero-title">설문 제작부터<br />분석까지, <em>15분이면</em><br />충분해요.</h1>
         </div>
-        <div className="uf26-hero__product" aria-label="Uni-Form 제품 미리보기" data-reveal>
-          <div className="uf26-browser"><div className="uf26-browser__bar"><span /><span /><span /><b>app.uni-form.kr</b></div><div className="uf26-app"><aside><BrandMark showName={false} /><i /><i /><i /><i /><div className="uf26-avatar">KY</div></aside><div className="uf26-app__main"><header><div><small>안녕하세요, 김유나님 👋</small><h3>오늘은 어떤 답이 궁금하세요?</h3></div><button type="button">＋ 설문 만들기</button></header><div className="uf26-filter"><b>추천</b><span>3분 이내</span><span>마감 임박</span><span>높은 포인트</span></div><div className="uf26-survey-grid">{surveys.map((survey) => <article className={`uf26-survey-card ${survey.color}`} key={survey.title}><div><span>{survey.tag}</span><b>{survey.reward}</b></div><h4>{survey.title}</h4><p>{survey.meta}</p><button type="button">참여하기 <span>↗</span></button></article>)}</div></div></div></div>
-          <div className="uf26-float uf26-float--time"><span>분석 시간</span><strong>92% ↓</strong><small>3시간 → 15분</small></div><div className="uf26-float uf26-float--people"><span>오늘의 응답</span><strong>+128</strong><i>👩🏻‍💻 🧑🏽‍🎓 👨🏻‍🔬</i></div><div className="uf26-spark" aria-hidden="true">✦</div>
+        <div className="uf26-hero__visual" aria-hidden="true">
+          <div className="uf26-ribbon uf26-ribbon--one" /><div className="uf26-ribbon uf26-ribbon--two" /><div className="uf26-ribbon uf26-ribbon--three" /><div className="uf26-ribbon uf26-ribbon--four" />
         </div>
-        <a className="uf26-scroll" href="#problem">SCROLL TO EXPLORE <span>↓</span></a>
+        <button className="uf26-hold" type="button" aria-label="애니메이션 활성화" onPointerDown={() => setIsHolding(true)} onPointerUp={() => setIsHolding(false)} onPointerLeave={() => setIsHolding(false)}><span><i /><i /></span><b>{isHolding ? 'KEEP HOLDING' : 'CLICK AND HOLD'}</b></button>
+        <div className="uf26-hero__side" data-reveal><p>설문 만들기부터 AI 분석, 챗봇 연동까지.<br />대학생이 직접 써보고 만든 자동화 툴이에요.</p><div><Link to="/signup">지금 시작하기</Link><a href="#create">Uni-Chat 보기</a></div></div>
       </section>
 
       <section className="uf26-marquee" aria-label="Uni-Form 주요 기능"><div>AI 설문 제작 <i>✦</i> 자동 결과 분석 <i>✦</i> 맞춤 설문 추천 <i>✦</i> 리마인드 자동화 <i>✦</i> AI 설문 제작 <i>✦</i> 자동 결과 분석</div></section>
