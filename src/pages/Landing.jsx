@@ -1,85 +1,76 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
 import '../styles/landing.css'
-import '../styles/landing-sections.css'
-import '../styles/dandy.css'
 
-const journey = [
-  { number: '01', label: 'VERIFY', title: '학생으로 시작해요', description: '대학 이메일로 인증하고, 믿을 수 있는 설문 네트워크에 들어와요.', steps: ['회원가입', '대학 이메일 인증', '로그인'], tone: 'peach' },
-  { number: '02', label: 'ANSWER & EARN', title: '답하고 포인트를 모아요', description: '내 조건에 맞는 설문과 보상을 먼저 확인하고 편하게 참여해요.', steps: ['참여 가능한 설문 조회', '보상 포인트 확인', '설문 참여', '포인트 획득'], tone: 'blue' },
-  { number: '03', label: 'ASK & DISCOVER', title: '필요한 답을 모아요', description: '모은 포인트로 설문을 열고, 응답 현황과 결과를 한눈에 확인해요.', steps: ['내 설문 등록', '인원 × 보상 포인트 사용', '다른 사용자 참여', '응답 결과 확인'], tone: 'lime' },
+const surveys = [
+  { tag: '논문', title: 'Z세대의 숏폼 콘텐츠 소비 습관', meta: '약 3분 · 82/100명', reward: '+300 P', color: 'violet' },
+  { tag: '프로젝트', title: '대학생의 카페 이용과 공간 선호도', meta: '약 5분 · 41/80명', reward: '+450 P', color: 'coral' },
+  { tag: '동아리', title: '이번 학기 축제, 뭐가 제일 기대돼?', meta: '약 2분 · 116/150명', reward: '+200 P', color: 'lime' },
+]
+
+const flow = [
+  { no: '01', eyebrow: 'JOIN', title: '나답게 가입하기', copy: '이름과 이메일은 기본. 직업, 나이, 생년월일, 관심 분야까지 차근차근 물어봐요.', chips: ['기본 정보', '상세 프로필', '관심 분야'], tone: 'peach' },
+  { no: '02', eyebrow: 'DISCOVER', title: '내게 맞는 설문 발견', copy: '로그인하면 다른 사용자가 올린 설문을 한눈에 보고, 조건과 보상을 확인해 바로 참여해요.', chips: ['맞춤 설문', '예상 시간', '참여 가능 여부'], tone: 'yellow' },
+  { no: '03', eyebrow: 'CREATE', title: 'AI와 함께 설문 제작', copy: '직접 만들다가 막히면 Uni-Chat에게 물어보세요. 추천한 질문을 클릭 한 번으로 반영할 수 있어요.', chips: ['질문 추천', '표현 개선', '설문에 반영'], tone: 'blue' },
+  { no: '04', eyebrow: 'ANALYZE', title: '응답을 인사이트로', copy: '문항별 그래프부터 응답자 특성, 주관식 요약까지 모아 바로 공유할 수 있는 리포트로 만들어요.', chips: ['자동 집계', 'AI 요약', '파일 저장'], tone: 'mint' },
 ]
 
 const features = [
-  ['01', '대학생 인증', '대학 이메일 인증을 거친 응답자와 만나 결과의 신뢰도를 높여요.'],
-  ['02', '조건 매칭', '학년·전공 등 모집 조건에 맞는 학생에게 설문을 보여줘요.'],
-  ['03', '상호 참여 포인트', '응답으로 얻은 포인트가 다음 설문의 모집비가 되어 다시 순환해요.'],
-  ['04', '결과 대시보드', '모집 진행률과 응답 결과를 한 화면에서 직관적으로 확인해요.'],
+  ['01', 'AI 설문 자동 분석', '응답이 들어오는 즉시 통계·그래프·요약을 만들어요.', '3시간 → 15분'],
+  ['02', '리마인드 자동 발송', '아직 응답하지 않은 사람에게만 가볍게 다시 알려요.', '응답률 1.8×'],
+  ['03', 'Uni-Chat 공동 제작', '목적만 말하면 질문, 보기, 순서, 표현을 함께 다듬어요.', '평균 10분'],
 ]
 
 export default function Landing() {
+  const [chatApplied, setChatApplied] = useState(false)
+
+  useEffect(() => {
+    const nodes = document.querySelectorAll('[data-reveal]')
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('is-visible')),
+      { threshold: 0.14 }
+    )
+    nodes.forEach((node) => observer.observe(node))
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <main className="unf-landing">
-      <nav className="unf-nav" aria-label="주요 메뉴">
-        <BrandMark className="unf-brand" light />
-        <div className="unf-nav__links"><a href="#journey">서비스 흐름</a><a href="#points">포인트</a><a href="#results">결과 확인</a></div>
-        <div className="unf-nav__actions"><Link to="/login">로그인</Link><Link to="/signup">학생 인증하기 <span aria-hidden="true">↗</span></Link></div>
+    <main className="uf26">
+      <nav className="uf26-nav" aria-label="주요 메뉴">
+        <BrandMark className="uf26-brand" />
+        <div className="uf26-nav__links"><a href="#how">이용 방법</a><a href="#create">Uni-Chat</a><a href="#result">결과 분석</a></div>
+        <div className="uf26-nav__actions"><Link to="/login">로그인</Link><Link to="/signup">무료로 시작하기 <span>↗</span></Link></div>
       </nav>
 
-      <section className="unf-hero" aria-labelledby="unf-hero-title">
-        <div className="unf-hero__cloud unf-hero__cloud--one" aria-hidden="true" /><div className="unf-hero__cloud unf-hero__cloud--two" aria-hidden="true" />
-        <div className="unf-hero__copy">
-          <p className="unf-eyebrow"><span /> UNIVERSITY SURVEY NETWORK</p>
-          <h1 id="unf-hero-title"><span>필요한 응답은 <em>더 빠르게,</em></span><span>참여한 시간은 <em>포인트로.</em></span></h1>
-          <p className="unf-hero__description">단톡방에 매번 부탁하지 않아도 괜찮아요.<br />인증된 대학생의 질문과 답이 자연스럽게 이어지는 곳, UNI-FORM.</p>
-          <Link className="unf-primary-cta" to="/signup">대학 인증하고 시작하기 <span aria-hidden="true">→</span></Link>
+      <section className="uf26-hero" aria-labelledby="hero-title">
+        <div className="uf26-hero__copy" data-reveal>
+          <p className="uf26-kicker"><i /> SURVEY, BUT MAKE IT EASY</p>
+          <h1 id="hero-title">설문 정리에<br /><em>밤새지 마세요.</em></h1>
+          <p>구글폼 붙여넣고, 카톡으로 리마인드 돌리고, 엑셀에 응답 옮기고…<br />그 시간에 과제 하나 더 하세요.</p>
+          <div className="uf26-hero__actions"><Link to="/signup">무료로 첫 설문 만들기 <span>→</span></Link><a href="#create"><i>▶</i> 3분 데모 보기</a></div>
+          <small><b>✓</b> 카드 등록 없이 바로 시작 가능</small>
         </div>
-
-        <div className="unf-hero-stage" aria-label="UNI-FORM 설문 참여 예시">
-          <p className="unf-stage-word" aria-hidden="true">ASK<br />&amp; EARN</p>
-          <div className="unf-orbit unf-orbit--one" aria-hidden="true" /><div className="unf-orbit unf-orbit--two" aria-hidden="true" />
-          <div className="unf-survey-card"><div className="unf-survey-card__top"><span>추천 설문</span><b>+300 P</b></div><div className="unf-survey-card__art"><span>UNI</span><i>FORM</i></div><p>대학생의 디지털 서비스 이용 경험</p><div className="unf-progress"><span /></div><small>82명이 참여했어요 · 약 3분</small></div>
-          <div className="unf-glass-pill"><span className="unf-glass-pill__dot" /><span>참여 가능</span><strong>+300 P</strong><i aria-hidden="true">→</i></div>
-          <div className="unf-paper-plane" aria-hidden="true"><span /></div><div className="unf-sticker" aria-hidden="true">100<br /><span>RESPONSES</span></div>
+        <div className="uf26-hero__product" aria-label="Uni-Form 제품 미리보기" data-reveal>
+          <div className="uf26-browser"><div className="uf26-browser__bar"><span /><span /><span /><b>app.uni-form.kr</b></div><div className="uf26-app"><aside><BrandMark showName={false} /><i /><i /><i /><i /><div className="uf26-avatar">KY</div></aside><div className="uf26-app__main"><header><div><small>안녕하세요, 김유나님 👋</small><h3>오늘은 어떤 답이 궁금하세요?</h3></div><button type="button">＋ 설문 만들기</button></header><div className="uf26-filter"><b>추천</b><span>3분 이내</span><span>마감 임박</span><span>높은 포인트</span></div><div className="uf26-survey-grid">{surveys.map((survey) => <article className={`uf26-survey-card ${survey.color}`} key={survey.title}><div><span>{survey.tag}</span><b>{survey.reward}</b></div><h4>{survey.title}</h4><p>{survey.meta}</p><button type="button">참여하기 <span>↗</span></button></article>)}</div></div></div></div>
+          <div className="uf26-float uf26-float--time"><span>분석 시간</span><strong>92% ↓</strong><small>3시간 → 15분</small></div><div className="uf26-float uf26-float--people"><span>오늘의 응답</span><strong>+128</strong><i>👩🏻‍💻 🧑🏽‍🎓 👨🏻‍🔬</i></div><div className="uf26-spark" aria-hidden="true">✦</div>
         </div>
-        <p className="unf-scroll">SCROLL TO SEE THE FLOW <span>↓</span></p>
+        <a className="uf26-scroll" href="#problem">SCROLL TO EXPLORE <span>↓</span></a>
       </section>
 
-      <section className="unf-problem" aria-label="설문 응답 모집 문제">
-        <p>“설문조사 한 번만 부탁해!”</p>
-        <div className="unf-problem__numbers"><span><small>지금 모인 응답</small><strong>3</strong></span><i aria-hidden="true">→</i><span><small>UNI-FORM 목표</small><strong>100</strong></span></div>
-        <p>부탁을 반복하는 대신, 조건에 맞는 학생과 연결하세요.</p>
-      </section>
+      <section className="uf26-marquee" aria-label="Uni-Form 주요 기능"><div>AI 설문 제작 <i>✦</i> 자동 결과 분석 <i>✦</i> 맞춤 설문 추천 <i>✦</i> 리마인드 자동화 <i>✦</i> AI 설문 제작 <i>✦</i> 자동 결과 분석</div></section>
 
-      <section className="unf-journey" id="journey" aria-labelledby="unf-journey-title">
-        <header className="unf-section-heading"><p>ONE CONNECTED JOURNEY</p><h2 id="unf-journey-title">가입부터 결과까지,<br /><em>한 흐름이면 충분해요.</em></h2><p>사용자 여정을 세 단계로 정리했습니다. 찾고, 답하고, 모으는 모든 과정이 끊기지 않아요.</p></header>
-        <ol className="unf-journey-grid">
-          {journey.map((chapter) => (
-            <li className={`unf-journey-card unf-journey-card--${chapter.tone}`} key={chapter.number}>
-              <div className="unf-journey-card__head"><span>{chapter.number}</span><small>{chapter.label}</small></div><h3>{chapter.title}</h3><p>{chapter.description}</p>
-              <ol>{chapter.steps.map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, '0')}</span>{step}</li>)}</ol>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <section className="uf26-problem" id="problem"><div className="uf26-section-label" data-reveal><span>01</span><p>THE OLD WAY</p></div><div className="uf26-problem__headline" data-reveal><h2>설문 하나 돌리는데,<br /><em>왜 이렇게 할 일이 많죠?</em></h2><p>만드는 사람도, 답하는 사람도<br />조금 덜 지치게 만들었어요.</p></div><div className="uf26-problem__cards"><article data-reveal><span>01</span><b>3H</b><h3>응답 정리에만 3시간</h3><p>엑셀로 옮기고, 필터 걸고, 그래프 만들다 보면 심사 전날이 와요.</p></article><article data-reveal><span>02</span><b>12%</b><h3>링크만 뿌리면 낮은 응답률</h3><p>리마인드를 따로 보내지 않으면 응답은 금세 멈춰버려요.</p></article><article data-reveal><span>03</span><b>AGAIN</b><h3>매 학기 처음부터 다시</h3><p>반복되는 설문인데 데이터도, 질문도 계속 흩어져 있어요.</p></article></div></section>
 
-      <section className="unf-points" id="points" aria-labelledby="unf-points-title">
-        <div className="unf-points__copy"><p className="unf-eyebrow"><span /> MUTUAL POINT ECONOMY</p><h2 id="unf-points-title">내 답변이<br />다음 질문의<br /><em>시작점.</em></h2><p>설문에 참여해 포인트를 얻고, 모은 포인트로 내 설문의 응답자를 모집해요. 참여가 다시 참여를 만드는 구조입니다.</p></div>
-        <div className="unf-point-loop" aria-label="UNI-FORM 포인트 사용 예시">
-          <div className="unf-point-loop__card unf-point-loop__card--answer"><span>ANSWER</span><h3>설문에 답하기</h3><strong>+ 200 P</strong><p>응답 완료 즉시 적립</p></div><div className="unf-point-loop__arrow" aria-hidden="true">↘</div>
-          <div className="unf-budget"><span>모집 포인트 계산</span><div><strong>100</strong><small>명</small><i>×</i><strong>200</strong><small>P</small></div><p>필요 포인트 <b>20,000 P</b></p></div><div className="unf-point-loop__arrow unf-point-loop__arrow--return" aria-hidden="true">↖</div>
-          <div className="unf-point-loop__card unf-point-loop__card--ask"><span>ASK</span><h3>내 설문 열기</h3><strong>− 20,000 P</strong><p>인원 × 1인 보상만큼 사용</p></div>
-        </div>
-      </section>
+      <section className="uf26-flow" id="how"><header data-reveal><p>ONE CONNECTED JOURNEY</p><h2>가입부터 결과까지,<br /><em>한 흐름이면 충분해요.</em></h2></header><ol>{flow.map((item) => <li className={`uf26-flow__item ${item.tone}`} key={item.no} data-reveal><div className="uf26-flow__top"><span>{item.no}</span><small>{item.eyebrow}</small></div><div><h3>{item.title}</h3><p>{item.copy}</p><div className="uf26-chips">{item.chips.map((chip) => <span key={chip}>{chip}</span>)}</div></div><b aria-hidden="true">↘</b></li>)}</ol></section>
 
-      <section className="unf-results" id="results" aria-labelledby="unf-results-title">
-        <div className="unf-results__board"><div className="unf-board__nav"><span>MY SURVEY</span><i /><i /><i /></div><div className="unf-board__summary"><div><small>응답 현황</small><strong>82<em>/100</em></strong></div><div className="unf-ring" style={{ position: 'relative' }}><span>82%</span></div></div><div className="unf-board__chart" aria-hidden="true"><span style={{ '--bar': '42%' }} /><span style={{ '--bar': '65%' }} /><span style={{ '--bar': '54%' }} /><span style={{ '--bar': '82%' }} /><span style={{ '--bar': '74%' }} /><span style={{ '--bar': '91%' }} /></div><div className="unf-board__meta"><span>평균 응답 시간 <b>03:24</b></span><span>완료율 <b>94%</b></span></div></div>
-        <div className="unf-results__copy"><p>RESULTS, NOT RAW NUMBERS</p><h2 id="unf-results-title">모인 답을<br /><em>한눈에.</em></h2><p>모집 진행률부터 응답 현황, 결과까지 대시보드에서 바로 확인하세요. 필요한 순간에 다음 판단으로 이어질 수 있도록.</p><div className="unf-feature-list">{features.map(([number, title, description]) => <article key={number}><span>{number}</span><div><h3>{title}</h3><p>{description}</p></div></article>)}</div></div>
-      </section>
+      <section className="uf26-create" id="create"><div className="uf26-create__copy" data-reveal><p>MEET YOUR SURVEY MATE</p><h2>혼자 만들지 말고,<br /><em>Uni-Chat과 같이.</em></h2><p>직접 문항을 만들다가 막히는 순간, 오른쪽 채팅창에 목적을 말해보세요. Claude 기반 Uni-Chat이 질문과 보기, 순서와 표현을 계속 제안합니다.</p><ul><li><span>01</span> 사용 목적과 타깃 입력</li><li><span>02</span> 질문·보기·순서 추천</li><li><span>03</span> 클릭 한 번으로 설문에 반영</li></ul></div><div className="uf26-builder" data-reveal><div className="uf26-builder__top"><div><span /><span /><span /></div><b>새 설문 만들기</b><button type="button">미리보기</button></div><div className="uf26-builder__body"><div className="uf26-editor"><small>SURVEY EDITOR</small><input aria-label="설문 제목" value={chatApplied ? '대학생의 카페 이용과 공간 선호도' : '대학생 카페 이용 조사'} readOnly /><p>더 좋은 캠퍼스 주변 공간을 찾기 위한 설문이에요.</p><article><span>01 · 객관식</span><h4>일주일에 카페를 몇 번 이용하나요?</h4><div><i /> 0–1회</div><div><i /> 2–3회</div><div><i /> 4회 이상</div></article><article className={chatApplied ? 'is-applied' : ''}><span>02 · 객관식 {chatApplied && <b>AI 반영됨</b>}</span><h4>{chatApplied ? '카페를 선택할 때 가장 중요하게 보는 것은 무엇인가요?' : '카페 선택 기준은 무엇인가요?'}</h4><div><i /> 가격</div><div><i /> 거리</div><div><i /> 분위기와 좌석</div></article></div><aside className="uf26-chat"><header><div className="uf26-chat__bot">U</div><div><b>Uni-Chat</b><span><i /> Online · Claude API</span></div><button type="button">•••</button></header><div className="uf26-chat__messages"><p className="from-user">대학생들이 카페를 고르는 기준을 알아보고 싶어.</p><div className="from-bot"><b>Uni-Chat</b><p>좋아요! 선택 기준을 비교하기 쉽도록 질문을 조금 더 구체적으로 바꿔볼게요.</p><div className="uf26-suggestion"><span>추천 문항</span><strong>카페를 선택할 때 가장 중요하게 보는 것은 무엇인가요?</strong><small>가격 · 거리 · 분위기와 좌석 · 메뉴 다양성</small></div><button type="button" onClick={() => setChatApplied(true)} disabled={chatApplied}>{chatApplied ? '✓ 설문에 반영했어요' : '＋ 설문에 반영'}</button></div></div><div className="uf26-chat__input"><span>질문을 입력해 주세요</span><button type="button">↑</button></div></aside></div></div></section>
 
-      <section className="unf-final-cta" aria-labelledby="unf-final-title"><p>YOUR OPINION HAS VALUE</p><h2 id="unf-final-title">첫 답변부터<br />시작해볼까요?</h2><Link to="/signup" aria-label="UNI-FORM 회원가입으로 이동">학생 인증하고 시작하기 <span>↗</span></Link><div className="unf-final-shapes" aria-hidden="true"><i /><i /><i /><i /></div></section>
+      <section className="uf26-results" id="result"><div className="uf26-results__header" data-reveal><p>RESULTS, NOT RAW NUMBERS</p><h2>응답이 모이면,<br /><em>결론까지 보여드려요.</em></h2><p>전체 응답 수, 문항별 그래프, 주관식 요약과 응답자 특성까지. 필요한 결과만 골라 리포트로 저장하고 공유하세요.</p></div><div className="uf26-dashboard" data-reveal><div className="uf26-dashboard__nav"><BrandMark showName={false} /><span>Overview</span><span>Questions</span><span>Respondents</span><span>AI Summary</span><button type="button">리포트 내보내기 ↗</button></div><div className="uf26-dashboard__content"><header><div><small>RESULT REPORT</small><h3>카페 이용과 공간 선호도</h3></div><span>● 모집 중</span></header><div className="uf26-metrics"><article><small>전체 응답</small><strong>128</strong><span>목표의 85%</span></article><article><small>평균 응답 시간</small><strong>03:24</strong><span>−18초 단축</span></article><article><small>완료율</small><strong>94%</strong><span>매우 좋아요</span></article></div><div className="uf26-charts"><article><div><span><small>문항 02</small><h4>카페 선택의 첫 번째 기준</h4></span><b>···</b></div><div className="uf26-bars"><span style={{ '--h': '44%' }}><i>44%</i><b>분위기</b></span><span style={{ '--h': '28%' }}><i>28%</i><b>가격</b></span><span style={{ '--h': '18%' }}><i>18%</i><b>거리</b></span><span style={{ '--h': '10%' }}><i>10%</i><b>메뉴</b></span></div></article><article className="uf26-insight"><span>✦ AI 핵심 요약</span><h4>“응답자의 절반 가까이가<br />가격보다 공간 경험을 우선해요.”</h4><p>20–24세 학생과 프리랜서 그룹에서 ‘콘센트와 좌석 간격’ 언급이 2.1배 많았습니다.</p><div><span># 공간 경험</span><span># 오래 머물기</span><span># 콘센트</span></div></article></div></div></div></section>
 
-      <footer className="unf-footer"><BrandMark light /><p>질문과 사람 사이를 더 가치 있게.</p><div><Link to="/login">로그인</Link><Link to="/signup">회원가입</Link><Link to="/dashboard">대시보드</Link><Link to="/versions">버전 기록</Link></div><small>© 2026 UNI-FORM · UNIVERSITY SURVEY NETWORK</small></footer>
+      <section className="uf26-features">{features.map(([no, title, copy, metric]) => <article key={no} data-reveal><span>{no}</span><h3>{title}</h3><p>{copy}</p><strong>{metric}</strong></article>)}</section>
+      <section className="uf26-final" data-reveal><p>YOUR NEXT SURVEY STARTS HERE</p><h2>다음 설문,<br /><em>3시간 아껴볼까요?</em></h2><p>지금 가입하면 무료로 설문 3개까지 만들 수 있어요.<br />카드 등록 없이, 5분이면 첫 설문 세팅 끝.</p><Link to="/signup">무료로 시작하기 <span>↗</span></Link><div className="uf26-final__shapes" aria-hidden="true"><i /><i /><i /><i /></div></section>
+      <footer className="uf26-footer"><div><BrandMark light /><p>질문과 사람 사이를 더 가볍게.</p></div><div><a href="#how">서비스 소개</a><Link to="/login">로그인</Link><Link to="/signup">회원가입</Link><Link to="/dashboard">대시보드</Link></div><small>© 2026 UNI-FORM · MADE FOR CURIOUS MINDS</small></footer>
     </main>
   )
 }
