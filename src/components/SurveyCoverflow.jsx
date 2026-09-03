@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ProgressBar from './ProgressBar'
-import { formatPoints } from '../utils/pointCalculator'
 import './SurveyCoverflow.css'
 
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
@@ -190,7 +189,7 @@ export default function SurveyCoverflow({
                   className={`survey-coverflow__card ${isOwner ? 'is-owned' : ''}`}
                   onClick={(event) => handleCardClick(event, survey, index, lastDragDistanceRef.current > 6)}
                 >
-                  <div className="survey-coverflow__top"><span className="tag">{isOwner ? '내 설문' : survey.category || '일반'}</span><strong>{isOwner ? `${survey.response_count || 0}명 응답` : formatPoints(survey.reward_points)}</strong></div>
+                  <div className="survey-coverflow__top"><span className="tag">{isOwner ? '내 설문' : survey.category || '일반'}</span><strong>{survey.response_count || 0}명 응답</strong></div>
                   <h3>{survey.title}</h3>
                   <p>{survey.description}</p>
                   <ProgressBar value={survey.response_count || 0} max={survey.target_count} />

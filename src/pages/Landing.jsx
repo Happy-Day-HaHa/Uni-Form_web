@@ -13,9 +13,9 @@ const steps = [
 const filterCategories = ['전체', '교육', '라이프스타일', '소비']
 
 const sampleSurveys = [
-  ['교육', '더 나은 캠퍼스 라이프를 위한 설문', '4분', '320 P', 68],
-  ['라이프스타일', '나의 아침 루틴과 생산성', '3분', '180 P', 34],
-  ['소비', '친환경 소비 선택 조사', '6분', '450 P', 77],
+  ['교육', '더 나은 캠퍼스 라이프를 위한 설문', '4분', 68],
+  ['라이프스타일', '나의 아침 루틴과 생산성', '3분', 34],
+  ['소비', '친환경 소비 선택 조사', '6분', 77],
 ]
 
 export default function Landing() {
@@ -28,6 +28,10 @@ export default function Landing() {
 
   useEffect(() => {
     const items = document.querySelectorAll('[data-reveal]')
+    if (!('IntersectionObserver' in window)) {
+      items.forEach((item) => item.classList.add('is-visible'))
+      return undefined
+    }
     const observer = new IntersectionObserver(
       (entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('is-visible')),
       { threshold: 0.14 },
@@ -54,11 +58,11 @@ export default function Landing() {
         <div className="blue-showcase" data-reveal>
           <span className="blue-showcase__status"><i /> 지금 82명이 참여 중</span>
           <h3 className="blue-showcase__title">캠퍼스 설문<br /><em>네트워크</em></h3>
-          <p className="blue-showcase__desc">전국 대학생의 응답이 실시간으로 모여요.<br />개설부터 리워드 정산까지 한 흐름으로 이어집니다.</p>
+          <p className="blue-showcase__desc">전국 대학생의 응답이 실시간으로 모여요.<br />개설부터 결과 분석까지 한 흐름으로 이어집니다.</p>
           <div className="blue-showcase__stats">
             <div><strong>32개</strong><span>참여 대학</span></div>
             <div><strong>4.6분</strong><span>평균 응답 시간</span></div>
-            <div><strong>97%</strong><span>리워드 정산율</span></div>
+            <div><strong>97%</strong><span>설문 완료율</span></div>
           </div>
         </div>
       </div>
@@ -75,12 +79,12 @@ export default function Landing() {
       <div className="blue-board" data-reveal>
         <header><div><small>AVAILABLE SURVEYS</small><strong>지금 참여할 수 있는 설문</strong></div><Link to="/surveys/create">+ 만들기</Link></header>
         <div className="blue-board__filters">{filterCategories.map((category) => <button type="button" key={category} className={category === activeCategory ? 'is-active' : ''} onClick={() => setActiveCategory(category)}>{category}</button>)}</div>
-        <div className="blue-board__grid">{visibleSurveys.map(([category, title, time, points, percent]) => <article key={title}><div><span>{category}</span><b>{points}</b></div><h3>{title}</h3><p>응답 현황 <strong>{percent}%</strong></p><i><b style={{ width: `${percent}%` }} /></i><footer><span>약 {time}</span><Link to="/surveys">참여하기 →</Link></footer></article>)}{!visibleSurveys.length && <p className="blue-board__empty">해당 카테고리의 설문이 아직 없어요.</p>}</div>
+        <div className="blue-board__grid">{visibleSurveys.map(([category, title, time, percent]) => <article key={title}><div><span>{category}</span><b>{percent}% 참여</b></div><h3>{title}</h3><p>응답 현황 <strong>{percent}%</strong></p><i><b style={{ width: `${percent}%` }} /></i><footer><span>약 {time}</span><Link to="/surveys">참여하기 →</Link></footer></article>)}{!visibleSurveys.length && <p className="blue-board__empty">해당 카테고리의 설문이 아직 없어요.</p>}</div>
       </div>
     </section>
 
     <section className="blue-ai" data-reveal>
-      <div><p className="blue-eyebrow">AI ASSISTED CREATION</p><h2>목적만 적으면,<br />질문 초안이 시작돼요.</h2><p>AI 추천을 그대로 쓰거나 내 조사에 맞게 수정하세요. 질문 추가와 삭제, 모집 인원과 리워드 설정까지 한 화면에서 이어집니다.</p></div>
+      <div><p className="blue-eyebrow">AI ASSISTED CREATION</p><h2>목적만 적으면,<br />질문 초안이 시작돼요.</h2><p>AI 추천을 그대로 쓰거나 내 조사에 맞게 수정하세요. 질문 추가와 삭제, 모집 인원과 공개 설정까지 한 화면에서 이어집니다.</p></div>
       <div className="blue-ai__chat"><header><span>U</span><div><b>Uni AI</b><small>설문 제작 도우미</small></div><i>● ONLINE</i></header><p>대학생의 통학 만족도를 알아보고 싶어요.</p><article><small>추천 질문</small><b>일주일에 평균 며칠 통학하나요?</b><span>주요 교통수단은 무엇인가요?</span><span>통학 시간에 얼마나 만족하나요?</span><button type="button" className={aiApplied ? 'is-applied' : ''} disabled={aiApplied} onClick={() => setAiApplied(true)}>{aiApplied ? '질문에 적용됨 ✓' : '+ 질문으로 적용'}</button></article></div>
     </section>
 
