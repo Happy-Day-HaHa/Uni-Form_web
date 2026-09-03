@@ -4,6 +4,11 @@ create table if not exists public.users (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   name text not null default '',
+  occupation text,
+  age integer check (age between 1 and 120),
+  birth_date date,
+  gender text,
+  additional_info text,
   age_group text,
   region text,
   interests text[] not null default '{}',
@@ -11,6 +16,12 @@ create table if not exists public.users (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.users add column if not exists occupation text;
+alter table public.users add column if not exists age integer check (age between 1 and 120);
+alter table public.users add column if not exists birth_date date;
+alter table public.users add column if not exists gender text;
+alter table public.users add column if not exists additional_info text;
 
 create table if not exists public.surveys (
   id uuid primary key default gen_random_uuid(),
@@ -57,8 +68,8 @@ create index if not exists point_transactions_user_created_idx on public.point_t
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
-  insert into public.users (id, email, name)
-  values (new.id, new.email, coalesce(new.raw_user_meta_data ->> 'name', ''))
+  insert into public.users (id, email, name, occupation, age, birth_date, gender, additional_info)
+  values (new.id, new.email, coalesce(new.raw_user_meta_data ->> 'name', ''), new.raw_user_meta_data ->> 'occupation', nullif(new.raw_user_meta_data ->> 'age', '')::integer, nullif(new.raw_user_meta_data ->> 'birth_date', '')::date, new.raw_user_meta_data ->> 'gender', new.raw_user_meta_data ->> 'additional_info')
   on conflict (id) do nothing;
   return new;
 end;

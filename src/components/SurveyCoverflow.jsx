@@ -29,8 +29,10 @@ export default function SurveyCoverflow({
   const dragRef = useRef(null)
   const lastDragDistanceRef = useRef(0)
   const selectedRef = useRef(0)
+  const knownSurveyIdsRef = useRef(new Set())
 
   const [selected, setSelected] = useState(0)
+  const [enteringIds, setEnteringIds] = useState(new Set())
   const setSelectedIndex = useCallback((index) => { selectedRef.current = index; setSelected(index) }, [])
 
   const indexAt = useCallback((pos) => ((Math.round(pos) % count) + count) % count, [count])
@@ -142,6 +144,17 @@ export default function SurveyCoverflow({
 
   useEffect(() => () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }, [])
 
+  useEffect(() => {
+    const currentIds = new Set(surveys.map((survey) => survey.id))
+    const addedIds = new Set(surveys.filter((survey) => !knownSurveyIdsRef.current.has(survey.id)).map((survey) => survey.id))
+    knownSurveyIdsRef.current = currentIds
+    if (!addedIds.size) return undefined
+
+    setEnteringIds(addedIds)
+    const timeout = window.setTimeout(() => setEnteringIds(new Set()), 850)
+    return () => window.clearTimeout(timeout)
+  }, [surveys])
+
   const cardStyle = useMemo(() => ({ '--sc-card': cardWidth, '--sc-ratio': cardRatio }), [cardWidth, cardRatio])
 
   const handleCardClick = (event, survey, index, wasDrag) => {
@@ -186,7 +199,7 @@ export default function SurveyCoverflow({
                   role="group"
                   aria-roledescription="slide"
                   aria-label={`${index + 1} / ${count}`}
-                  className={`survey-coverflow__card ${isOwner ? 'is-owned' : ''}`}
+                  className={`survey-coverflow__card ${isOwner ? 'is-owned' : ''} ${enteringIds.has(survey.id) ? 'is-entering' : ''}`.trim()}
                   onClick={(event) => handleCardClick(event, survey, index, lastDragDistanceRef.current > 6)}
                 >
                   <div className="survey-coverflow__top"><span className="tag">{isOwner ? '내 설문' : survey.category || '일반'}</span><strong>{survey.response_count || 0}명 응답</strong></div>
