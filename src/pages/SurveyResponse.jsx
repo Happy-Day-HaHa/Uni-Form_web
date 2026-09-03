@@ -7,9 +7,11 @@ import QuestionItem from '../components/QuestionItem'
 import { submitSurveyResponse } from '../services/responseService'
 import { getSurvey } from '../services/surveyService'
 import { formatPoints } from '../utils/pointCalculator'
+import { useAuth } from '../hooks/useAuth'
 
 export default function SurveyResponse() {
   const { surveyId } = useParams()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [survey, setSurvey] = useState(null)
   const [answers, setAnswers] = useState({})
@@ -18,6 +20,8 @@ export default function SurveyResponse() {
   const [submitting, setSubmitting] = useState(false)
   useEffect(() => { getSurvey(surveyId).then(setSurvey).catch((error) => setMessage(error.message)) }, [surveyId])
   if (!survey) return <><Header /><main className="app-main"><div className="empty-state">{message || '설문을 불러오고 있어요.'}</div></main></>
+  const isOwner = survey.creator_id === user.id
+  if (isOwner) return <><Header /><main className="app-main app-main--narrow"><div className="empty-state result-gate"><b>MY SURVEY</b><h1>{survey.title}</h1><p>본인이 만든 설문에는 직접 응답할 수 없어요.</p>{survey.response_count > 0 ? <Link className="button" to={`/surveys/${survey.id}/results`}>결과 분석 보기 →</Link> : <Link className="button" to="/dashboard">응답 현황 확인하기 →</Link>}</div></main></>
   async function handleSubmit(event) {
     event.preventDefault()
     if (survey.questions?.some((question) => answers[question.id] === undefined || answers[question.id] === '')) return setMessage('모든 질문에 답해주세요.')
