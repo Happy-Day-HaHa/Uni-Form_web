@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
 import '../styles/landing.css'
@@ -10,13 +10,22 @@ const steps = [
   { no: '04', label: 'ANALYZE', title: '설문 결과 분석', copy: '내가 만든 설문에 응답이 들어오면 통계와 핵심 결과를 확인해요.' },
 ]
 
+const filterCategories = ['전체', '교육', '라이프스타일', '소비']
+
 const sampleSurveys = [
-  ['교육', '더 나은 캠퍼스 라이프를 위한 설문', '4분', '320 P'],
-  ['라이프스타일', '나의 아침 루틴과 생산성', '3분', '180 P'],
-  ['소비', '친환경 소비 선택 조사', '6분', '450 P'],
+  ['교육', '더 나은 캠퍼스 라이프를 위한 설문', '4분', '320 P', 68],
+  ['라이프스타일', '나의 아침 루틴과 생산성', '3분', '180 P', 34],
+  ['소비', '친환경 소비 선택 조사', '6분', '450 P', 77],
 ]
 
 export default function Landing() {
+  const [activeCategory, setActiveCategory] = useState('전체')
+  const [aiApplied, setAiApplied] = useState(false)
+  const visibleSurveys = useMemo(
+    () => activeCategory === '전체' ? sampleSurveys : sampleSurveys.filter(([category]) => category === activeCategory),
+    [activeCategory],
+  )
+
   useEffect(() => {
     const items = document.querySelectorAll('[data-reveal]')
     const observer = new IntersectionObserver(
@@ -42,9 +51,16 @@ export default function Landing() {
         <div className="blue-hero__actions"><Link className="blue-button blue-button--dark" to="/surveys">설문 시작하기 <span>→</span></Link><Link className="blue-text-link" to="/signup">처음이라면 회원가입</Link></div>
       </div>
       <div className="blue-hero__art" aria-hidden="true">
-        <span className="blue-orb blue-orb--one" /><span className="blue-orb blue-orb--two" />
-        <div className="blue-float-card"><small>LIVE SURVEY</small><strong>82</strong><span>응답이 모였어요</span><i><b /></i></div>
-        <div className="blue-mini-card"><span>AI SUMMARY</span><b>핵심 의견 3개 발견</b><small>분석 완료 · 방금 전</small></div>
+        <div className="blue-showcase" data-reveal>
+          <span className="blue-showcase__status"><i /> 지금 82명이 참여 중</span>
+          <h3 className="blue-showcase__title">캠퍼스 설문<br /><em>네트워크</em></h3>
+          <p className="blue-showcase__desc">전국 대학생의 응답이 실시간으로 모여요.<br />개설부터 리워드 정산까지 한 흐름으로 이어집니다.</p>
+          <div className="blue-showcase__stats">
+            <div><strong>32개</strong><span>참여 대학</span></div>
+            <div><strong>4.6분</strong><span>평균 응답 시간</span></div>
+            <div><strong>97%</strong><span>리워드 정산율</span></div>
+          </div>
+        </div>
       </div>
       <a className="blue-scroll" href="#flow">SCROLL <span>↓</span></a>
     </section>
@@ -58,14 +74,14 @@ export default function Landing() {
       <div className="blue-section-copy" data-reveal><p className="blue-eyebrow">SURVEY BOARD</p><h2>참여할 설문을 고르고,<br />내 설문도 바로 만들어요.</h2><p>‘설문 시작하기’를 누르면 현재 모집 중인 설문이 보여요. 참여하고 싶은 설문을 선택하거나 오른쪽 위의 <b>+ 만들기</b>로 새 설문을 개설할 수 있습니다.</p><Link className="blue-button blue-button--dark" to="/surveys">올라온 설문 보기 <span>→</span></Link></div>
       <div className="blue-board" data-reveal>
         <header><div><small>AVAILABLE SURVEYS</small><strong>지금 참여할 수 있는 설문</strong></div><Link to="/surveys/create">+ 만들기</Link></header>
-        <div className="blue-board__filters"><b>전체</b><span>교육</span><span>라이프스타일</span><span>소비</span></div>
-        <div className="blue-board__grid">{sampleSurveys.map(([category, title, time, points], index) => <article key={title}><div><span>{category}</span><b>{points}</b></div><h3>{title}</h3><p>응답 현황 <strong>{[68, 34, 77][index]}%</strong></p><i><b style={{ width: `${[68, 34, 77][index]}%` }} /></i><footer><span>약 {time}</span><b>참여하기 →</b></footer></article>)}</div>
+        <div className="blue-board__filters">{filterCategories.map((category) => <button type="button" key={category} className={category === activeCategory ? 'is-active' : ''} onClick={() => setActiveCategory(category)}>{category}</button>)}</div>
+        <div className="blue-board__grid">{visibleSurveys.map(([category, title, time, points, percent]) => <article key={title}><div><span>{category}</span><b>{points}</b></div><h3>{title}</h3><p>응답 현황 <strong>{percent}%</strong></p><i><b style={{ width: `${percent}%` }} /></i><footer><span>약 {time}</span><Link to="/surveys">참여하기 →</Link></footer></article>)}{!visibleSurveys.length && <p className="blue-board__empty">해당 카테고리의 설문이 아직 없어요.</p>}</div>
       </div>
     </section>
 
     <section className="blue-ai" data-reveal>
       <div><p className="blue-eyebrow">AI ASSISTED CREATION</p><h2>목적만 적으면,<br />질문 초안이 시작돼요.</h2><p>AI 추천을 그대로 쓰거나 내 조사에 맞게 수정하세요. 질문 추가와 삭제, 모집 인원과 리워드 설정까지 한 화면에서 이어집니다.</p></div>
-      <div className="blue-ai__chat"><header><span>U</span><div><b>Uni AI</b><small>설문 제작 도우미</small></div><i>● ONLINE</i></header><p>대학생의 통학 만족도를 알아보고 싶어요.</p><article><small>추천 질문</small><b>일주일에 평균 며칠 통학하나요?</b><span>주요 교통수단은 무엇인가요?</span><span>통학 시간에 얼마나 만족하나요?</span><button type="button">+ 질문으로 적용</button></article></div>
+      <div className="blue-ai__chat"><header><span>U</span><div><b>Uni AI</b><small>설문 제작 도우미</small></div><i>● ONLINE</i></header><p>대학생의 통학 만족도를 알아보고 싶어요.</p><article><small>추천 질문</small><b>일주일에 평균 며칠 통학하나요?</b><span>주요 교통수단은 무엇인가요?</span><span>통학 시간에 얼마나 만족하나요?</span><button type="button" className={aiApplied ? 'is-applied' : ''} disabled={aiApplied} onClick={() => setAiApplied(true)}>{aiApplied ? '질문에 적용됨 ✓' : '+ 질문으로 적용'}</button></article></div>
     </section>
 
     <section className="blue-results" id="results">
