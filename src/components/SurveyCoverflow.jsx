@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import ProgressBar from './ProgressBar'
 import './SurveyCoverflow.css'
 
@@ -240,7 +240,10 @@ export default function SurveyCoverflow({
                   <ProgressBar value={survey.response_count || 0} max={survey.target_count} />
                   <footer>
                     <span>{isOwner ? `목표 ${survey.target_count}명` : `약 ${survey.estimated_minutes || 5}분`}</span>
-                    <b>{isOwner ? (canViewResults ? '결과 보기 →' : '응답 대기 중') : '참여하기 →'}</b>
+                    {isOwner ? (canViewResults
+                      ? <Link className="survey-coverflow__action" to={`/surveys/${survey.id}/results`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>결과 보기 <span>→</span></Link>
+                      : <span className="survey-coverflow__waiting">응답 대기 중</span>)
+                      : <Link className="survey-coverflow__action" to={`/surveys/${survey.id}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>응답하기 <span>→</span></Link>}
                   </footer>
                 </div>
               )
