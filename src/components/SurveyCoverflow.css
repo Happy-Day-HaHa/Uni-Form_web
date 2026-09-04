@@ -19,8 +19,9 @@
 .survey-coverflow__card footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;color:#68798c;font-size:.76rem}
 .survey-coverflow__card footer b{color:#172331}
 .survey-coverflow__nav{position:absolute;top:50%;z-index:20;display:grid;width:44px;height:44px;translate:0 -50%;border:1px solid rgba(23,35,49,.1);border-radius:50%;background:rgba(255,255,255,.92);color:#172331;font-size:1.3rem;line-height:1;place-items:center;cursor:pointer;box-shadow:0 12px 28px rgba(41,73,119,.14);transition:transform .25s cubic-bezier(.16,1,.3,1),box-shadow .25s}
-.survey-coverflow__nav:hover{transform:translateY(-50%) scale(1.06)}
-.survey-coverflow__nav:active{transform:translateY(-50%) scale(.94)}
+.survey-coverflow__nav:hover{transform:scale(1.06)}
+.survey-coverflow__nav:active{transform:scale(.94)}
+.survey-coverflow__nav:disabled{opacity:.35;cursor:not-allowed;transform:none}
 .survey-coverflow__nav--prev{left:0}
 .survey-coverflow__nav--next{right:0}
 .survey-coverflow__dots{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px}

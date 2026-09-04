@@ -90,7 +90,17 @@ export default function SurveyCoverflow({
     settle(target)
   }, [count, settle])
 
-  const nudge = useCallback((by) => settle(Math.round(targetRef.current) + by), [settle])
+  const nudge = useCallback((by) => {
+    if (count < 2) return
+    lastDragDistanceRef.current = 0
+    settle(Math.round(targetRef.current) + by)
+  }, [count, settle])
+
+  const handleNavClick = useCallback((event, by) => {
+    event.preventDefault()
+    event.stopPropagation()
+    nudge(by)
+  }, [nudge])
 
   const onPointerDown = (event) => {
     if (rafRef.current !== null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
@@ -238,8 +248,8 @@ export default function SurveyCoverflow({
           </div>
         </div>
 
-        <button type="button" className="survey-coverflow__nav survey-coverflow__nav--prev" aria-label="이전 설문" onClick={() => nudge(-1)}>‹</button>
-        <button type="button" className="survey-coverflow__nav survey-coverflow__nav--next" aria-label="다음 설문" onClick={() => nudge(1)}>›</button>
+        <button type="button" className="survey-coverflow__nav survey-coverflow__nav--prev" aria-label="이전 설문" disabled={count < 2} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => handleNavClick(event, -1)}>‹</button>
+        <button type="button" className="survey-coverflow__nav survey-coverflow__nav--next" aria-label="다음 설문" disabled={count < 2} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => handleNavClick(event, 1)}>›</button>
       </div>
 
       <div className="survey-coverflow__dots">
