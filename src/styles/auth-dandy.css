@@ -16,3 +16,29 @@
 .auth-page--dandy .auth-card::before{content:"01";display:block;margin:0 0 72px;color:#aeb4b7;font-size:clamp(4.8rem,7vw,8rem);font-weight:200;line-height:.72;letter-spacing:-.09em}
 .auth-page--signup .auth-card::before{content:"02"}
 .auth-page--dandy .auth-scene{background:#e6ebee}
+
+/* Center the authentication forms on web layouts. */
+.auth-page--dandy {
+  grid-template-columns: 1fr;
+  place-items: stretch center;
+}
+
+.auth-page--dandy .auth-scene {
+  display: none;
+}
+
+.auth-page--dandy .auth-card {
+  width: min(100%, 680px);
+  max-width: 680px;
+  justify-self: center;
+  border-right: 1px solid rgba(23, 26, 28, 0.14);
+  border-left: 1px solid rgba(23, 26, 28, 0.14);
+}
+
+@media (max-width: 620px) {
+  .auth-page--dandy .auth-card {
+    width: 100%;
+    border-right: 0;
+    border-left: 0;
+  }
+}
