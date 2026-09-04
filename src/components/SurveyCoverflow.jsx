@@ -150,9 +150,31 @@ export default function SurveyCoverflow({
     knownSurveyIdsRef.current = currentIds
     if (!addedIds.size) return undefined
 
-    setEnteringIds(addedIds)
+    let createdSurveyId = null
+    try { createdSurveyId = sessionStorage.getItem('uni-form-new-survey') } catch { /* use the normal entrance animation */ }
+    const animatedIds = createdSurveyId && currentIds.has(createdSurveyId) ? new Set([createdSurveyId]) : addedIds
+    if (createdSurveyId && currentIds.has(createdSurveyId)) try { sessionStorage.removeItem('uni-form-new-survey') } catch { /* no-op */ }
+    setEnteringIds(animatedIds)
+
+    const frame = requestAnimationFrame(() => {
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+      surveys.forEach((survey, index) => {
+        if (!animatedIds.has(survey.id)) return
+        const card = cardRefs.current[index]
+        if (!card?.animate) return
+        const finalTransform = card.style.transform
+        const finalOpacity = Number(card.style.opacity || 1)
+        card.animate(
+          [
+            { transform: `${finalTransform} translateY(72px) scale(.9)`, opacity: 0, filter: 'blur(8px)' },
+            { transform: finalTransform, opacity: finalOpacity, filter: 'blur(0)' },
+          ],
+          { duration: 900, delay: index * 55, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'backwards' },
+        )
+      })
+    })
     const timeout = window.setTimeout(() => setEnteringIds(new Set()), 850)
-    return () => window.clearTimeout(timeout)
+    return () => { cancelAnimationFrame(frame); window.clearTimeout(timeout) }
   }, [surveys])
 
   const cardStyle = useMemo(() => ({ '--sc-card': cardWidth, '--sc-ratio': cardRatio }), [cardWidth, cardRatio])

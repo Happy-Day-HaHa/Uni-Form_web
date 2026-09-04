@@ -1,8 +1,4 @@
-.brand-mark{display:inline-flex;align-items:center;gap:11px;width:max-content}
-.brand-mark__seal{display:inline-flex;align-items:center;height:42px;padding:0 16px;border-radius:13px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),linear-gradient(155deg,#232323,#0a0a0a);background-blend-mode:overlay,normal;box-shadow:0 10px 26px rgba(10,10,10,.32),inset 0 1px 0 rgba(255,255,255,.07);color:#f5f3ee}
-.brand-mark__seal b{font-size:1rem;font-weight:900;letter-spacing:-.01em;line-height:1}
-.brand-mark__seal em{position:relative;display:inline-block;font-style:normal}
-.brand-mark__seal em::before{content:"";position:absolute;top:-.62em;left:50%;width:.2em;height:.2em;border-radius:50%;background:currentColor;transform:translateX(-50%)}
-.brand-mark__name{font-size:.76rem;font-weight:850;letter-spacing:.16em}
-.brand-mark--light{color:#f5f2ea}
-@media(max-width:520px){.brand-mark__seal{height:38px;padding:0 13px}.brand-mark__seal b{font-size:.88rem}.brand-mark__name{display:none}}
+.brand-mark{display:inline-flex;width:max-content;align-items:center;color:#16191b}
+.brand-mark__word{font-size:1.08rem;font-weight:900;line-height:1;letter-spacing:-.055em}
+.brand-mark--light{color:#f5f5f2}
+@media(max-width:520px){.brand-mark__word{font-size:1rem}}

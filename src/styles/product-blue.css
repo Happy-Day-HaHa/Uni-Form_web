@@ -22,3 +22,10 @@ body{background:#eef1f2}.app-header{border-color:rgba(28,32,35,.14);background:r
 @media(max-width:900px){.create-workspace{grid-template-columns:1fr}.ai-draft-panel{position:static;order:-1}}
 @media(max-width:560px){.create-page{width:min(100% - 28px,1180px)}.create-submit-row{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.builder-row{animation:none}}
+
+.page-heading::before{content:"03";display:block;margin-bottom:52px;color:#aeb4b7;font-size:clamp(4.5rem,7vw,7.5rem);font-weight:200;line-height:.72;letter-spacing:-.09em}
+.create-page .page-heading::before{content:"04"}
+.result-page .result-hero::before{content:"05";display:block;align-self:flex-start;min-width:150px;color:#aeb4b7;font-size:clamp(4.5rem,7vw,7.5rem);font-weight:200;line-height:.72;letter-spacing:-.09em}
+.create-page .workspace-label span{font-family:inherit;font-weight:200}
+.brand-mark__word{font-size:1.12rem}
+@media(max-width:850px){.result-page .result-hero::before{min-width:0;margin-bottom:22px}}

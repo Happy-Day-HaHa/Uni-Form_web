@@ -28,11 +28,14 @@ export async function createSurvey(payload) {
   if (!supabase) {
     const survey = { id: crypto.randomUUID(), creator_id: 'demo-user', response_count: 0, status: 'active', ...payload }
     localStorage.setItem(demoStorageKey, JSON.stringify([survey, ...getDemoCreatedSurveys()]))
+    try { sessionStorage.setItem('uni-form-new-survey', survey.id) } catch { /* animation hint is optional */ }
     return survey
   }
   const legacyPayload = { ...payload, reward_points: 1 }
   const { data, error } = await supabase.rpc('create_survey_with_budget', { survey_payload: legacyPayload })
   if (error) throw error
+  const createdId = typeof data === 'string' ? data : data?.id
+  if (createdId) try { sessionStorage.setItem('uni-form-new-survey', createdId) } catch { /* animation hint is optional */ }
   return data
 }
 

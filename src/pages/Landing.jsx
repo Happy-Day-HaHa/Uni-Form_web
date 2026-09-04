@@ -55,17 +55,17 @@ export default function Landing() {
         <p>설문 제작, 응답 수집, 결과 분석을<br />하나의 간결한 흐름으로 연결합니다.</p>
         <div className="blue-hero__actions"><Link className="blue-button blue-button--dark" to="/surveys">설문 시작하기 <span>→</span></Link><Link className="blue-text-link" to="/signup">처음이라면 회원가입</Link></div>
       </div>
-      <div className="blue-hero__art" aria-hidden="true" />
+      <figure className="blue-hero__art"><img src="/uniform-network-hero.jpeg" alt="다양한 대학 연구 주제가 연결된 네트워크" /></figure>
       <a className="blue-scroll" href="#flow">SCROLL <span>↓</span></a>
     </section>
 
     <section className="blue-flow" id="flow">
-      <header data-reveal><p className="blue-eyebrow">ONE SIMPLE FLOW</p><h2>시작부터 결과까지,<br />네 단계면 충분해요.</h2></header>
+      <header data-reveal><span className="blue-section-index">02</span><div><p className="blue-eyebrow">ONE SIMPLE FLOW</p><h2>시작부터 결과까지,<br />네 단계면 충분해요.</h2></div></header>
       <ol>{steps.map((step) => <li key={step.no} data-reveal><div><span>{step.no}</span><small>{step.label}</small></div><h3>{step.title}</h3><p>{step.copy}</p><b aria-hidden="true">↗</b></li>)}</ol>
     </section>
 
     <section className="blue-surveys" id="surveys">
-      <div className="blue-section-copy" data-reveal><p className="blue-eyebrow">SURVEY BOARD</p><h2>참여할 설문을 고르고,<br />내 설문도 바로 만들어요.</h2><p>‘설문 시작하기’를 누르면 현재 모집 중인 설문이 보여요. 참여하고 싶은 설문을 선택하거나 오른쪽 위의 <b>+ 만들기</b>로 새 설문을 개설할 수 있습니다.</p><Link className="blue-button blue-button--dark" to="/surveys">올라온 설문 보기 <span>→</span></Link></div>
+      <div className="blue-section-copy" data-reveal><span className="blue-section-index">03</span><p className="blue-eyebrow">SURVEY BOARD</p><h2>참여할 설문을 고르고,<br />내 설문도 바로 만들어요.</h2><p>‘설문 시작하기’를 누르면 현재 모집 중인 설문이 보여요. 참여하고 싶은 설문을 선택하거나 오른쪽 위의 <b>+ 만들기</b>로 새 설문을 개설할 수 있습니다.</p><Link className="blue-button blue-button--dark" to="/surveys">올라온 설문 보기 <span>→</span></Link></div>
       <div className="blue-board" data-reveal>
         <header><div><small>AVAILABLE SURVEYS</small><strong>지금 참여할 수 있는 설문</strong></div><Link to="/surveys/create">+ 만들기</Link></header>
         <div className="blue-board__filters">{filterCategories.map((category) => <button type="button" key={category} className={category === activeCategory ? 'is-active' : ''} onClick={() => setActiveCategory(category)}>{category}</button>)}</div>
@@ -74,16 +74,16 @@ export default function Landing() {
     </section>
 
     <section className="blue-ai" data-reveal>
-      <div><p className="blue-eyebrow">AI ASSISTED CREATION</p><h2>목적만 적으면,<br />질문 초안이 시작돼요.</h2><p>AI 추천을 그대로 쓰거나 내 조사에 맞게 수정하세요. 질문 추가와 삭제, 모집 인원과 공개 설정까지 한 화면에서 이어집니다.</p></div>
+      <div><span className="blue-section-index">04</span><p className="blue-eyebrow">AI ASSISTED CREATION</p><h2>목적만 적으면,<br />질문 초안이 시작돼요.</h2><p>AI 추천을 그대로 쓰거나 내 조사에 맞게 수정하세요. 질문 추가와 삭제, 모집 인원과 공개 설정까지 한 화면에서 이어집니다.</p></div>
       <div className="blue-ai__chat"><header><span>U</span><div><b>Uni AI</b><small>설문 제작 도우미</small></div><i>● ONLINE</i></header><p>대학생의 통학 만족도를 알아보고 싶어요.</p><article><small>추천 질문</small><b>일주일에 평균 며칠 통학하나요?</b><span>주요 교통수단은 무엇인가요?</span><span>통학 시간에 얼마나 만족하나요?</span><button type="button" className={aiApplied ? 'is-applied' : ''} disabled={aiApplied} onClick={() => setAiApplied(true)}>{aiApplied ? '질문에 적용됨 ✓' : '+ 질문으로 적용'}</button></article></div>
     </section>
 
     <section className="blue-results" id="results">
       <div className="blue-result-panel" data-reveal><header><span>RESULT REPORT</span><b>응답 82건</b></header><h3>통학 만족도 조사</h3><div className="blue-result-stats"><article><span>전체 응답</span><strong>82</strong><small>목표의 82%</small></article><article><span>평균 만족도</span><strong>3.8</strong><small>5점 만점</small></article></div><div className="blue-bars" aria-hidden="true">{[54, 82, 65, 96, 72, 88].map((height, index) => <i key={index} style={{ '--height': `${height}%` }} />)}</div><aside><span>✦ AI 핵심 요약</span><p>응답자는 환승 횟수보다 통학 시간의 예측 가능성을 더 중요하게 느껴요.</p></aside></div>
-      <div className="blue-section-copy" data-reveal><p className="blue-eyebrow">RESULTS WITH OWNERSHIP</p><h2>응답이 들어온<br />내 설문만 분석해요.</h2><p>결과 페이지는 <b>본인이 만든 설문</b>에 실제 응답이 한 건 이상 들어온 경우에만 열립니다. 응답 원문은 보호하고, 설문 제작자에게 필요한 통계와 요약만 보여줘요.</p><Link className="blue-button blue-button--dark" to="/dashboard">내 설문 확인하기 <span>→</span></Link></div>
+      <div className="blue-section-copy" data-reveal><span className="blue-section-index">05</span><p className="blue-eyebrow">RESULTS WITH OWNERSHIP</p><h2>응답이 들어온<br />내 설문만 분석해요.</h2><p>결과 페이지는 <b>본인이 만든 설문</b>에 실제 응답이 한 건 이상 들어온 경우에만 열립니다. 응답 원문은 보호하고, 설문 제작자에게 필요한 통계와 요약만 보여줘요.</p><Link className="blue-button blue-button--dark" to="/dashboard">내 설문 확인하기 <span>→</span></Link></div>
     </section>
 
-    <section className="blue-final" data-reveal><p className="blue-eyebrow">READY WHEN YOU ARE</p><h2>첫 질문을<br />시작해볼까요?</h2><div><Link className="blue-button blue-button--dark" to="/surveys">설문 시작하기 <span>→</span></Link><Link className="blue-button blue-button--light" to="/signup">회원가입</Link></div></section>
+    <section className="blue-final" data-reveal><span className="blue-section-index">06</span><p className="blue-eyebrow">READY WHEN YOU ARE</p><h2>첫 질문을<br />시작해볼까요?</h2><div><Link className="blue-button blue-button--dark" to="/surveys">설문 시작하기 <span>→</span></Link><Link className="blue-button blue-button--light" to="/signup">회원가입</Link></div></section>
     <footer className="blue-footer"><BrandMark light /><p>질문과 사람 사이를 더 가볍게.</p><div><Link to="/login">로그인</Link><Link to="/signup">회원가입</Link><Link to="/surveys">설문 목록</Link><a href="http://www.freepik.com" target="_blank" rel="noreferrer">Designed by Freepik</a></div><small>© 2026 UNI-FORM</small></footer>
   </main>
 }
