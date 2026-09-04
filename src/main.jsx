@@ -6,6 +6,7 @@ import AppErrorBoundary from './components/AppErrorBoundary'
 import { AuthProvider } from './hooks/useAuth'
 import './styles/global.css'
 import './styles/product-blue.css'
+import './styles/question-layout.css'
 
 window.addEventListener('vite:preloadError', () => {
   const reloadKey = 'uni-form-preload-reload'
