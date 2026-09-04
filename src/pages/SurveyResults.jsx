@@ -32,7 +32,7 @@ export default function SurveyResults() {
 
   return <><Header /><main className="app-main result-page">
     <Link className="back-link" to="/dashboard">← 내 설문</Link>
-    <header className="result-hero"><div><p className="eyebrow">OWNED SURVEY REPORT</p><h1>{survey.title}</h1><p>본인이 만든 설문에 들어온 응답만 안전하게 분석합니다.</p></div><span>응답 있음 · 분석 가능</span></header>
+    <header className="result-hero"><div><p className="eyebrow">SURVEY REPORT</p><h1>{survey.title}</h1><p>모인 응답을 이해하기 쉬운 수치와 요약으로 정리했어요.</p></div><span>정리 완료</span></header>
     <section className="result-stats"><article><span>전체 응답</span><strong>{survey.response_count}</strong><small>현재까지 수집된 응답</small></article><article><span>목표 달성률</span><strong>{completion}%</strong><small>{survey.target_count}명 중 {survey.response_count}명</small></article><article><span>분석 가능한 샘플</span><strong>{responses.length}</strong><small>현재 불러온 응답 데이터</small></article></section>
     <section className="result-summary"><div><p className="eyebrow">AI SUMMARY</p><h2>응답에서 먼저 볼 부분</h2></div><p>{analyses[0]?.counts?.length ? `첫 번째 문항에서는 ‘${[...analyses[0].counts].sort((a, b) => b.count - a.count)[0].option}’ 응답이 가장 많아요.` : '주관식 답변에서 반복되는 의견을 문항별로 확인해보세요.'} 표본이 더 모일수록 결과의 의미가 선명해집니다.</p></section>
     <section className="result-questions"><div className="section-title"><div><p className="eyebrow">QUESTION BREAKDOWN</p><h2>문항별 결과</h2></div></div>{survey.questions?.map((question, index) => {

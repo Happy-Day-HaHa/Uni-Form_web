@@ -40,3 +40,21 @@
 .blue-final .blue-section-index{margin:0 auto 58px;color:#9ba4a9}
 @media(max-width:1050px){.blue-hero__art img{min-height:720px}.blue-flow>header{grid-template-columns:1fr}.blue-flow>header>.blue-section-index{margin-bottom:50px}}
 @media(max-width:700px){.blue-hero__art{display:block;min-height:auto;border-top:1px solid rgba(23,26,28,.12)}.blue-hero__art img{min-height:0;aspect-ratio:16/10;object-fit:cover}.blue-section-index{margin-bottom:38px;font-size:4.5rem}}
+
+/* Uni-Chat mirrors the prompt-to-draft workflow used in the builder. */
+.blue-ai__chat{display:grid;gap:16px}
+.blue-ai__chat>header i{display:flex;align-items:center;gap:6px;color:#66747b}
+.blue-ai__chat>header i b{width:7px;height:7px;border-radius:50%;background:#68a07d}
+.blue-ai__thread{display:grid;gap:10px;padding-top:6px}
+.blue-ai__thread p{max-width:82%;margin:0;padding:13px 15px;border-radius:2px;font-size:.72rem;line-height:1.55}
+.blue-ai__thread .blue-ai__assistant{justify-self:start;background:#e7ebed;color:#354047}
+.blue-ai__thread .blue-ai__assistant span{display:block;margin-top:3px;color:#737f85}
+.blue-ai__thread .blue-ai__user{justify-self:end;background:#202d35;color:#fff}
+.blue-ai__chat>article{gap:8px;padding:18px;background:#edf0f1}
+.blue-ai__chat>article>b{margin-bottom:6px}
+.blue-ai__chat>article span{display:grid;grid-template-columns:82px 1fr;gap:9px;align-items:center;color:#4f5d65}
+.blue-ai__chat>article span em{color:#75858d;font-size:.57rem;font-style:normal;font-weight:800;letter-spacing:.03em}
+.blue-ai__chat>article button{margin-top:6px}
+.blue-ai__composer{display:flex;min-height:48px;align-items:center;justify-content:space-between;padding:0 7px 0 14px;border:1px solid #cfd5d8;background:#fff;color:#899399;font-size:.66rem}
+.blue-ai__composer b{display:grid;width:34px;height:34px;background:#202427;color:#fff;place-items:center}
+@media(max-width:560px){.blue-ai__chat>article span{grid-template-columns:1fr}.blue-ai__thread p{max-width:94%}}
