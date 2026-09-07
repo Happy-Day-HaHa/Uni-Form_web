@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
 import '../styles/landing.css'
+import '../styles/landing-canva.css'
 
 const steps = [
   { no: '01', label: 'START', title: '가볍게 시작', copy: '이메일 하나로 가입하고, 필요한 설문을 바로 찾아볼 수 있어요.' },
@@ -43,20 +44,17 @@ export default function Landing() {
   return <main className="blue-landing">
     <nav className="blue-nav" aria-label="주요 메뉴">
       <Link to="/" aria-label="UNI-FORM 홈"><BrandMark /></Link>
-      <div className="blue-nav__menu"><a href="#flow">이용 방법</a><a href="#surveys">설문 둘러보기</a><a href="#results">결과 분석</a></div>
-      <div className="blue-nav__actions"><Link to="/login">로그인</Link><Link to="/signup">회원가입</Link></div>
+      <div className="blue-nav__menu"><a href="#flow">이용 방법</a><span aria-hidden="true">|</span><a href="#surveys">Support</a></div>
+      <div className="blue-nav__actions"><Link to="/signup">회원가입</Link><Link to="/login">로그인</Link></div>
     </nav>
 
     <section className="blue-hero" aria-labelledby="blue-hero-title">
       <div className="blue-hero__copy" data-reveal>
-        <span className="blue-hero__index" aria-hidden="true">01</span>
-        <p className="blue-eyebrow">AI SURVEY WORKSPACE</p>
-        <h1 id="blue-hero-title">설문은 간단하게,<br />결과는 선명하게.</h1>
-        <p>만들고, 참여하고, 정리하는 과정을<br />하나의 편한 흐름으로 연결합니다.</p>
-        <div className="blue-hero__actions"><Link className="blue-button blue-button--dark" to="/surveys">설문 시작하기 <span>→</span></Link><Link className="blue-text-link" to="/signup">처음이라면 회원가입</Link></div>
+        <span className="blue-hero__word" aria-hidden="true">UNIFORM</span>
+        <h1 id="blue-hero-title"><span>설문 응답자 모집,</span><strong>이제 더 간편하게.</strong></h1>
+        <p className="blue-hero__tagline">설문은 간단하게, 결과는 선명하게.</p>
+        <div className="blue-hero__actions"><Link className="blue-hero__primary" to="/surveys">설문 참여하기</Link></div>
       </div>
-      <figure className="blue-hero__art"><img src="/uniform-network-hero.jpeg" alt="다양한 대학 연구 주제가 연결된 네트워크" /></figure>
-      <a className="blue-scroll" href="#flow">SCROLL <span>↓</span></a>
     </section>
 
     <section className="blue-flow" id="flow">

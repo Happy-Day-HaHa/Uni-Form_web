@@ -1,0 +1,239 @@
+/* Experimental first viewport based on the supplied Canva composition. */
+.blue-nav {
+  top: 0;
+  right: 0;
+  left: 0;
+  min-height: 96px;
+  padding: 0 clamp(28px, 3.5vw, 70px);
+  border: 0;
+  border-bottom: 1px solid #e2e7e9;
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: none;
+}
+
+.blue-nav .brand-mark__word {
+  font-size: clamp(1.2rem, 1.8vw, 1.65rem);
+  font-weight: 950;
+}
+
+.blue-nav__menu {
+  align-items: center;
+  gap: 28px;
+  color: #171a1c;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.blue-nav__menu span {
+  color: #171a1c;
+  font-weight: 300;
+}
+
+.blue-nav__actions {
+  align-items: center;
+  gap: 12px;
+}
+
+.blue-nav__actions a {
+  padding: 13px 20px;
+  border-radius: 999px;
+  color: #111;
+  font-size: 0.93rem;
+  font-weight: 500;
+}
+
+.blue-nav__actions a:last-child {
+  min-width: 146px;
+  background: #000;
+  color: #fff;
+  text-align: center;
+}
+
+.blue-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100svh;
+  padding: 96px 24px 0;
+  place-items: center;
+  overflow: hidden;
+  background: #e9f0f4;
+}
+
+.blue-hero::before,
+.blue-hero::after {
+  display: none;
+}
+
+.blue-hero__copy {
+  position: relative;
+  display: grid;
+  width: min(100%, 1360px);
+  min-height: calc(100svh - 96px);
+  max-width: none;
+  align-content: center;
+  justify-items: center;
+  padding: 48px 20px 110px;
+  border: 0;
+  background: transparent;
+  text-align: center;
+}
+
+.blue-hero__word {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  color: rgba(23, 26, 28, 0.09);
+  font-size: clamp(8rem, 18vw, 18rem);
+  font-weight: 900;
+  line-height: 0.75;
+  letter-spacing: -0.075em;
+  transform: translate(-50%, -54%);
+  white-space: nowrap;
+}
+
+.blue-hero h1 {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: min(100%, 1120px);
+  margin: 0;
+  color: #000;
+  font-size: clamp(3.4rem, 5.9vw, 6.7rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.075em;
+}
+
+.blue-hero h1 span,
+.blue-hero h1 strong {
+  display: block;
+}
+
+.blue-hero h1 span {
+  justify-self: start;
+}
+
+.blue-hero h1 strong {
+  position: relative;
+  justify-self: end;
+  padding: 0 12px 10px;
+  font-weight: inherit;
+}
+
+.blue-hero h1 strong::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -1;
+  height: 28%;
+  background: #aee9e3;
+}
+
+.blue-hero__tagline {
+  position: relative;
+  z-index: 1;
+  margin: 34px 0 28px;
+  color: #5d6265;
+  font-size: clamp(1.25rem, 2vw, 2rem);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+}
+
+.blue-hero__actions {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.blue-hero__primary {
+  display: inline-flex;
+  min-width: 380px;
+  min-height: 86px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 42px;
+  border: 1px solid rgba(23, 26, 28, 0.05);
+  border-radius: 999px;
+  background: #fff;
+  color: #050505;
+  box-shadow: 0 18px 42px rgba(39, 55, 65, 0.06);
+  font-size: clamp(1.15rem, 1.8vw, 1.55rem);
+  font-weight: 850;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.blue-hero__primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 48px rgba(39, 55, 65, 0.12);
+}
+
+.blue-hero__primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@media (max-width: 700px) {
+  .blue-nav {
+    min-height: 72px;
+    padding: 0 16px;
+  }
+
+  .blue-nav__actions {
+    gap: 2px;
+  }
+
+  .blue-nav__actions a {
+    padding: 10px 9px;
+    font-size: 0.76rem;
+  }
+
+  .blue-nav__actions a:last-child {
+    min-width: 82px;
+  }
+
+  .blue-hero {
+    min-height: 100svh;
+    padding: 72px 14px 0;
+  }
+
+  .blue-hero__copy {
+    min-height: calc(100svh - 72px);
+    padding: 48px 4px 90px;
+  }
+
+  .blue-hero__word {
+    font-size: 28vw;
+    transform: translate(-50%, -70%);
+  }
+
+  .blue-hero h1 {
+    gap: 8px;
+    font-size: clamp(2.75rem, 12.8vw, 4.4rem);
+    line-height: 0.98;
+  }
+
+  .blue-hero h1 span,
+  .blue-hero h1 strong {
+    justify-self: center;
+  }
+
+  .blue-hero__tagline {
+    margin-top: 28px;
+    font-size: 1.08rem;
+  }
+
+  .blue-hero__primary {
+    min-width: min(82vw, 330px);
+    min-height: 68px;
+    font-size: 1.08rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blue-hero__primary {
+    transition: none;
+  }
+}
