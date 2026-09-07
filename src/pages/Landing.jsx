@@ -1,92 +1,151 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
-import '../styles/landing.css'
 import '../styles/landing-canva.css'
 
-const steps = [
-  { no: '01', label: 'START', title: '가볍게 시작', copy: '이메일 하나로 가입하고, 필요한 설문을 바로 찾아볼 수 있어요.' },
-  { no: '02', label: 'CREATE', title: '대화하듯 제작', copy: '목적을 적으면 Uni-Chat이 질문과 보기를 빠르게 구성해줘요.' },
-  { no: '03', label: 'RESPOND', title: '쉽게 참여', copy: '열려 있는 설문을 둘러보고 복잡한 절차 없이 바로 응답해요.' },
-  { no: '04', label: 'REVIEW', title: '한눈에 확인', copy: '모인 응답은 그래프와 핵심 요약으로 보기 좋게 정리돼요.' },
-]
-
-const filterCategories = ['전체', '교육', '라이프스타일', '소비']
-
-const sampleSurveys = [
-  ['교육', '더 나은 캠퍼스 라이프를 위한 설문', '4분', 68],
-  ['라이프스타일', '나의 아침 루틴과 생산성', '3분', 34],
-  ['소비', '친환경 소비 선택 조사', '6분', 77],
+const journey = [
+  {
+    no: '01',
+    title: '설문 등록',
+    lead: '준비한 설문을 간편하게 등록하세요.',
+    copy: '설문 정보와 예상 소요시간, 필요한 응답 인원을 설정합니다.',
+  },
+  {
+    no: '02',
+    title: '응답자 설정',
+    lead: '내 설문에 필요한 사람을 선택하세요.',
+    copy: '학교, 학년, 전공 등 원하는 조건에 맞춰 응답 대상을 설정합니다.',
+  },
+  {
+    no: '03',
+    title: '참여자 모집',
+    lead: '조건에 맞는 참여자에게 설문을 연결합니다.',
+    copy: '필요한 응답을 빠르고 편리하게 모을 수 있습니다.',
+  },
+  {
+    no: '04',
+    title: '결과 확인',
+    lead: '모인 응답을 한곳에서 확인하세요.',
+    copy: '응답 현황부터 결과까지 편리하게 확인하고 활용할 수 있습니다.',
+  },
 ]
 
 export default function Landing() {
-  const [activeCategory, setActiveCategory] = useState('전체')
-  const [aiApplied, setAiApplied] = useState(false)
-  const visibleSurveys = useMemo(
-    () => activeCategory === '전체' ? sampleSurveys : sampleSurveys.filter(([category]) => category === activeCategory),
-    [activeCategory],
-  )
+  const [prompt, setPrompt] = useState('')
+  const navigate = useNavigate()
 
   useEffect(() => {
     const items = document.querySelectorAll('[data-reveal]')
+
     if (!('IntersectionObserver' in window)) {
       items.forEach((item) => item.classList.add('is-visible'))
       return undefined
     }
+
     const observer = new IntersectionObserver(
-      (entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('is-visible')),
-      { threshold: 0.14 },
+      (entries) => entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible')
+          observer.unobserve(entry.target)
+        }
+      }),
+      { threshold: 0.18, rootMargin: '0px 0px -8% 0px' },
     )
+
     items.forEach((item) => observer.observe(item))
     return () => observer.disconnect()
   }, [])
 
-  return <main className="blue-landing">
-    <nav className="blue-nav" aria-label="주요 메뉴">
-      <Link to="/" aria-label="UNI-FORM 홈"><BrandMark /></Link>
-      <div className="blue-nav__menu"><a href="#flow">이용 방법</a><span aria-hidden="true">|</span><a href="#surveys">Support</a></div>
-      <div className="blue-nav__actions"><Link to="/signup">회원가입</Link><Link to="/login">로그인</Link></div>
-    </nav>
+  const startWithFormMate = (event) => {
+    event.preventDefault()
+    navigate('/surveys/create', { state: { formMatePrompt: prompt.trim() } })
+  }
 
-    <section className="blue-hero" aria-labelledby="blue-hero-title">
-      <div className="blue-hero__copy" data-reveal>
-        <span className="blue-hero__word" aria-hidden="true">UNIFORM</span>
-        <h1 id="blue-hero-title"><span>설문 응답자 모집,</span><strong>이제 더 간편하게.</strong></h1>
-        <p className="blue-hero__tagline">설문은 간단하게, 결과는 선명하게.</p>
-        <div className="blue-hero__actions"><Link className="blue-hero__primary" to="/surveys">설문 참여하기</Link></div>
-      </div>
-    </section>
+  return (
+    <main className="uf-landing">
+      <nav className="uf-nav" aria-label="주요 메뉴">
+        <Link className="uf-nav__brand" to="/" aria-label="UNIFORM 홈"><BrandMark /></Link>
+        <div className="uf-nav__center">
+          <a href="#how">이용 방법</a>
+          <span aria-hidden="true">|</span>
+          <a href="#formmate">Support</a>
+        </div>
+        <div className="uf-nav__actions">
+          <Link to="/signup">회원가입</Link>
+          <Link className="uf-nav__login" to="/login">로그인</Link>
+        </div>
+      </nav>
 
-    <section className="blue-flow" id="flow">
-      <header data-reveal><span className="blue-section-index">02</span><div><p className="blue-eyebrow">ONE SIMPLE FLOW</p><h2>복잡했던 설문을,<br />한 흐름으로 줄였어요.</h2></div></header>
-      <ol>{steps.map((step) => <li key={step.no} data-reveal><div><span>{step.no}</span><small>{step.label}</small></div><h3>{step.title}</h3><p>{step.copy}</p><b aria-hidden="true">↗</b></li>)}</ol>
-    </section>
+      <section className="uf-panel uf-hero" aria-labelledby="uf-hero-title">
+        <span className="uf-watermark" aria-hidden="true">UNIFORM</span>
+        <div className="uf-hero__content" data-reveal>
+          <h1 id="uf-hero-title">
+            <span>설문 응답자 모집,</span>
+            <strong className="uf-highlight">이제 더 간편하게.</strong>
+          </h1>
+          <p>설문은 간단하게, 결과는 선명하게.</p>
+          <Link className="uf-pill" to="/surveys">설문 참여하기</Link>
+        </div>
+        <a className="uf-scroll-cue" href="#how" aria-label="이용 방법으로 이동"><span>SCROLL</span><b>↓</b></a>
+      </section>
 
-    <section className="blue-surveys" id="surveys">
-      <div className="blue-section-copy" data-reveal><span className="blue-section-index">03</span><p className="blue-eyebrow">SURVEY BOARD</p><h2>찾고, 참여하고,<br />만드는 일까지 한곳에서.</h2><p>진행 중인 설문은 옆으로 넘겨 빠르게 살펴보고 바로 참여하세요. 새 설문이 필요할 때는 <b>+ 만들기</b>를 누르면 곧바로 제작 화면이 열립니다.</p><Link className="blue-button blue-button--dark" to="/surveys">설문 둘러보기 <span>→</span></Link></div>
-      <div className="blue-board" data-reveal>
-        <header><div><small>AVAILABLE SURVEYS</small><strong>지금 참여할 수 있는 설문</strong></div><Link to="/surveys/create">+ 만들기</Link></header>
-        <div className="blue-board__filters">{filterCategories.map((category) => <button type="button" key={category} className={category === activeCategory ? 'is-active' : ''} onClick={() => setActiveCategory(category)}>{category}</button>)}</div>
-        <div className="blue-board__grid">{visibleSurveys.map(([category, title, time, percent]) => <article key={title}><div><span>{category}</span><b>{percent}% 참여</b></div><h3>{title}</h3><p>응답 현황 <strong>{percent}%</strong></p><i><b style={{ width: `${percent}%` }} /></i><footer><span>약 {time}</span><Link to="/surveys">참여하기 →</Link></footer></article>)}{!visibleSurveys.length && <p className="blue-board__empty">해당 카테고리의 설문이 아직 없어요.</p>}</div>
-      </div>
-    </section>
+      <section className="uf-panel uf-how" id="how" aria-labelledby="uf-how-title">
+        <header data-reveal>
+          <h2 id="uf-how-title">번거로운 설문 과정을<br /><span className="uf-highlight">하나의 경험으로</span></h2>
+        </header>
+        <ol className="uf-journey">
+          {journey.map((step, index) => (
+            <li key={step.no} data-reveal style={{ '--delay': `${index * 90}ms` }}>
+              <div className="uf-journey__title"><span>{step.no}</span><h3>{step.title}</h3></div>
+              <p><strong>{step.lead}</strong>{step.copy}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
 
-    <section className="blue-ai" data-reveal>
-      <div><span className="blue-section-index">04</span><p className="blue-eyebrow">UNI-CHAT WORKSPACE</p><h2>막막한 설문도,<br />대화하듯 간단하게.</h2><p>목적과 대상만 알려주면 질문, 보기, 순서를 함께 구성해요. 제안받은 문항은 고쳐 쓰거나 한 번에 설문으로 옮길 수 있습니다.</p></div>
-      <div className="blue-ai__chat">
-        <header><span>U</span><div><b>Uni-Chat</b><small>설문 제작 파트너</small></div><i><b /> 준비됨</i></header>
-        <div className="blue-ai__thread"><p className="blue-ai__assistant">어떤 설문을 만들까요?<br /><span>목적과 응답 대상만 편하게 알려주세요.</span></p><p className="blue-ai__user">대학생의 통학 경험과 만족도를 알아보고 싶어요.</p></div>
-        <article><small>질문 초안을 만들었어요</small><b>통학 경험 설문 · 총 3문항</b><span><em>01 · 객관식</em> 주로 이용하는 교통수단은 무엇인가요?</span><span><em>02 · 척도형</em> 현재 통학 시간에 얼마나 만족하나요?</span><span><em>03 · 주관식</em> 가장 개선되었으면 하는 점은 무엇인가요?</span><button type="button" className={aiApplied ? 'is-applied' : ''} disabled={aiApplied} onClick={() => setAiApplied(true)}>{aiApplied ? '설문에 반영했어요 ✓' : '이 초안을 설문에 반영 →'}</button></article>
-        <div className="blue-ai__composer"><span>바꾸고 싶은 내용을 이어서 입력하세요</span><b>→</b></div>
-      </div>
-    </section>
+      <section className="uf-panel uf-formmate" id="formmate" aria-labelledby="uf-formmate-title">
+        <div className="uf-formmate__intro" data-reveal>
+          <h2 id="uf-formmate-title">막막했던 설문,<br />이제는 <span className="uf-highlight">FormMate와</span><br />함께 시작하세요.</h2>
+        </div>
+        <form className="uf-formmate__card" onSubmit={startWithFormMate} data-reveal aria-label="FormMate로 설문 시작하기">
+          <h3>FormMate</h3>
+          <label htmlFor="formmate-prompt" className="sr-only">만들고 싶은 설문</label>
+          <div className="uf-formmate__composer">
+            <input
+              id="formmate-prompt"
+              value={prompt}
+              onChange={(event) => setPrompt(event.target.value)}
+              placeholder="어떤 설문이 하고 싶은가요?"
+            />
+            <button type="submit" aria-label="FormMate로 설문 만들기"><span aria-hidden="true">↗</span></button>
+          </div>
+          <p>목적을 한 문장으로 알려주면 질문과 보기 구성을 함께 시작해요.</p>
+        </form>
+      </section>
 
-    <section className="blue-results" id="results">
-      <div className="blue-result-panel" data-reveal><header><span>RESULT REPORT</span><b>응답 82건</b></header><h3>통학 만족도 조사</h3><div className="blue-result-stats"><article><span>전체 응답</span><strong>82</strong><small>목표의 82%</small></article><article><span>평균 만족도</span><strong>3.8</strong><small>5점 만점</small></article></div><div className="blue-bars" aria-hidden="true">{[54, 82, 65, 96, 72, 88].map((height, index) => <i key={index} style={{ '--height': `${height}%` }} />)}</div><aside><span>✦ AI 핵심 요약</span><p>응답자는 환승 횟수보다 통학 시간의 예측 가능성을 더 중요하게 느껴요.</p></aside></div>
-      <div className="blue-section-copy" data-reveal><span className="blue-section-index">05</span><p className="blue-eyebrow">CLEAR RESULTS</p><h2>모인 응답은,<br />한눈에 정리돼요.</h2><p>복잡한 표를 직접 정리하지 않아도 괜찮아요. 응답 수, 문항별 분포, 주관식 의견과 핵심 내용을 보기 쉬운 결과로 자동 정리합니다.</p><Link className="blue-button blue-button--dark" to="/dashboard">결과 화면 살펴보기 <span>→</span></Link></div>
-    </section>
+      <section className="uf-panel uf-results" id="results" aria-labelledby="uf-results-title">
+        <div className="uf-results__copy" data-reveal>
+          <h2 id="uf-results-title">응답의 흐름부터<br />결과까지, <span className="uf-highlight">한번에.</span></h2>
+          <p>응답 현황과 핵심 결과를 복잡한 정리 없이 한 화면에서 확인하세요.</p>
+          <Link className="uf-text-link" to="/dashboard">결과 화면 살펴보기 <span>↗</span></Link>
+        </div>
+        <div className="uf-results__visual" data-reveal>
+          <img src="/uniform-result-report.png" alt="응답 수, 응답 시간, 성별과 학년 분포를 한눈에 보여주는 설문 결과 보고서" />
+        </div>
+      </section>
 
-    <section className="blue-final" data-reveal><span className="blue-section-index">06</span><p className="blue-eyebrow">READY WHEN YOU ARE</p><h2>설문이 필요할 때,<br />바로 시작하세요.</h2><div><Link className="blue-button blue-button--dark" to="/surveys">설문 시작하기 <span>→</span></Link><Link className="blue-button blue-button--light" to="/signup">회원가입</Link></div></section>
-    <footer className="blue-footer"><BrandMark light /><p>질문과 사람 사이를 더 가볍게.</p><div><Link to="/login">로그인</Link><Link to="/signup">회원가입</Link><Link to="/surveys">설문 목록</Link><a href="http://www.freepik.com" target="_blank" rel="noreferrer">Designed by Freepik</a></div><small>© 2026 UNI-FORM</small></footer>
-  </main>
+      <section className="uf-panel uf-final" aria-labelledby="uf-final-title">
+        <span className="uf-watermark" aria-hidden="true">UNIFORM</span>
+        <div data-reveal>
+          <h2 id="uf-final-title">설문이 필요할 때,<br /><span className="uf-highlight">바로 시작하세요.</span></h2>
+          <Link className="uf-pill" to="/surveys">설문 시작하기</Link>
+        </div>
+      </section>
+
+      <footer className="uf-footer">
+        <BrandMark light />
+        <nav aria-label="하단 메뉴"><a href="#how">이용약관</a><span aria-hidden="true">|</span><Link to="/surveys">더 알아보기</Link></nav>
+      </footer>
+    </main>
+  )
 }
