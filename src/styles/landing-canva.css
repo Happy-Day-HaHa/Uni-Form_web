@@ -108,7 +108,7 @@ html:has(.uf-landing) {
 .is-visible .uf-highlight::after,
 .uf-highlight.is-visible::after { transform: scaleX(1); }
 
-.uf-hero { place-items: center; }
+.uf-hero { place-items: center; background: #eaf2f5; }
 .uf-hero__content {
   position: relative;
   z-index: 1;
@@ -176,6 +176,7 @@ html:has(.uf-landing) {
   align-content: center;
   gap: clamp(70px, 9vh, 108px);
   padding: clamp(90px, 10vh, 130px) clamp(32px, 5vw, 100px);
+  background: #f7fbfc;
 }
 .uf-how header { text-align: center; }
 .uf-how h2 { font-size: clamp(3.4rem, 5.4vw, 6.2rem); }
@@ -228,6 +229,7 @@ html:has(.uf-landing) {
   align-content: start;
   justify-items: center;
   padding: clamp(105px, 12vh, 150px) 24px 0;
+  background: #dfeef2;
 }
 .uf-formmate__intro { z-index: 1; text-align: center; }
 .uf-formmate h2 { font-size: clamp(3.5rem, 5.8vw, 6.5rem); }
@@ -290,6 +292,7 @@ html:has(.uf-landing) {
   grid-template-columns: 47% 53%;
   align-items: center;
   padding: 50px 0 50px clamp(40px, 7.4vw, 150px);
+  background: #eef5f2;
 }
 .uf-results__copy { position: relative; z-index: 2; }
 .uf-results h2 { font-size: clamp(3.6rem, 5.7vw, 6.5rem); }
@@ -320,7 +323,7 @@ html:has(.uf-landing) {
   filter: drop-shadow(0 28px 45px rgba(32, 48, 56, 0.07));
 }
 
-.uf-final { min-height: 84svh; place-items: center; text-align: center; }
+.uf-final { min-height: 84svh; place-items: center; background: #e9edf7; text-align: center; }
 .uf-final > div { position: relative; z-index: 1; display: grid; justify-items: center; }
 .uf-final h2 { font-size: clamp(3.8rem, 6.2vw, 7rem); }
 .uf-final .uf-pill { margin-top: 48px; }
