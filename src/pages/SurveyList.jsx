@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
+import SurveyFilters from '../components/survey/SurveyFilters'
+import SurveyRow from '../components/survey/SurveyRow'
 import { useAuth } from '../hooks/useAuth'
 import { getSurveys } from '../services/surveyService'
 import { getProfile } from '../services/userService'
 import { matchesProfile } from '../utils/surveyFilter'
 import '../styles/survey-catalog.css'
-
-const categories = ['전체', '교육', '라이프스타일', '소비', '테크', '문화']
-const categoryMarks = { 교육: 'A', 라이프스타일: '○', 소비: '◇', 테크: 'AI', 문화: '✦' }
 
 export default function SurveyList() {
   const { user } = useAuth()
@@ -116,14 +115,7 @@ export default function SurveyList() {
             <article data-catalog-reveal style={{ '--catalog-delay': '160ms' }}><span className="catalog-summary__mark catalog-summary__mark--mint">⌁</span><div><small>평균 예상 소요시간</small><strong>{averageMinutes}<em>분</em></strong><p>부담 없이 빠르게 참여하세요.</p></div></article>
           </section>
 
-          <section className="catalog-tools" data-catalog-reveal>
-            <label className="catalog-search"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="설문 제목이나 키워드로 검색해보세요." /></label>
-            <div className="catalog-filter-rail" aria-label="설문 필터">
-              {categories.map((item) => <button key={item} type="button" className={category === item ? 'is-active' : ''} onClick={() => setCategory(item)}>{item}</button>)}
-              <select aria-label="정렬" value={sort} onChange={(event) => setSort(event.target.value)}><option>추천순</option><option>인기순</option><option>최신순</option><option>소요시간순</option></select>
-              <select aria-label="소요시간" value={duration} onChange={(event) => setDuration(event.target.value)}><option>전체 시간</option><option>3분 이내</option><option>5분 이내</option><option>6분 이상</option></select>
-            </div>
-          </section>
+          <div data-catalog-reveal><SurveyFilters query={query} onQueryChange={setQuery} category={category} onCategoryChange={setCategory} sort={sort} onSortChange={setSort} duration={duration} onDurationChange={setDuration} /></div>
 
           {!loading && !error && <p className="catalog-count" data-catalog-reveal>총 <strong>{visibleSurveys.length}개</strong>의 설문이 있습니다.</p>}
           {loading && <div className="catalog-skeleton" aria-label="설문을 불러오고 있어요">{Array.from({ length: 4 }, (_, index) => <div key={index}><span /><p /><i /></div>)}</div>}
@@ -131,29 +123,7 @@ export default function SurveyList() {
 
           {!loading && !error && (
             <section className="catalog-list" aria-live="polite">
-              {visibleSurveys.map((survey, index) => {
-                const isOwner = survey.creator_id === user?.id
-                const canViewResults = isOwner && survey.response_count > 0
-                const target = Math.max(Number(survey.target_count || 1), 1)
-                const responses = Number(survey.response_count || 0)
-                const progress = Math.min(100, Math.round((responses / target) * 100))
-                const remaining = Math.max(0, target - responses)
-                const destination = isOwner ? (canViewResults ? `/surveys/${survey.id}/results` : '') : `/surveys/${survey.id}`
-                return (
-                  <article className={`catalog-row ${survey.id === newSurveyId ? 'catalog-row--new' : ''}`} key={survey.id} data-catalog-reveal style={{ '--catalog-delay': `${Math.min(index, 5) * 70}ms` }}>
-                    <span className={`catalog-row__icon catalog-row__icon--${index % 5}`} aria-hidden="true">{categoryMarks[survey.category] || 'U'}</span>
-                    <div className="catalog-row__copy">
-                      <div><h2>{survey.title}</h2>{index === 0 && <span className="catalog-tag">추천</span>}</div>
-                      <p>{survey.description}</p>
-                      <ul><li>◷ 약 {survey.estimated_minutes || 5}분</li><li>◎ {survey.category || '전체'}</li><li>♧ {responses.toLocaleString()}명 참여 중</li></ul>
-                    </div>
-                    <div className="catalog-row__progress"><span>잔여 {remaining.toLocaleString()}명</span><div><i style={{ width: `${progress}%` }} /><b>{progress}%</b></div></div>
-                    {destination
-                      ? <Link className="catalog-row__action" to={destination}>{isOwner ? '결과 보기' : '참여하기'} <span>→</span></Link>
-                      : <span className="catalog-row__waiting">응답 대기 중</span>}
-                  </article>
-                )
-              })}
+              {visibleSurveys.map((survey, index) => <SurveyRow key={survey.id} survey={survey} index={index} user={user} newSurveyId={newSurveyId} />)}
               {!visibleSurveys.length && <div className="catalog-empty">조건에 맞는 설문이 없습니다. 다른 필터를 선택해보세요.</div>}
             </section>
           )}
