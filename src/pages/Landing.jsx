@@ -1,151 +1,30 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
+import { useReveal } from '../hooks/useReveal'
 import '../styles/landing-canva.css'
 
-const journey = [
-  {
-    no: '01',
-    title: '설문 등록',
-    lead: '준비한 설문을 간편하게 등록하세요.',
-    copy: '설문 정보와 예상 소요시간, 필요한 응답 인원을 설정합니다.',
-  },
-  {
-    no: '02',
-    title: '응답자 설정',
-    lead: '내 설문에 필요한 사람을 선택하세요.',
-    copy: '학교, 학년, 전공 등 원하는 조건에 맞춰 응답 대상을 설정합니다.',
-  },
-  {
-    no: '03',
-    title: '참여자 모집',
-    lead: '조건에 맞는 참여자에게 설문을 연결합니다.',
-    copy: '필요한 응답을 빠르고 편리하게 모을 수 있습니다.',
-  },
-  {
-    no: '04',
-    title: '결과 확인',
-    lead: '모인 응답을 한곳에서 확인하세요.',
-    copy: '응답 현황부터 결과까지 편리하게 확인하고 활용할 수 있습니다.',
-  },
-]
+const journey=[['01','▤','설문 등록','준비한 설문을 간편하게 등록하세요.'],['02','◎','응답자 설정','필요한 조건에 맞춰 응답 대상을 설정하세요.'],['03','↗','참여자 모집','조건에 맞는 참여자와 설문을 연결하세요.'],['04','▥','결과 확인','모인 응답과 핵심 결과를 한곳에서 확인하세요.']]
+const previews=[['대학생의 AI 서비스 사용 경험 조사','약 5분','대학생','341 / 600'],['캠퍼스 내 카페 이용 만족도 설문','약 3분','전체','208 / 305'],['온라인 강의 집중도 조사','약 4분','대학생','279 / 400']]
 
-export default function Landing() {
-  const [prompt, setPrompt] = useState('')
-  const navigate = useNavigate()
+export default function Landing(){
+  const [prompt,setPrompt]=useState(''); const navigate=useNavigate(); const rootRef=useReveal([])
+  const start=(event)=>{event.preventDefault();navigate('/surveys/create',{state:{formMatePrompt:prompt.trim()}})}
+  return <main className="uf-landing motion-page" ref={rootRef}>
+    <nav className="uf-nav" aria-label="주요 메뉴"><Link className="uf-nav__brand" to="/"><BrandMark/></Link><div className="uf-nav__center"><a href="#how">이용 방법</a><a href="#formmate">FormMate</a><a href="#results">결과 분석</a></div><div className="uf-nav__actions"><Link className="uf-nav__signup" to="/signup">회원가입</Link><Link className="uf-button uf-button--dark" to="/login">로그인</Link></div></nav>
 
-  useEffect(() => {
-    const items = document.querySelectorAll('[data-reveal]')
+    <section className="uf-hero" aria-labelledby="hero-title"><div className="uf-hero__copy"><span className="uf-badge" data-motion-reveal>설문을 더 간단하게</span><h1 id="hero-title" data-motion-reveal style={{'--delay':'70ms'}}>설문 응답자 모집,<br/><span>이제 더 간편하게.</span></h1><p data-motion-reveal style={{'--delay':'140ms'}}>설문 제작부터 참여자 모집, 결과 확인까지.<br/>필요한 과정을 하나의 흐름으로 연결합니다.</p><div className="uf-hero__actions" data-motion-reveal style={{'--delay':'210ms'}}><Link className="uf-button uf-button--primary" to="/surveys">설문 참여하기 <span>→</span></Link><Link className="uf-button uf-button--secondary" to="/surveys/create">설문 등록하기 <span>→</span></Link></div></div><div className="uf-browser" data-motion-reveal style={{'--delay':'260ms'}}><div className="uf-browser__bar"><i/><i/><i/><span>uniform.app/surveys</span></div><div className="uf-browser__body"><aside><b>UNIFORM</b><span className="active">▦ 대시보드</span><span>▤ 내 설문</span><span>▣ 설문 목록</span><span>▥ 결과 보고서</span></aside><div className="uf-browser__main"><small>OVERVIEW</small><h2>오늘의 설문 현황</h2><div className="uf-mock-metrics"><article><span>진행 중</span><strong>12</strong></article><article><span>누적 응답</span><strong>3,482</strong></article><article><span>분석 완료</span><strong>8</strong></article></div><div className="uf-mock-chart">{[42,58,52,76,92,68,82].map((v,i)=><i key={v} style={{height:`${v}%`,'--delay':`${i*50}ms`}}/>)}</div></div></div></div>
+    </section>
 
-    if (!('IntersectionObserver' in window)) {
-      items.forEach((item) => item.classList.add('is-visible'))
-      return undefined
-    }
+    <section className="uf-section uf-how" id="how"><div className="uf-section__heading" data-motion-reveal><span>HOW IT WORKS</span><h2>번거로운 설문 과정을<br/>하나의 경험으로</h2><p>등록부터 결과 확인까지, 필요한 단계만 명확하게 이어집니다.</p></div><ol className="uf-journey">{journey.map(([no,icon,title,copy],index)=><li className="uf-card" key={no} data-motion-reveal style={{'--delay':`${index*70}ms`}}><span className="uf-journey__no">{no}</span><i>{icon}</i><h3>{title}</h3><p>{copy}</p></li>)}</ol></section>
 
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible')
-          observer.unobserve(entry.target)
-        }
-      }),
-      { threshold: 0.18, rootMargin: '0px 0px -8% 0px' },
-    )
+    <section className="uf-section uf-formmate" id="formmate"><div className="uf-formmate__copy" data-motion-reveal><span>FORMMATE</span><h2>막막했던 설문,<br/>이제는 FormMate와<br/>함께 시작하세요.</h2><p>목적을 한 문장으로 입력하면 질문 구성과 표현을 정리해 설문의 첫 초안을 빠르게 시작할 수 있어요.</p><ul><li>질문과 보기 구성 제안</li><li>문항 표현과 순서 개선</li><li>초안을 내 설문에 바로 반영</li></ul></div><form className="uf-formmate__ui uf-card" onSubmit={start} data-motion-reveal style={{'--delay':'90ms'}}><header><span>F</span><div><b>FormMate</b><small>설문 제작 도우미</small></div><i>ONLINE</i></header><div className="uf-formmate__chat"><small>어떤 설문을 만들고 싶으신가요?</small><div><input value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder="설문의 목적을 한 문장으로 입력하세요."/><button type="submit" aria-label="설문 초안 만들기">→</button></div></div><p>이런 주제로 시작해보세요.</p><div className="uf-prompt-chips">{['대학생 카페 이용 만족도','AI 서비스 사용 경험','통학시간과 피로도'].map(item=><button type="button" onClick={()=>setPrompt(item)} key={item}>{item}</button>)}</div></form></section>
 
-    items.forEach((item) => observer.observe(item))
-    return () => observer.disconnect()
-  }, [])
+    <section className="uf-section uf-results" id="results"><div className="uf-results__copy" data-motion-reveal><span>RESULT REPORT</span><h2>응답의 흐름부터<br/>결과까지, 한 번에.</h2><p>복잡하게 다시 정리하지 않아도 응답 현황과 핵심 결과를 명확하게 확인할 수 있습니다.</p><Link className="uf-text-link" to="/reports">결과 화면 살펴보기 <span>→</span></Link></div><div className="uf-report uf-card" data-motion-reveal style={{'--delay':'90ms'}}><header><div><small>RESULT REPORT</small><h3>캠퍼스 생활 만족도 조사</h3></div><b>응답 82건</b></header><div className="uf-report__stats"><article><small>전체 응답</small><strong>82</strong></article><article><small>완료율</small><strong>82%</strong></article><article><small>평균 응답 시간</small><strong>3:24</strong></article></div><div className="uf-report__chart"><div>{[48,66,58,82,70,76].map((v,i)=><i key={`${v}-${i}`} style={{height:`${v}%`,'--delay':`${i*55}ms`}}/>)}</div><aside><span>학년 분포</span><b>1학년 <i style={{width:'64%'}}/></b><b>2학년 <i style={{width:'78%'}}/></b><b>3학년 <i style={{width:'52%'}}/></b></aside></div></div></section>
 
-  const startWithFormMate = (event) => {
-    event.preventDefault()
-    navigate('/surveys/create', { state: { formMatePrompt: prompt.trim() } })
-  }
+    <section className="uf-section uf-explore"><div className="uf-section__heading" data-motion-reveal><span>SURVEY DISCOVERY</span><h2>나에게 맞는 설문을,<br/>한눈에 찾아보세요.</h2><p>소요시간과 모집 현황을 확인하고 부담 없이 참여할 수 있어요.</p></div><div className="uf-survey-previews">{previews.map(([title,time,target,count],index)=><article className="uf-card" key={title} data-motion-reveal style={{'--delay':`${index*70}ms`}}><span className={`service-tone--${['blue','violet','mint'][index]}`}>{['AI','○','A'][index]}</span><small>{target}</small><h3>{title}</h3><p>{time} · 현재 {count}명</p><div><i style={{width:`${[57,68,70][index]}%`}}/></div><Link to="/surveys">참여하기 <b>→</b></Link></article>)}</div></section>
 
-  return (
-    <main className="uf-landing">
-      <nav className="uf-nav" aria-label="주요 메뉴">
-        <Link className="uf-nav__brand" to="/" aria-label="UNIFORM 홈"><BrandMark /></Link>
-        <div className="uf-nav__center">
-          <a href="#how">이용 방법</a>
-          <span aria-hidden="true">|</span>
-          <a href="#formmate">Support</a>
-        </div>
-        <div className="uf-nav__actions">
-          <Link to="/signup">회원가입</Link>
-          <Link className="uf-nav__login" to="/login">로그인</Link>
-        </div>
-      </nav>
-
-      <section className="uf-panel uf-hero" aria-labelledby="uf-hero-title">
-        <span className="uf-watermark" aria-hidden="true">UNIFORM</span>
-        <div className="uf-hero__content" data-reveal>
-          <h1 id="uf-hero-title">
-            <span>설문 응답자 모집,</span>
-            <strong className="uf-highlight">이제 더 간편하게.</strong>
-          </h1>
-          <p>설문은 간단하게, 결과는 선명하게.</p>
-          <Link className="uf-pill" to="/surveys">설문 참여하기</Link>
-        </div>
-        <a className="uf-scroll-cue" href="#how" aria-label="이용 방법으로 이동"><span>SCROLL</span><b>↓</b></a>
-      </section>
-
-      <section className="uf-panel uf-how" id="how" aria-labelledby="uf-how-title">
-        <header data-reveal>
-          <h2 id="uf-how-title">번거로운 설문 과정을<br /><span className="uf-highlight">하나의 경험으로</span></h2>
-        </header>
-        <ol className="uf-journey">
-          {journey.map((step, index) => (
-            <li key={step.no} data-reveal style={{ '--delay': `${index * 90}ms` }}>
-              <div className="uf-journey__title"><span>{step.no}</span><h3>{step.title}</h3></div>
-              <p><strong>{step.lead}</strong>{step.copy}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="uf-panel uf-formmate" id="formmate" aria-labelledby="uf-formmate-title">
-        <div className="uf-formmate__intro" data-reveal>
-          <h2 id="uf-formmate-title">막막했던 설문,<br />이제는 <span className="uf-highlight">FormMate와</span><br />함께 시작하세요.</h2>
-        </div>
-        <form className="uf-formmate__card" onSubmit={startWithFormMate} data-reveal aria-label="FormMate로 설문 시작하기">
-          <h3>FormMate</h3>
-          <label htmlFor="formmate-prompt" className="sr-only">만들고 싶은 설문</label>
-          <div className="uf-formmate__composer">
-            <input
-              id="formmate-prompt"
-              value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
-              placeholder="어떤 설문이 하고 싶은가요?"
-            />
-            <button type="submit" aria-label="FormMate로 설문 만들기"><span aria-hidden="true">↗</span></button>
-          </div>
-          <p>목적을 한 문장으로 알려주면 질문과 보기 구성을 함께 시작해요.</p>
-        </form>
-      </section>
-
-      <section className="uf-panel uf-results" id="results" aria-labelledby="uf-results-title">
-        <div className="uf-results__copy" data-reveal>
-          <h2 id="uf-results-title">응답의 흐름부터<br />결과까지, <span className="uf-highlight">한번에.</span></h2>
-          <p>응답 현황과 핵심 결과를 복잡한 정리 없이 한 화면에서 확인하세요.</p>
-          <Link className="uf-text-link" to="/dashboard">결과 화면 살펴보기 <span>↗</span></Link>
-        </div>
-        <div className="uf-results__visual" data-reveal>
-          <img src="/uniform-result-report.png" alt="응답 수, 응답 시간, 성별과 학년 분포를 한눈에 보여주는 설문 결과 보고서" />
-        </div>
-      </section>
-
-      <section className="uf-panel uf-final" aria-labelledby="uf-final-title">
-        <span className="uf-watermark" aria-hidden="true">UNIFORM</span>
-        <div data-reveal>
-          <h2 id="uf-final-title">설문이 필요할 때,<br /><span className="uf-highlight">바로 시작하세요.</span></h2>
-          <Link className="uf-pill" to="/surveys">설문 시작하기</Link>
-        </div>
-      </section>
-
-      <footer className="uf-footer">
-        <BrandMark light />
-        <nav aria-label="하단 메뉴"><a href="#how">이용약관</a><span aria-hidden="true">|</span><Link to="/surveys">더 알아보기</Link></nav>
-      </footer>
-    </main>
-  )
+    <section className="uf-final" data-motion-reveal><div><span>READY WHEN YOU ARE</span><h2>설문이 필요한 순간,<br/>UniForm에서 바로 시작하세요.</h2><p>참여도, 제작도, 결과 확인도 한곳에서 간편하게 이어집니다.</p><div><Link className="uf-button uf-button--primary" to="/surveys">설문 참여하기 <span>→</span></Link><Link className="uf-button uf-button--secondary" to="/surveys/create">설문 등록하기 <span>→</span></Link></div></div></section>
+    <footer className="uf-footer"><BrandMark/><nav><a href="#how">서비스 소개</a><a href="#how">이용 방법</a><a href="#formmate">Support</a><a href="#">이용약관</a><a href="#">개인정보처리방침</a></nav><small>© 2026 UNIFORM. All rights reserved.</small></footer>
+  </main>
 }

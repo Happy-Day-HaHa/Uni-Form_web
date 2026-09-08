@@ -19,6 +19,9 @@ export default function SurveyList() {
   const [category, setCategory] = useState('전체')
   const [sort, setSort] = useState('추천순')
   const [duration, setDuration] = useState('전체 시간')
+  const [newSurveyId] = useState(() => {
+    try { const id = sessionStorage.getItem('uni-form-new-survey') || ''; sessionStorage.removeItem('uni-form-new-survey'); return id } catch { return '' }
+  })
   const listRef = useRef(null)
 
   useEffect(() => {
@@ -78,10 +81,11 @@ export default function SurveyList() {
         <Link to="/" className="catalog-sidebar__brand"><BrandMark /></Link>
         <nav aria-label="설문 메뉴">
           <NavLink to="/dashboard"><span aria-hidden="true">⌂</span>대시보드</NavLink>
-          <NavLink to="/dashboard"><span aria-hidden="true">▤</span>내 설문</NavLink>
+          <NavLink to="/my-surveys"><span aria-hidden="true">▤</span>내 설문</NavLink>
           <NavLink to="/surveys" end><span aria-hidden="true">▣</span>설문 목록</NavLink>
-          <NavLink to="/dashboard"><span aria-hidden="true">▥</span>결과 보고서</NavLink>
-          <NavLink to="/profile"><span aria-hidden="true">⚙</span>설정</NavLink>
+          <NavLink to="/reports"><span aria-hidden="true">▥</span>결과 보고서</NavLink>
+          <NavLink to="/activity"><span aria-hidden="true">◷</span>활동 내역</NavLink>
+          <NavLink to="/settings"><span aria-hidden="true">⚙</span>설정</NavLink>
         </nav>
         <div className="catalog-sidebar__note">
           <span>NEW</span>
@@ -96,7 +100,7 @@ export default function SurveyList() {
           <Link to="/" className="catalog-mobile-brand"><BrandMark /></Link>
           <Link className="catalog-create" to="/surveys/create">+ 새 설문 만들기</Link>
           {user
-            ? <Link className="catalog-user" to="/profile"><span>{(user.email || 'U').slice(0, 1).toUpperCase()}</span><b>{user.email?.split('@')[0] || '사용자'}님</b></Link>
+            ? <Link className="catalog-user" to="/settings"><span>{(user.email || 'U').slice(0, 1).toUpperCase()}</span><b>{user.email?.split('@')[0] || '사용자'}님</b></Link>
             : <Link className="catalog-user catalog-user--login" to="/login">로그인</Link>}
         </header>
 
@@ -122,7 +126,7 @@ export default function SurveyList() {
           </section>
 
           {!loading && !error && <p className="catalog-count" data-catalog-reveal>총 <strong>{visibleSurveys.length}개</strong>의 설문이 있습니다.</p>}
-          {loading && <div className="catalog-empty">설문을 불러오고 있어요.</div>}
+          {loading && <div className="catalog-skeleton" aria-label="설문을 불러오고 있어요">{Array.from({ length: 4 }, (_, index) => <div key={index}><span /><p /><i /></div>)}</div>}
           {error && <div className="catalog-empty">{error}</div>}
 
           {!loading && !error && (
@@ -136,7 +140,7 @@ export default function SurveyList() {
                 const remaining = Math.max(0, target - responses)
                 const destination = isOwner ? (canViewResults ? `/surveys/${survey.id}/results` : '') : `/surveys/${survey.id}`
                 return (
-                  <article className="catalog-row" key={survey.id} data-catalog-reveal style={{ '--catalog-delay': `${Math.min(index, 6) * 55}ms` }}>
+                  <article className={`catalog-row ${survey.id === newSurveyId ? 'catalog-row--new' : ''}`} key={survey.id} data-catalog-reveal style={{ '--catalog-delay': `${Math.min(index, 5) * 70}ms` }}>
                     <span className={`catalog-row__icon catalog-row__icon--${index % 5}`} aria-hidden="true">{categoryMarks[survey.category] || 'U'}</span>
                     <div className="catalog-row__copy">
                       <div><h2>{survey.title}</h2>{index === 0 && <span className="catalog-tag">추천</span>}</div>
