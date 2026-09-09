@@ -72,7 +72,7 @@ export default function Landing() {
         <div className="uf-hero__actions" data-motion-reveal style={{ '--delay': '210ms' }}><Link className="uf-button uf-button--primary" to="/surveys">설문 참여하기 <span>→</span></Link><Link className="uf-button uf-button--secondary" to="/surveys/create">설문 만들기 <span>→</span></Link></div>
       </div>
       <ProductFrame label="uniform.app/surveys" className="uf-hero__product">
-        <div className="uf-product-heading"><span>▤</span><div><small>SURVEY DISCOVERY</small><h2>지금 참여할 수 있는 설문</h2></div></div>
+        <div className="uf-product-heading"><span>▤</span><div><small>설문 목록</small><h2>지금 참여할 수 있는 설문</h2></div></div>
         <div className="uf-hero-row"><SurveyRow survey={demoSurveys[0]} index={0} /></div>
         <div className="uf-hero-row"><SurveyRow survey={demoSurveys[4]} index={1} /></div>
       </ProductFrame>
@@ -98,7 +98,7 @@ export default function Landing() {
     </section>
 
     <section className="uf-section uf-feature uf-feature--results" id="results">
-      <ProductFrame label="uniform.app/results" className="uf-feature__product" data-motion-reveal><div className="uf-result-preview"><div className="uf-product-heading"><span>▥</span><div><small>RESULT REPORT</small><h2>{resultSurvey.title}</h2></div></div><ResultOverview survey={resultSurvey} sampleCount={resultSurvey.response_count} summary="공간 이용과 생활 습관의 응답 흐름을 먼저 확인해보세요. 응답이 쌓일수록 비교할 수 있는 결과가 더 선명해집니다." /></div></ProductFrame>
+      <ProductFrame label="uniform.app/results" className="uf-feature__product" data-motion-reveal><div className="uf-result-preview"><div className="uf-product-heading"><span>▥</span><div><small>결과 보고서</small><h2>{resultSurvey.title}</h2></div></div><ResultOverview survey={resultSurvey} sampleCount={resultSurvey.response_count} summary="공간 이용과 생활 습관의 응답 흐름을 먼저 확인해보세요. 응답이 쌓일수록 비교할 수 있는 결과가 더 선명해집니다." /></div></ProductFrame>
       <div className="uf-feature__copy" data-motion-reveal style={{ '--delay': '90ms' }}><span>결과 분석</span><h2>모인 응답을,<br />바로 이해하세요.</h2><p>복잡하게 다시 정리하지 않아도 응답 수와 목표 달성률, 문항별 흐름을 한 화면에서 확인할 수 있습니다.</p><Link className="uf-text-link" to="/reports">결과 화면 살펴보기 <span>→</span></Link></div>
     </section>
 

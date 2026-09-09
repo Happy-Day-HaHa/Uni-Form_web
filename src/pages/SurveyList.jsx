@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
-import BrandMark from '../components/BrandMark'
+import { Link } from 'react-router-dom'
+import ServiceShell from '../components/ServiceShell'
 import SurveyFilters from '../components/survey/SurveyFilters'
 import SurveyRow from '../components/survey/SurveyRow'
 import { useAuth } from '../hooks/useAuth'
@@ -75,38 +75,12 @@ export default function SurveyList() {
     : 0
 
   return (
-    <div className="survey-catalog">
-      <aside className="catalog-sidebar">
-        <Link to="/" className="catalog-sidebar__brand"><BrandMark /></Link>
-        <nav aria-label="설문 메뉴">
-          <NavLink to="/dashboard"><span aria-hidden="true">⌂</span>대시보드</NavLink>
-          <NavLink to="/my-surveys"><span aria-hidden="true">▤</span>내 설문</NavLink>
-          <NavLink to="/surveys" end><span aria-hidden="true">▣</span>설문 목록</NavLink>
-          <NavLink to="/reports"><span aria-hidden="true">▥</span>결과 보고서</NavLink>
-          <NavLink to="/activity"><span aria-hidden="true">◷</span>활동 내역</NavLink>
-          <NavLink to="/settings"><span aria-hidden="true">⚙</span>설정</NavLink>
-        </nav>
-        <div className="catalog-sidebar__note">
-          <span>NEW</span>
-          <strong>필요한 설문을<br />빠르게 찾아보세요.</strong>
-          <p>검색과 필터로 지금 참여할 설문을 한눈에 확인할 수 있어요.</p>
-          <Link to="/surveys/create">설문 만들기 <b>→</b></Link>
-        </div>
-      </aside>
-
-      <main className="catalog-main">
-        <header className="catalog-topbar">
-          <Link to="/" className="catalog-mobile-brand"><BrandMark /></Link>
-          <Link className="catalog-create" to="/surveys/create">+ 새 설문 만들기</Link>
-          {user
-            ? <Link className="catalog-user" to="/settings"><span>{(user.email || 'U').slice(0, 1).toUpperCase()}</span><b>{user.email?.split('@')[0] || '사용자'}님</b></Link>
-            : <Link className="catalog-user catalog-user--login" to="/login">로그인</Link>}
-        </header>
-
-        <div className="catalog-content" ref={listRef}>
+    <ServiceShell activePath="/surveys">
+      <div className="catalog-content catalog-content--service" ref={listRef}>
           <section className="catalog-heading" data-catalog-reveal>
             <div className="catalog-heading__icon" aria-hidden="true">▤</div>
             <div><h1>설문 목록</h1><p>{user ? '나와 잘 맞는 설문을 확인하고 바로 참여해보세요.' : '참여 가능한 설문을 확인하고 간편하게 시작해보세요.'}</p></div>
+            <Link className="ui-button catalog-heading__action" to="/surveys/create">새 설문 만들기</Link>
           </section>
 
           <section className="catalog-summary" aria-label="설문 요약">
@@ -127,8 +101,7 @@ export default function SurveyList() {
               {!visibleSurveys.length && <div className="catalog-empty">조건에 맞는 설문이 없습니다. 다른 필터를 선택해보세요.</div>}
             </section>
           )}
-        </div>
-      </main>
-    </div>
+      </div>
+    </ServiceShell>
   )
 }

@@ -10,10 +10,11 @@ export const demoSurveys = [
 ]
 
 const demoStorageKey = 'uni-form-created-surveys'
-function getDemoCreatedSurveys() {
+export function getDemoCreatedSurveys() {
   try { return JSON.parse(localStorage.getItem(demoStorageKey) || '[]') } catch { return [] }
 }
-function getAllDemoSurveys() { return [...getDemoCreatedSurveys(), ...demoSurveys] }
+export function getAllDemoSurveys() { return [...getDemoCreatedSurveys(), ...demoSurveys] }
+export function isDemoSurveyFixture(surveyId) { return demoSurveys.some((survey) => survey.id === surveyId) }
 
 export async function getSurveys() {
   if (!supabase) return getAllDemoSurveys()
@@ -22,7 +23,7 @@ export async function getSurveys() {
   return data
 }
 export async function getSurvey(surveyId) {
-  if (!supabase) return getAllDemoSurveys().find((survey) => survey.id === surveyId) || demoSurveys[0]
+  if (!supabase) return getAllDemoSurveys().find((survey) => survey.id === surveyId) || null
   const { data, error } = await supabase.from('surveys').select('*').eq('id', surveyId).single()
   if (error) throw error
   return data

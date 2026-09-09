@@ -8,8 +8,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(isSupabaseConfigured)
   useEffect(() => {
     if (!supabase) return undefined
-    supabase.auth.getUser().then(({ data }) => { setUser(data.user); setLoading(false) })
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null))
+    supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setLoading(false) })
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); setLoading(false) })
     return () => data.subscription.unsubscribe()
   }, [])
   const value = useMemo(() => ({ user, loading, demoMode: !isSupabaseConfigured }), [user, loading])
