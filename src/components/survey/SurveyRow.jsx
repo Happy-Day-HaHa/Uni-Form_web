@@ -12,7 +12,7 @@ export default function SurveyRow({ survey, index = 0, user, newSurveyId = '' })
   const destination = isOwner ? (canViewResults ? `/surveys/${survey.id}/results` : '') : `/surveys/${survey.id}`
 
   return (
-    <article className={`catalog-row ${survey.id === newSurveyId ? 'catalog-row--new' : ''}`} data-catalog-reveal style={{ '--catalog-delay': `${Math.min(index, 5) * 70}ms` }}>
+    <article className={`catalog-row ${survey.id === newSurveyId ? 'catalog-row--new' : ''}`} data-catalog-reveal style={{ '--catalog-delay': `${Math.min(index, 3) * 35}ms` }}>
       <span className={`catalog-row__icon catalog-row__icon--${index % 5}`} aria-hidden="true">{categoryMarks[survey.category] || 'U'}</span>
       <div className="catalog-row__copy">
         <div><h2>{survey.title}</h2>{index === 0 && <span className="catalog-tag">추천</span>}</div>

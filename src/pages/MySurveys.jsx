@@ -69,7 +69,7 @@ export default function MySurveys() {
     <section className="managed-list">{display.map((survey, index) => {
       const progress = Math.min(100, Math.round(Number(survey.response_count || 0) / Math.max(1, Number(survey.target_count || 1)) * 100))
       const isOwned = survey.creator_id === user.id || (demoMode && isDemoSurveyFixture(survey.id))
-      return <article className="managed-row ui-card" key={survey.id} data-motion-reveal style={{ '--delay': `${Math.min(index, 5) * 65}ms` }}>
+      return <article className="managed-row ui-card" key={survey.id} data-clickable="true" data-motion-reveal style={{ '--delay': `${Math.min(index, 3) * 35}ms` }}>
         <div className="managed-row__title"><span className={`service-tone--${['violet', 'amber', 'rose', 'mint', 'blue'][index % 5]}`}>{['◇', '○', '▤', '◎', '✦'][index % 5]}</span><div><h2>{survey.title}</h2><p>{survey.description}</p><small>약 {survey.estimated_minutes || 5}분 · 응답 {Number(survey.response_count || 0).toLocaleString()}명 · {survey.category || '일반'}</small></div></div>
         <div className="managed-progress"><span>{progress}%</span><div><i style={{ '--progress': `${progress}%` }} /></div><small>{Number(survey.response_count || 0).toLocaleString()}명 / {Number(survey.target_count || 0).toLocaleString()}명</small></div>
         <div className="managed-actions"><Link to={`/surveys/${survey.id}`}>{isOwned ? '상세보기' : '미리보기'}</Link>{isOwned && <Link to={`/surveys/${survey.id}/results`}>{survey.response_count > 0 ? '결과보기' : '응답 현황'}</Link>}<button type="button" onClick={() => share(survey)}>공유</button></div>

@@ -2,12 +2,13 @@
 @keyframes modal-soft-enter{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
 @keyframes progress-soft-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes skeleton-soft{0%,100%{opacity:.46}50%{opacity:.82}}
-.app-main,.auth-card,.result-page{animation:page-soft-enter 420ms cubic-bezier(.22,1,.36,1) both}
+.app-main,.auth-card,.result-page{animation:page-soft-enter 230ms cubic-bezier(.22,1,.36,1) both}
 .app-header{transition:background 220ms ease-out,box-shadow 220ms ease-out}.app-header:hover{box-shadow:0 5px 22px rgba(34,54,91,.05)}
 .app-header nav a,.app-create-button,.header-login,.button,.text-button{transition:color 180ms ease-out,background 180ms ease-out,border-color 180ms ease-out,transform 180ms ease-out,box-shadow 180ms ease-out}
 .app-header nav a:hover{color:#2563eb}.app-create-button:hover,.header-login:hover,.button:hover{transform:translateY(-1px)}.button:active,.app-create-button:active,.header-login:active{transform:scale(.98)}
 .button span,.app-create-button span{transition:transform 180ms ease-out}.button:hover span,.app-create-button:hover span{transform:translateX(3px)}
-.panel,.question,.dashboard-survey,.result-question{transition:transform 260ms cubic-bezier(.22,1,.36,1),border-color 260ms ease-out,box-shadow 260ms ease-out}.panel:hover,.result-question:hover{border-color:#cdd8e8;box-shadow:0 12px 30px rgba(34,58,105,.055);transform:translateY(-2px)}
-.progress__track span,.result-distribution b{transform-origin:left;animation:progress-soft-fill 700ms 120ms cubic-bezier(.22,1,.36,1) both}.modal{animation:modal-soft-enter 240ms cubic-bezier(.22,1,.36,1) both}
+.panel,.question,.dashboard-survey,.result-question{transition:border-color 220ms ease-out,box-shadow 220ms ease-out}.dashboard-survey:hover{border-color:#cdd8e8;box-shadow:0 12px 30px rgba(34,58,105,.055)}
+.progress__track span,.result-distribution b{transform-origin:left;animation:progress-soft-fill 520ms 80ms cubic-bezier(.22,1,.36,1) both}.modal{animation:modal-soft-enter 240ms cubic-bezier(.22,1,.36,1) both}.modal-backdrop{animation:backdrop-soft-enter 200ms ease-out both}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(37,99,235,.28);outline-offset:3px}.skeleton-block{border-radius:10px;background:#e9eef5;animation:skeleton-soft 1.6s ease-in-out infinite}
 @media(prefers-reduced-motion:reduce){.app-main,.auth-card,.result-page,.modal,.progress__track span,.result-distribution b,.skeleton-block{animation:none!important;transform:none!important}}
+@keyframes backdrop-soft-enter{from{opacity:0}to{opacity:1}}

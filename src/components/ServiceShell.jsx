@@ -4,6 +4,29 @@ import BrandMark from './BrandMark'
 import { useAuth } from '../hooks/useAuth'
 import '../styles/service-shell.css'
 
+function useCountUp(value, enabled) {
+  const target = Number(value) || 0
+  const [displayValue, setDisplayValue] = useState(enabled ? 0 : target)
+
+  useEffect(() => {
+    if (!enabled || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplayValue(target)
+      return undefined
+    }
+    const startedAt = performance.now()
+    let frame
+    const tick = (now) => {
+      const progress = Math.min(1, (now - startedAt) / 520)
+      setDisplayValue(Math.round(target * (1 - Math.pow(1 - progress, 3))))
+      if (progress < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [enabled, target])
+
+  return enabled ? displayValue : target
+}
+
 const navItems = [
   ['/dashboard', '⌂', '대시보드'],
   ['/my-surveys', '▤', '내 설문'],
@@ -61,6 +84,7 @@ export function ServiceHeading({ icon, title, description, action }) {
   return <header className="service-heading" data-motion-reveal><span aria-hidden="true">{icon}</span><div><h1>{title}</h1><p>{description}</p></div>{action}</header>
 }
 
-export function MetricCard({ tone = 'blue', icon, label, value, unit = '', note }) {
-  return <article className="service-metric ui-card" data-motion-reveal><span className={`service-metric__icon service-tone--${tone}`}>{icon}</span><div><small>{label}</small><strong>{value.toLocaleString()}<em>{unit}</em></strong><p>{note}</p></div></article>
+export function MetricCard({ tone = 'blue', icon, label, value, unit = '', note, animate = false }) {
+  const displayValue = useCountUp(value, animate)
+  return <article className="service-metric ui-card" data-motion-reveal><span className={`service-metric__icon service-tone--${tone}`}>{icon}</span><div><small>{label}</small><strong>{displayValue.toLocaleString()}<em>{unit}</em></strong><p>{note}</p></div></article>
 }
