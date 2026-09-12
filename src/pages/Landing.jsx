@@ -53,7 +53,7 @@ export default function Landing() {
       setFormMessage('알아보고 싶은 내용을 조금 더 구체적으로 적어주세요.')
       return
     }
-    navigate('/surveys/create', { state: { formMatePrompt: prompt.trim() } })
+    navigate('/formmate', { state: { formMatePrompt: prompt.trim() } })
   }
 
   const resultSurvey = demoSurveys.find((survey) => survey.id === 'campus-life')
@@ -69,7 +69,7 @@ export default function Landing() {
         <span className="uf-kicker" data-motion-reveal>UNIFORM</span>
         <h1 id="hero-title" data-motion-reveal style={{ '--delay': '70ms' }}>설문은 간단하게,<br />결과는 <span>선명하게.</span></h1>
         <p data-motion-reveal style={{ '--delay': '140ms' }}>설문 제작부터 응답 참여, 결과 확인까지.<br />복잡했던 과정을 하나의 흐름으로 연결합니다.</p>
-        <div className="uf-hero__actions" data-motion-reveal style={{ '--delay': '210ms' }}><Link className="uf-button uf-button--primary" to="/surveys">설문 참여하기 <span>→</span></Link><Link className="uf-button uf-button--secondary" to="/surveys/create">설문 만들기 <span>→</span></Link></div>
+        <div className="uf-hero__actions" data-motion-reveal style={{ '--delay': '210ms' }}><Link className="uf-button uf-button--primary" to="/surveys">설문 참여하기 <span>→</span></Link><Link className="uf-button uf-button--secondary" to="/formmate">설문 만들기 <span>→</span></Link></div>
       </div>
       <ProductFrame label="uniform.app/surveys" className="uf-hero__product">
         <div className="uf-product-heading"><span>▤</span><div><small>설문 목록</small><h2>지금 참여할 수 있는 설문</h2></div></div>
@@ -93,8 +93,8 @@ export default function Landing() {
     </section>
 
     <section className="uf-section uf-feature uf-feature--formmate" id="formmate">
-      <div className="uf-feature__copy" data-motion-reveal><span>FORMMATE</span><h2>떠오른 생각을,<br />설문의 시작으로.</h2><p>목적을 편하게 적으면 질문과 보기를 빠르게 구성합니다. 제안받은 초안은 실제 편집 화면에서 바로 다듬을 수 있어요.</p><Link className="uf-text-link" to="/surveys/create">직접 설문 만들기 <span>→</span></Link></div>
-      <ProductFrame label="uniform.app/surveys/create" className="uf-feature__product uf-feature__product--create" data-motion-reveal style={{ '--delay': '90ms' }}><div className="uf-create-preview"><SurveyEditorPanel form={previewForm} onChange={(patch) => setPreviewForm((current) => ({ ...current, ...patch }))} onQuestionChange={(id, patch) => setPreviewForm((current) => ({ ...current, questions: current.questions.map((question) => question.id === id ? { ...question, ...patch } : question) }))} onAddQuestion={() => setPreviewForm((current) => ({ ...current, questions: [...current.questions, { id: `preview-${current.questions.length + 1}`, type: 'text', title: '', options: [] }] }))} onDeleteQuestion={(id) => setPreviewForm((current) => ({ ...current, questions: current.questions.filter((question) => question.id !== id) }))} aiApplied /><FormMatePanel value={prompt} onChange={(value) => { setPrompt(value); setFormMessage('') }} onCreateDraft={openFormMate} message={formMessage} buttonLabel="FormMate로 시작하기" /></div></ProductFrame>
+      <div className="uf-feature__copy" data-motion-reveal><span>FORMMATE</span><h2>떠오른 생각을,<br />설문의 시작으로.</h2><p>목적을 편하게 적으면 질문과 보기를 빠르게 구성합니다. 제안받은 초안은 실제 편집 화면에서 바로 다듬을 수 있어요.</p><Link className="uf-text-link" to="/formmate">직접 설문 만들기 <span>→</span></Link></div>
+      <ProductFrame label="uniform.app/formmate" className="uf-feature__product uf-feature__product--create" data-motion-reveal style={{ '--delay': '90ms' }}><div className="uf-create-preview"><SurveyEditorPanel form={previewForm} onChange={(patch) => setPreviewForm((current) => ({ ...current, ...patch }))} onQuestionChange={(id, patch) => setPreviewForm((current) => ({ ...current, questions: current.questions.map((question) => question.id === id ? { ...question, ...patch } : question) }))} onAddQuestion={() => setPreviewForm((current) => ({ ...current, questions: [...current.questions, { id: `preview-${current.questions.length + 1}`, type: 'text', title: '', options: [] }] }))} onDeleteQuestion={(id) => setPreviewForm((current) => ({ ...current, questions: current.questions.filter((question) => question.id !== id) }))} aiApplied /><FormMatePanel value={prompt} onChange={(value) => { setPrompt(value); setFormMessage('') }} onCreateDraft={openFormMate} message={formMessage} buttonLabel="FormMate로 시작하기" /></div></ProductFrame>
     </section>
 
     <section className="uf-section uf-feature uf-feature--results" id="results">
@@ -102,7 +102,7 @@ export default function Landing() {
       <div className="uf-feature__copy" data-motion-reveal style={{ '--delay': '90ms' }}><span>결과 분석</span><h2>모인 응답을,<br />바로 이해하세요.</h2><p>복잡하게 다시 정리하지 않아도 응답 수와 목표 달성률, 문항별 흐름을 한 화면에서 확인할 수 있습니다.</p><Link className="uf-text-link" to="/reports">결과 화면 살펴보기 <span>→</span></Link></div>
     </section>
 
-    <section className="uf-final" data-motion-reveal><div><span>지금 시작하기</span><h2>설문이 필요한 순간,<br />바로 시작하세요.</h2><p>참여도, 제작도, 결과 확인도 UniForm에서 간편하게 이어집니다.</p><div><Link className="uf-button uf-button--primary" to="/surveys">설문 참여하기 <span>→</span></Link><Link className="uf-button uf-button--secondary" to="/surveys/create">설문 만들기 <span>→</span></Link></div></div></section>
+    <section className="uf-final" data-motion-reveal><div><span>지금 시작하기</span><h2>설문이 필요한 순간,<br />바로 시작하세요.</h2><p>참여도, 제작도, 결과 확인도 UniForm에서 간편하게 이어집니다.</p><div><Link className="uf-button uf-button--primary" to="/surveys">설문 참여하기 <span>→</span></Link><Link className="uf-button uf-button--secondary" to="/formmate">설문 만들기 <span>→</span></Link></div></div></section>
     <footer className="uf-footer"><BrandMark /><nav><a href="#how">이용 방법</a><a href="#discovery">설문 찾기</a><a href="#formmate">FormMate</a><a href="#results">결과 분석</a></nav><small>© 2026 UNIFORM</small></footer>
   </main>
 }

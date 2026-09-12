@@ -49,3 +49,32 @@ export async function getMySurveys(userId) {
   if (error) throw error
   return data
 }
+
+export async function updateSurvey(surveyId, patch) {
+  if (!supabase) {
+    const created = getDemoCreatedSurveys()
+    const next = created.map((survey) => survey.id === surveyId ? { ...survey, ...patch, updated_at: new Date().toISOString() } : survey)
+    localStorage.setItem(demoStorageKey, JSON.stringify(next))
+    return next.find((survey) => survey.id === surveyId) || { id: surveyId, ...patch }
+  }
+  const { data, error } = await supabase.from('surveys').update(patch).eq('id', surveyId).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteSurvey(surveyId) {
+  if (!supabase) {
+    localStorage.setItem(demoStorageKey, JSON.stringify(getDemoCreatedSurveys().filter((survey) => survey.id !== surveyId)))
+    return
+  }
+  const { error } = await supabase.from('surveys').delete().eq('id', surveyId)
+  if (error) throw error
+}
+
+export async function duplicateSurvey(survey) {
+  return createSurvey({
+    title: `${survey.title} 사본`, description: survey.description, category: survey.category,
+    target_count: survey.target_count, estimated_minutes: survey.estimated_minutes,
+    questions: survey.questions || [], audience: survey.audience || {}, visibility: survey.visibility || '전체 공개', status: 'draft',
+  })
+}

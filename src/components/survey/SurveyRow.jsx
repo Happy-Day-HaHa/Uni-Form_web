@@ -1,8 +1,11 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const categoryMarks = { 교육: 'A', 라이프스타일: '○', 소비: '◇', 테크: 'AI', 문화: '✦' }
 
 export default function SurveyRow({ survey, index = 0, user, newSurveyId = '' }) {
+  const navigate = useNavigate()
+  const [busy, setBusy] = useState(false)
   const isOwner = survey.creator_id === user?.id
   const canViewResults = isOwner && survey.response_count > 0
   const target = Math.max(Number(survey.target_count || 1), 1)
@@ -10,6 +13,11 @@ export default function SurveyRow({ survey, index = 0, user, newSurveyId = '' })
   const progress = Math.min(100, Math.round((responses / target) * 100))
   const remaining = Math.max(0, target - responses)
   const destination = isOwner ? (canViewResults ? `/surveys/${survey.id}/results` : '') : `/surveys/${survey.id}`
+  const openSurvey = () => {
+    if (!destination || busy) return
+    setBusy(true)
+    window.setTimeout(() => navigate(destination), 260)
+  }
 
   return (
     <article className={`catalog-row ${survey.id === newSurveyId ? 'catalog-row--new' : ''}`} data-catalog-reveal style={{ '--catalog-delay': `${Math.min(index, 3) * 35}ms` }}>
@@ -21,8 +29,9 @@ export default function SurveyRow({ survey, index = 0, user, newSurveyId = '' })
       </div>
       <div className="catalog-row__progress"><span>잔여 {remaining.toLocaleString()}명</span><div><i style={{ width: `${progress}%` }} /><b>{progress}%</b></div></div>
       {destination
-        ? <Link className="catalog-row__action" to={destination}>{isOwner ? '결과 보기' : '참여하기'} <span>→</span></Link>
+        ? <button className="catalog-row__action" type="button" disabled={busy} onClick={openSurvey}>{busy ? '불러오는 중…' : isOwner ? '결과 보기' : '참여하기'} {!busy && <span>→</span>}</button>
         : <span className="catalog-row__waiting">응답 대기 중</span>}
+      <button className="catalog-row__more" type="button" aria-label="더보기">⋮</button>
     </article>
   )
 }
