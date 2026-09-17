@@ -9,10 +9,13 @@ import '../styles/service-shell.css'
 const navItems = [
   ['/formmate', '✦', 'FormMate'],
   ['/dashboard', '⌂', '대시보드'],
+  ['/leaderboard', '♛', '리더보드'],
   ['/my-surveys', '▤', '내 설문'],
+  ['/team', '⌘', '팀'],
   ['/surveys', '▣', '설문 목록'],
   ['/reports', '▥', '결과 보고서'],
   ['/settings', '⚙', '설정'],
+  ['/admin', '◆', '관리자'],
 ]
 
 const notifications = [
@@ -85,7 +88,7 @@ export default function ServiceShell({ children, activePath }) {
     <button className="service-drawer-backdrop" type="button" aria-label="메뉴 닫기" onClick={() => setMobileOpen(false)} />
     <aside className="service-sidebar" aria-label="서비스 사이드바">
       <Link className="service-sidebar__brand" to="/"><BrandMark /></Link>
-      <nav aria-label="서비스 메뉴">{navItems.map(([to, icon, label], index) => <div key={to} className={index === 1 ? 'service-nav-break' : ''}><NavLink to={to} title={collapsed ? label : undefined} onClick={() => setMobileOpen(false)} className={({ isActive }) => (isActive || activePath === to) ? 'active' : ''}><span aria-hidden="true">{icon}</span><b>{label}</b>{index === 0 && <i>›</i>}</NavLink></div>)}</nav>
+      <nav aria-label="서비스 메뉴">{navItems.map(([to, icon, label], index) => <div key={to} className={index === 1 || to === '/admin' ? 'service-nav-break' : ''}><NavLink to={to} title={collapsed ? label : undefined} onClick={() => setMobileOpen(false)} className={({ isActive }) => (isActive || activePath === to) ? 'active' : ''}><span aria-hidden="true">{icon}</span><b>{label}</b>{index === 0 && <i>›</i>}</NavLink></div>)}</nav>
       <section className="service-recent" aria-label="최근 작업">
         <header><span>최근 작업</span><Link to="/formmate?new=true" aria-label="FormMate 새 작업 시작">＋</Link></header>
         <div>{recent.length ? recent.map((survey, index) => <Link key={survey.id} to={`/my-surveys?survey=${survey.id}`} title={survey.title}><span>▤</span><p><b>{survey.title}</b><small>{relativeTime(survey.updated_at || survey.created_at, index)}</small></p></Link>) : <p className="service-recent__empty">최근 작업이 없습니다.</p>}</div>
@@ -98,7 +101,7 @@ export default function ServiceShell({ children, activePath }) {
       <button className="service-help" type="button" onClick={() => setMenu(menu === 'help' ? '' : 'help')} aria-expanded={menu === 'help'}><span>?</span>도움말</button>
       <button className="service-notice" type="button" aria-label="알림" aria-expanded={menu === 'notice'} onClick={() => setMenu(menu === 'notice' ? '' : 'notice')}>●</button>
       <button className="service-user" type="button" aria-expanded={menu === 'profile'} onClick={() => setMenu(menu === 'profile' ? '' : 'profile')}><span>{name.slice(0, 1).toUpperCase()}</span><b>{name}님</b><i>⌄</i></button>
-      {menu === 'help' && <div className="service-popover service-popover--help" role="dialog"><strong>무엇을 도와드릴까요?</strong><Link to="/formmate">FormMate 사용법</Link><Link to="/surveys">설문 참여 안내</Link><Link to="/settings?tab=service">고객센터</Link></div>}
+      {menu === 'help' && <div className="service-popover service-popover--help" role="dialog"><strong>무엇을 도와드릴까요?</strong><Link to="/formmate">FormMate 사용법</Link><Link to="/surveys">설문 참여 안내</Link><Link to="/support">고객센터</Link></div>}
       {menu === 'notice' && <div className="service-popover service-popover--notice" role="dialog"><header><strong>알림</strong><button type="button" onClick={() => setMenu('')}>모두 읽음</button></header>{notifications.map(([title, copy]) => <Link to="/reports" key={title}><i /><p><b>{title}</b><small>{copy}</small></p></Link>)}</div>}
       {menu === 'profile' && <div className="service-popover service-popover--profile" role="menu"><Link role="menuitem" to="/settings">프로필</Link><Link role="menuitem" to="/settings">설정</Link><button role="menuitem" type="button" onClick={signOut}>로그아웃</button></div>}
     </div></header><main className="service-content motion-page">{children}</main></div>

@@ -258,3 +258,7 @@
   .catalog-row,
   .catalog-sidebar nav a { transition: none; }
 }
+
+.catalog-load-more{display:block;width:100%;min-height:48px;margin-top:16px;border:1px solid #d8deea;border-radius:12px;background:#fff;color:#354261;font:inherit;font-size:.76rem;font-weight:780;cursor:pointer;transition:border-color 180ms ease-out,transform 180ms ease-out}
+.catalog-load-more:hover{border-color:#aebbd4;transform:translateY(-1px)}
+.catalog-load-more:active{transform:scale(.99)}

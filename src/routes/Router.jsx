@@ -8,6 +8,10 @@ import SurveyResponse from '../pages/SurveyResponse'
 import SurveyCreate from '../pages/SurveyCreate'
 import SurveyResults from '../pages/SurveyResults'
 import Dashboard from '../pages/Dashboard'
+import Leaderboard from '../pages/Leaderboard'
+import Team from '../pages/Team'
+import Support from '../pages/Support'
+import Admin from '../pages/Admin'
 import Versions from '../pages/Versions'
 import MySurveys from '../pages/MySurveys'
 import Settings from '../pages/Settings'
@@ -15,5 +19,5 @@ import Reports from '../pages/Reports'
 import PrivateRoute from './PrivateRoute'
 
 export default function AppRouter() {
-  return <Routes><Route path="/" element={<Landing />} /><Route path="/versions" element={<Versions />} /><Route path="/login" element={<Login />} /><Route path="/signup" element={<Signup />} /><Route path="/surveys" element={<SurveyList />} /><Route element={<PrivateRoute />}><Route path="/profile" element={<Profile />} /><Route path="/settings" element={<Settings />} /><Route path="/activity" element={<Navigate to="/dashboard" replace />} /><Route path="/reports" element={<Reports />} /><Route path="/my-surveys" element={<MySurveys />} /><Route path="/formmate" element={<SurveyCreate />} /><Route path="/surveys/create" element={<Navigate to="/formmate" replace />} /><Route path="/surveys/:surveyId/results" element={<SurveyResults />} /><Route path="/surveys/:surveyId" element={<SurveyResponse />} /><Route path="/dashboard" element={<Dashboard />} /></Route><Route path="*" element={<Navigate to="/" replace />} /></Routes>
+  return <Routes><Route path="/" element={<Landing />} /><Route path="/versions" element={<Versions />} /><Route path="/login" element={<Login />} /><Route path="/signup" element={<Signup />} /><Route path="/surveys" element={<SurveyList />} /><Route path="/support" element={<Support />} /><Route element={<PrivateRoute />}><Route path="/profile" element={<Profile />} /><Route path="/settings" element={<Settings />} /><Route path="/activity" element={<Navigate to="/dashboard" replace />} /><Route path="/reports" element={<Reports />} /><Route path="/my-surveys" element={<MySurveys />} /><Route path="/formmate" element={<SurveyCreate />} /><Route path="/surveys/create" element={<Navigate to="/formmate" replace />} /><Route path="/surveys/:surveyId/results" element={<SurveyResults />} /><Route path="/surveys/:surveyId" element={<SurveyResponse />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/leaderboard" element={<Leaderboard />} /><Route path="/team" element={<Team />} /><Route path="/admin" element={<Admin />} /></Route><Route path="*" element={<Navigate to="/" replace />} /></Routes>
 }

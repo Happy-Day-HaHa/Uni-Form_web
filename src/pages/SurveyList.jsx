@@ -18,11 +18,12 @@ export default function SurveyList() {
   const [query, setQuery] = useState(params.get('q') || '')
   const [debouncedQuery, setDebouncedQuery] = useState(query)
   const [category, setCategory] = useState(params.get('category') || '전체')
-  const [sort, setSort] = useState(params.get('sort') || '추천순')
+  const [sort, setSort] = useState(params.get('sort') || '최신순')
   const [duration, setDuration] = useState(params.get('duration') || '전체 시간')
   const [newSurveyId] = useState(() => {
     try { const id = sessionStorage.getItem('uni-form-new-survey') || ''; sessionStorage.removeItem('uni-form-new-survey'); return id } catch { return '' }
   })
+  const [visibleCount, setVisibleCount] = useState(20)
   const listRef = useRef(null)
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function SurveyList() {
     const next = {}
     if (debouncedQuery) next.q = debouncedQuery
     if (category !== '전체') next.category = category
-    if (sort !== '추천순') next.sort = sort
+    if (sort !== '최신순') next.sort = sort
     if (duration !== '전체 시간') next.duration = duration
     setParams(next, { replace: true })
   }, [category, debouncedQuery, duration, setParams, sort])
@@ -58,12 +59,12 @@ export default function SurveyList() {
     return [...filtered].sort((a, b) => {
       if (sort === '인기순') return (b.response_count || 0) - (a.response_count || 0)
       if (sort === '소요시간순') return (a.estimated_minutes || 5) - (b.estimated_minutes || 5)
-      if (sort === '최신순') return String(b.created_at || b.id).localeCompare(String(a.created_at || a.id))
-      const aRate = (a.response_count || 0) / Math.max(a.target_count || 1, 1)
-      const bRate = (b.response_count || 0) / Math.max(b.target_count || 1, 1)
-      return bRate - aRate
+      return String(b.created_at || b.id).localeCompare(String(a.created_at || a.id))
     })
   }, [category, debouncedQuery, duration, sort, surveys])
+
+  useEffect(() => { setVisibleCount(20) }, [category, debouncedQuery, duration, sort])
+  const pagedSurveys = visibleSurveys.slice(0, visibleCount)
 
   useEffect(() => {
     const root = listRef.current
@@ -79,7 +80,7 @@ export default function SurveyList() {
     )
     items.forEach((item) => observer.observe(item))
     return () => observer.disconnect()
-  }, [visibleSurveys])
+  }, [pagedSurveys])
 
   const available = surveys.filter((survey) => (survey.response_count || 0) < (survey.target_count || 1)).length
   const averageMinutes = surveys.length
@@ -109,10 +110,11 @@ export default function SurveyList() {
 
           {!loading && !error && (
             <section className="catalog-list" aria-live="polite">
-              {visibleSurveys.map((survey, index) => <SurveyRow key={survey.id} survey={survey} index={index} user={user} newSurveyId={newSurveyId} />)}
-              {!visibleSurveys.length && <div className="catalog-empty"><b>조건에 맞는 설문이 없습니다.</b><span>검색어나 필터를 바꿔보세요.</span><button className="ui-button ui-button--secondary" type="button" onClick={() => { setQuery(''); setCategory('전체'); setSort('추천순'); setDuration('전체 시간') }}>필터 초기화</button></div>}
+              {pagedSurveys.map((survey, index) => <SurveyRow key={survey.id} survey={survey} index={index} user={user} newSurveyId={newSurveyId} />)}
+              {!visibleSurveys.length && <div className="catalog-empty"><b>조건에 맞는 설문이 없습니다.</b><span>검색어나 필터를 바꿔보세요.</span><button className="ui-button ui-button--secondary" type="button" onClick={() => { setQuery(''); setCategory('전체'); setSort('최신순'); setDuration('전체 시간') }}>필터 초기화</button></div>}
             </section>
           )}
+          {!loading && !error && visibleCount < visibleSurveys.length && <button className="catalog-load-more" type="button" onClick={() => setVisibleCount((count) => count + 20)}>더 보기 ({visibleSurveys.length - visibleCount}개 더 있음)</button>}
       </div>
     </ServiceShell>
   )

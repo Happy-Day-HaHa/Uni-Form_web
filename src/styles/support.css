@@ -1,0 +1,21 @@
+.support-contact{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:28px;padding:22px 24px}
+.support-contact span{display:block;color:var(--saas-muted);font-size:.7rem}
+.support-contact strong{display:block;margin-top:5px;font-size:1.1rem;letter-spacing:-.02em}
+.support-contact__actions{display:flex;gap:8px}
+
+.support-types{margin-top:24px}
+.support-types h2,.support-faq h2{margin:0 0 12px;font-size:.95rem}
+.support-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.support-type-card{display:block;padding:16px}
+.support-type-card b{display:block;font-size:.8rem}
+.support-type-card p{margin:6px 0 0;color:var(--saas-muted);font-size:.68rem;line-height:1.5}
+
+.support-faq{margin-top:28px}
+.support-faq-list{border-top:1px solid var(--saas-line)}
+.support-faq-item{border-bottom:1px solid var(--saas-line)}
+.support-faq-item>button{display:flex;width:100%;min-height:54px;align-items:center;justify-content:space-between;border:0;background:none;color:var(--saas-navy);font:inherit;font-size:.85rem;font-weight:700;text-align:left;cursor:pointer}
+.support-faq-item>button span{color:var(--saas-blue);font-size:1.1rem;font-weight:400}
+.support-faq-item p{margin:0 0 18px;color:var(--saas-muted);font-size:.78rem;line-height:1.7}
+
+@media(max-width:900px){.support-type-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.support-contact{flex-direction:column;align-items:flex-start}.support-type-grid{grid-template-columns:1fr}}

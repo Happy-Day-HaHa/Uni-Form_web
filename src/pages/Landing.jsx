@@ -28,7 +28,7 @@ export default function Landing() {
   const [formMessage, setFormMessage] = useState('')
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('전체')
-  const [sort, setSort] = useState('추천순')
+  const [sort, setSort] = useState('최신순')
   const [duration, setDuration] = useState('전체 시간')
   const [previewForm, setPreviewForm] = useState({ title: '대학생의 AI 서비스 사용 경험 조사', description: 'AI 서비스 이용 경험과 만족도를 알아보는 설문입니다.', category: '테크', targetCount: 500, estimatedMinutes: 5, ageGroup: '20대', visibility: '전체 공개', questions: [{ id: 'preview-q1', type: 'single', title: '평소 어떤 AI 서비스를 주로 이용하시나요?', options: ['대화형 AI', '이미지 생성', '번역·요약'] }, { id: 'preview-q2', type: 'scale', title: 'AI 서비스 전반에 얼마나 만족하시나요?', options: [], min: 1, max: 5 }] })
 
@@ -43,8 +43,7 @@ export default function Landing() {
     return [...filtered].sort((a, b) => {
       if (sort === '인기순') return b.response_count - a.response_count
       if (sort === '소요시간순') return a.estimated_minutes - b.estimated_minutes
-      if (sort === '최신순') return String(b.id).localeCompare(String(a.id))
-      return (b.response_count / b.target_count) - (a.response_count / a.target_count)
+      return String(b.id).localeCompare(String(a.id))
     })
   }, [category, duration, query, sort])
 

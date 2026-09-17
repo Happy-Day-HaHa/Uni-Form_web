@@ -7,14 +7,14 @@ import SurveyEditorPanel from '../components/survey/SurveyEditorPanel'
 import { createSurvey } from '../services/surveyService'
 import { validateSurvey } from '../utils/validation'
 
-const blankQuestion = (type = 'text') => ({ id: crypto.randomUUID(), title: '', type, options: type === 'single' ? ['선택 1', '선택 2'] : [], ...(type === 'scale' ? { min: 1, max: 5 } : {}) })
+const blankQuestion = (type = 'text') => ({ id: crypto.randomUUID(), title: '', type, required: true, options: (type === 'single' || type === 'multiple') ? ['선택 1', '선택 2'] : [], ...(type === 'scale' ? { min: 1, max: 5 } : {}) })
 const initialMessages = [{ role: 'assistant', text: '안녕하세요! 어떤 설문을 만들고 싶으신가요? 먼저 이번 설문의 목적을 알려주세요.' }]
 
 export default function SurveyCreate() {
   const navigate = useNavigate()
   const location = useLocation()
   const initialPrompt = location.state?.formMatePrompt || ''
-  const [form, setForm] = useState({ title: '', description: '', category: '교육', targetCount: 50, estimatedMinutes: 5, ageGroup: '전체', visibility: '전체 공개', questions: [blankQuestion()] })
+  const [form, setForm] = useState({ title: '', description: '', category: '교육', targetCount: 50, estimatedMinutes: 5, deadline: '', ageGroup: '전체', visibility: '전체 공개', questions: [blankQuestion()] })
   const [aiPrompt, setAiPrompt] = useState(initialPrompt)
   const [aiStep, setAiStep] = useState(0)
   const [aiPurpose, setAiPurpose] = useState(initialPrompt)
@@ -90,7 +90,7 @@ export default function SurveyCreate() {
     event?.preventDefault()
     const validationMessage = validateSurvey({ title: form.title, questions: form.questions, targetCount: form.targetCount })
     if (validationMessage) return setMessage(validationMessage)
-    const payload = { title: form.title, description: form.description, category: form.category, target_count: Number(form.targetCount), estimated_minutes: Number(form.estimatedMinutes), questions: form.questions.filter((question) => question.title.trim()), audience: form.ageGroup === '전체' ? {} : { age_groups: [form.ageGroup] }, visibility: form.visibility }
+    const payload = { title: form.title, description: form.description, category: form.category, target_count: Number(form.targetCount), estimated_minutes: Number(form.estimatedMinutes), deadline: form.deadline || null, questions: form.questions.filter((question) => question.title.trim()), audience: form.ageGroup === '전체' ? {} : { age_groups: [form.ageGroup] }, visibility: form.visibility }
     try { setSubmitting(true); await createSurvey(payload); navigate('/surveys') } catch (error) { setMessage(error.message) } finally { setSubmitting(false) }
   }
 

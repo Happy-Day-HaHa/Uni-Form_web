@@ -4,6 +4,20 @@ import ResultOverview from '../components/result/ResultOverview'
 import ServiceShell from '../components/ServiceShell'
 import { useAuth } from '../hooks/useAuth'
 import { getOwnedSurveyResults } from '../services/responseService'
+import { downloadAllCharts, downloadQuestionChart, isChartable } from '../utils/chartExport'
+
+const PIE_COLORS = ['#397ff1', '#78adf9', '#59cfb4', '#60c4c4', '#9468e8', '#f2994a', '#eb5757', '#56ccf2', '#bb6bd9', '#27ae60']
+
+function buildConicGradient(counts, total) {
+  if (!total) return '#eef1f6'
+  let cursor = 0
+  const stops = counts.map((item, index) => {
+    const start = cursor
+    cursor += (item.count / total) * 100
+    return `${PIE_COLORS[index % PIE_COLORS.length]} ${start}% ${cursor}%`
+  })
+  return `conic-gradient(${stops.join(',')})`
+}
 
 function valuesFor(question, responses) {
   return responses.flatMap((response) => {
@@ -15,7 +29,7 @@ function valuesFor(question, responses) {
 
 function analyzeQuestion(question, responses) {
   const values = valuesFor(question, responses)
-  if (String(question.type).includes('text')) return { type: 'text', values }
+  if (question.type === 'text' || question.type === 'long') return { type: 'text', values }
   const options = question.type === 'scale'
     ? Array.from({ length: Number(question.max || 5) - Number(question.min || 1) + 1 }, (_, index) => Number(question.min || 1) + index)
     : question.options || []
@@ -39,7 +53,17 @@ function ResultState({ code, onRetry, surveyId }) {
 }
 
 function QuestionAnalysis({ question, analysis, index, compact = false }) {
-  return <article className={`result-analysis ${compact ? 'result-analysis--compact' : ''}`}><header><span>Q{index + 1}</span><div><h2>{question.title}</h2><p>{analysis.values.length.toLocaleString()}개 응답{analysis.average !== null ? ` · 평균 ${analysis.average.toFixed(1)} / ${question.max || 5}` : ''}</p></div></header>{analysis.type === 'text' ? <div className="result-text-list">{analysis.values.slice(0, compact ? 3 : 8).map((answer, answerIndex) => <p key={`${question.id}-${answerIndex}`}>{answer}</p>)}</div> : <div className="result-bars">{analysis.counts.map(({ option, count }) => { const percent = analysis.values.length ? Math.round((count / analysis.values.length) * 100) : 0; return <div key={option}><span>{option}</span><i><b style={{ '--bar': `${percent}%` }} /></i><strong>{percent}%</strong><small>{count}명</small></div>})}</div>}</article>
+  const total = analysis.values.length
+  return <article className={`result-analysis ${compact ? 'result-analysis--compact' : ''}`}>
+    <header><span>Q{index + 1}</span><div><h2>{question.title}</h2><p>{total.toLocaleString()}개 응답{analysis.average !== null ? ` · 평균 ${analysis.average.toFixed(1)} / ${question.max || 5}` : ''}</p></div>{isChartable(question) && <button className="result-analysis__png" type="button" onClick={() => downloadQuestionChart(question, analysis, index)}>PNG 다운로드</button>}</header>
+    {analysis.type === 'text' ? <div className="result-text-list">{analysis.values.slice(0, compact ? 3 : 8).map((answer, answerIndex) => <p key={`${question.id}-${answerIndex}`}>{answer}</p>)}</div>
+      : question.type === 'single' ? <div className="result-pie-wrap">
+          <div className="result-pie" style={{ background: buildConicGradient(analysis.counts, total) }}><span>{total}<small>응답</small></span></div>
+          <ul className="result-pie-legend">{analysis.counts.map((item, colorIndex) => <li key={item.option} style={{ '--tone': PIE_COLORS[colorIndex % PIE_COLORS.length] }}><i />{item.option}<b>{total ? Math.round((item.count / total) * 100) : 0}%</b></li>)}</ul>
+        </div>
+      : question.type === 'scale' ? <div className="result-vbars">{analysis.counts.map((item) => { const percent = total ? Math.round((item.count / total) * 100) : 0; return <div key={item.option}><i style={{ '--bar': `${percent}%` }} /><b>{item.option}</b><small>{item.count}명</small></div> })}</div>
+      : <div className="result-bars">{analysis.counts.map(({ option, count }) => { const percent = total ? Math.round((count / total) * 100) : 0; return <div key={option}><span>{option}</span><i><b style={{ '--bar': `${percent}%` }} /></i><strong>{percent}%</strong><small>{count}명</small></div> })}</div>}
+  </article>
 }
 
 export default function SurveyResults() {
@@ -70,19 +94,6 @@ export default function SurveyResults() {
     navigator.clipboard.writeText(url).then(() => setToast('설문 링크를 복사했습니다.')).catch(() => setToast('주소창의 링크를 복사해주세요.'))
   }
 
-  function downloadCsv() {
-    const { survey, responses } = state.result
-    const questions = survey.questions || []
-    const escape = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`
-    const rows = [['응답 번호', '응답 일시', ...questions.map((question) => question.title)], ...responses.map((response, index) => [index + 1, response.created_at || '', ...questions.map((question) => Array.isArray(response.answers?.[question.id]) ? response.answers[question.id].join(', ') : response.answers?.[question.id] || '')])]
-    const blob = new Blob([`\ufeff${rows.map((row) => row.map(escape).join(',')).join('\n')}`], { type: 'text/csv;charset=utf-8' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `${survey.title}-응답.csv`
-    link.click()
-    URL.revokeObjectURL(link.href)
-  }
-
   if (state.status === 'loading') return <ServiceShell activePath="/reports"><ResultSkeleton /></ServiceShell>
   if (state.status === 'error') return <ServiceShell activePath="/reports"><ResultState code={state.error?.code} onRetry={load} surveyId={surveyId} /></ServiceShell>
 
@@ -98,7 +109,7 @@ export default function SurveyResults() {
 
   return <ServiceShell activePath="/reports"><div className="result-dashboard">
     <Link className="result-dashboard__back" to="/my-surveys">← 내 설문으로 돌아가기</Link>
-    <header className="result-dashboard__header"><div><div className="result-dashboard__title"><span>▥</span><div><h1>{survey.title}</h1><p>{survey.description}</p></div></div><ul><li>목표 응답 {target.toLocaleString()}명</li><li>상태 {survey.status === 'active' ? '진행 중' : '종료'}</li><li>문항 {questions.length}개</li></ul></div><div><button className="result-action" type="button" onClick={share}>공유하기</button>{responses.length > 0 && <button className="result-action result-action--primary" type="button" onClick={downloadCsv}>CSV 다운로드</button>}</div></header>
+    <header className="result-dashboard__header"><div><div className="result-dashboard__title"><span>▥</span><div><h1>{survey.title}</h1><p>{survey.description}</p></div></div><ul><li>목표 응답 {target.toLocaleString()}명</li><li>상태 {survey.status === 'active' ? '진행 중' : '종료'}</li><li>문항 {questions.length}개</li></ul></div><div><button className="result-action" type="button" onClick={share}>공유하기</button>{responses.length > 0 && questions.some(isChartable) && <button className="result-action result-action--primary" type="button" onClick={() => downloadAllCharts(survey.title, questions, analyses)}>전체 그래프 다운로드</button>}</div></header>
 
     {responses.length === 0 ? <section className="result-empty"><span>◎</span><h2>아직 응답이 없어요.</h2><p>설문을 공유하면 첫 응답을 받을 수 있습니다.</p><button className="ui-button" type="button" onClick={share}>설문 공유하기</button></section> : <>
       <ResultOverview survey={survey} sampleCount={responses.length} completionRate={completionRate} summary={summary} />

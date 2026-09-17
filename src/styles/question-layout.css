@@ -32,10 +32,37 @@
   word-break: keep-all;
 }
 
+.question__optional-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: #eef1f6;
+  color: #66748d;
+  font-size: 0.6rem;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
 .question .option-grid,
 .question .scale-grid,
-.question textarea {
+.question textarea,
+.question input[type="text"] {
   margin-top: 0;
+}
+
+.question input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--saas-line, var(--line));
+  border-radius: 9px;
+  outline: none;
+  transition: border-color 180ms ease-out, box-shadow 180ms ease-out;
+}
+
+.question input[type="text"]:focus {
+  border-color: var(--saas-blue, #2957ff);
+  box-shadow: 0 0 0 3px rgba(41, 87, 255, 0.1);
 }
 
 @media (max-width: 650px) {
