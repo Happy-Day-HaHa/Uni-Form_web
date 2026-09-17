@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { sites } from '@openai/sites-vite-plugin'
-import { copyFile, mkdir } from 'node:fs/promises'
+import { copyFile, cp, mkdir, readdir } from 'node:fs/promises'
 
 const sitesWorker = () => ({
   name: 'sites-worker-entry',
@@ -18,6 +18,12 @@ const sitesWorker = () => ({
       'index-T0hXYRDC.css',
       'index-B1lMb0OH.css',
     ].map((file) => copyFile('dist/client/assets/index.css', `dist/client/assets/${file}`)))
+
+    // Cloudflare Pages' configured output directory is "dist", not "dist/client",
+    // so mirror the client build up a level. Keeps SPA fallback (_redirects) and
+    // static assets resolvable regardless of which directory Cloudflare actually reads.
+    const clientEntries = await readdir('dist/client')
+    await Promise.all(clientEntries.map((entry) => cp(`dist/client/${entry}`, `dist/${entry}`, { recursive: true })))
   },
 })
 
