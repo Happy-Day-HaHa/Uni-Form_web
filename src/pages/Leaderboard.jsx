@@ -28,32 +28,49 @@ export default function Leaderboard() {
   return <ServiceShell activePath="/leaderboard"><div ref={rootRef}>
     <ServiceHeading icon="♛" title="응답 횟수 리더보드" description={`이번 주 ${data.week.rangeLabel} · ${data.week.remainingLabel}`} />
 
-    <section className="leaderboard-meta" data-motion-reveal>
-      <article><span>이번 주 보상</span><strong>{data.reward}</strong></article>
-      <article><span>지난주 내 순위</span><strong>{data.lastWeekRank ? `${data.lastWeekRank}위` : '기록 없음'}</strong></article>
-      <article><span>집계 기준</span><strong>설문 응답 1건 = 1점</strong></article>
-    </section>
+    <div className="leaderboard-layout">
+      <div className="leaderboard-main">
+        <section className="podium" aria-label="이번 주 TOP 3" data-motion-reveal>
+          <p className="podium__caption">더 많은 참여가 더 나은 변화를 만듭니다. 가장 활발히 참여한 유저들을 만나보세요.</p>
+          <div className="podium__row">
+            <div className="podium__slot podium__slot--second"><div className="podium__avatar podium__avatar--silver">{second.nickname[0]}</div><b>{second.nickname}</b><span>{second.score}회</span><div className="podium__bar podium__bar--silver"><em>2</em></div></div>
+            <div className="podium__slot podium__slot--first"><span className="podium__crown" aria-hidden="true">♛</span><div className="podium__avatar podium__avatar--gold">{first.nickname[0]}</div><b>{first.nickname}</b><span>{first.score}회</span><div className="podium__bar podium__bar--gold"><em>1</em></div></div>
+            <div className="podium__slot podium__slot--third"><div className="podium__avatar podium__avatar--bronze">{third.nickname[0]}</div><b>{third.nickname}</b><span>{third.score}회</span><div className="podium__bar podium__bar--bronze"><em>3</em></div></div>
+          </div>
+        </section>
 
-    <section className="podium" aria-label="TOP 3" data-motion-reveal>
-      <div className="podium__slot podium__slot--second"><div className="podium__avatar">{second.nickname[0]}</div><b>{second.nickname}</b><span>{second.score}점</span><div className="podium__bar podium__bar--silver">2</div></div>
-      <div className="podium__slot podium__slot--first"><span className="podium__crown" aria-hidden="true">♛</span><div className="podium__avatar">{first.nickname[0]}</div><b>{first.nickname}</b><span>{first.score}점</span><div className="podium__bar podium__bar--gold">1</div></div>
-      <div className="podium__slot podium__slot--third"><div className="podium__avatar">{third.nickname[0]}</div><b>{third.nickname}</b><span>{third.score}점</span><div className="podium__bar podium__bar--bronze">3</div></div>
-    </section>
+        <section className="leaderboard-list ui-card" data-motion-reveal>
+          <header><h2>4 ~ 50위 랭킹</h2><span>{data.entries.length}명 참여 중</span></header>
+          <div className="leaderboard-table__head"><span>순위</span><span>닉네임</span><span>응답 횟수</span><span>최근 활동일</span></div>
+          <div className="leaderboard-rows">{rest.map((entry) => <div className={`leaderboard-row ${data.me?.rank === entry.rank ? 'is-me' : ''}`} key={entry.rank}><span>{entry.rank}</span><b>{entry.nickname}</b><strong>{entry.score}회</strong><time>{entry.lastActiveLabel}</time></div>)}</div>
+        </section>
+      </div>
 
-    <section className="leaderboard-list ui-card" data-motion-reveal>
-      <header><h2>4 ~ 50위</h2></header>
-      <div className="leaderboard-rows">{rest.map((entry) => <div className={`leaderboard-row ${data.me?.rank === entry.rank ? 'is-me' : ''}`} key={entry.rank}><span>{entry.rank}</span><b>{entry.nickname}</b><strong>{entry.score}점</strong></div>)}</div>
-    </section>
+      <aside className="leaderboard-aside">
+        <article className="board-card board-card--reward" data-motion-reveal>
+          <h2>보상 안내</h2>
+          <p>매주 가장 많은 설문에 참여한 상위 3명에게 소정의 상품을 드립니다.</p>
+          <ul className="reward-tiers">{data.rewards.map((item) => <li key={item.rank}><span className={`reward-tiers__rank reward-tiers__rank--${item.rank}`}>{item.rank}</span><b>{item.label}</b></li>)}</ul>
+        </article>
 
-    <section className={`my-rank ui-card ${!data.me ? 'my-rank--empty' : ''}`} data-motion-reveal>
-      {data.me ? <>
-        <div><span>내 순위</span><strong>{data.me.rank}위</strong></div>
-        <div><span>이번 주 점수</span><strong>{data.me.score}점</strong></div>
-        <div><span>바로 위와 점수 차이</span><strong>{data.me.gapToAbove === null ? '전체 1위' : data.me.gapToAbove > 0 ? `${data.me.gapToAbove}점` : '공동 순위'}</strong></div>
-      </> : <>
-        <p>이번 주 첫 응답을 해보세요.</p>
-        <Link className="ui-button" to="/surveys">설문 참여하러 가기 →</Link>
-      </>}
-    </section>
+        <article className="board-card" data-motion-reveal>
+          <h2>운영 기준</h2>
+          <ul className="policy-list">{data.policyNotes.map((note) => <li key={note}>{note}</li>)}</ul>
+        </article>
+
+        <article className={`board-card board-card--me ${!data.me ? 'board-card--empty' : ''}`} data-motion-reveal>
+          <h2>내 순위</h2>
+          {data.me ? <>
+            <strong className="board-card__rank">{data.me.rank}위</strong>
+            <p>이번 주 총 <b>{data.me.score}회</b> 참여했어요!</p>
+            <span className="board-card__gap">{data.me.gapToAbove === null ? '전체 1위' : data.me.gapToAbove > 0 ? `바로 위와 ${data.me.gapToAbove}회 차이` : '공동 순위'}</span>
+            <small>지난주 순위: {data.lastWeekRank ? `${data.lastWeekRank}위` : '기록 없음'}</small>
+          </> : <>
+            <p>이번 주 첫 응답을 해보세요.</p>
+            <Link className="ui-button" to="/surveys">설문 참여하러 가기 →</Link>
+          </>}
+        </article>
+      </aside>
+    </div>
   </div></ServiceShell>
 }
