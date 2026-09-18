@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import FormMatePanel from '../components/formmate/FormMatePanel'
+import FormMateSurveyEditor from '../components/formmate/FormMateSurveyEditor'
 import Modal from '../components/Modal'
 import ServiceShell from '../components/ServiceShell'
-import SurveyEditorPanel from '../components/survey/SurveyEditorPanel'
 import { createSurvey } from '../services/surveyService'
 import { validateSurvey } from '../utils/validation'
 
@@ -123,7 +123,7 @@ export default function SurveyCreate() {
       <FormMatePanel value={aiPrompt} onChange={setAiPrompt} onSend={handleAgentSend} onUndo={() => { const previous = history.at(-1); if (previous) { setForm(previous); setHistory((past) => past.slice(0, -1)); setAiMessage('마지막 변경을 되돌렸어요.') } }} canUndo={history.length > 0} selectedLabel={selectedQuestionId ? `Q${form.questions.findIndex((item) => item.id === selectedQuestionId) + 1} 선택됨` : ''} messages={aiMessages} message={aiMessage} applying={applying} suggestions={aiStep === 0 ? [] : aiStep === 1 ? ['대학생 전체', '20대 이용자'] : aiStep === 2 ? ['5분 정도', '3분 이내'] : ['개선 의견도 추가해줘.']} draftSummary={aiStep > 0 ? { title: form.title, count: form.questions.length, minutes: form.estimatedMinutes, onOpen: () => setEditMode(false) } : null} />
       <section className={`formmate-survey-panel ${editMode ? 'is-editing' : ''}`}>
         <header><div><h2>{editMode ? '설문 편집' : '미리보기'}</h2>{editMode && <span>● 편집 모드</span>}</div><button type="button" onClick={() => setEditMode((value) => !value)}>{editMode ? '× 편집 취소하기' : '◇ 수정하기'}</button></header>
-        <div className="formmate-survey-panel__content">{editMode ? <SurveyEditorPanel form={form} onChange={(patch) => commitForm(patch)} onQuestionChange={(id, patch) => { const current = form.questions.find((item) => item.id === id); updateQuestion(id, patch.type && patch.type !== current.type ? { ...blankQuestion(patch.type), id, title: current.title } : patch) }} onAddQuestion={() => commitForm((current) => ({ ...current, questions: [...current.questions, blankQuestion('single')] }))} onDeleteQuestion={(id) => commitForm((current) => ({ ...current, questions: current.questions.filter((item) => item.id !== id) }))} selectedQuestionId={selectedQuestionId} onSelectQuestion={setSelectedQuestionId} aiApplied={aiStep > 0} /> : <FormMatePreview form={form} />}</div>
+        <div className="formmate-survey-panel__content">{editMode ? <FormMateSurveyEditor form={form} onChange={(patch) => commitForm(patch)} onQuestionChange={(id, patch) => { const current = form.questions.find((item) => item.id === id); updateQuestion(id, patch.type && patch.type !== current.type ? { ...blankQuestion(patch.type), id, title: current.title, required: current.required } : patch) }} onAddQuestion={() => commitForm((current) => ({ ...current, questions: [...current.questions, blankQuestion('single')] }))} onDeleteQuestion={(id) => commitForm((current) => ({ ...current, questions: current.questions.filter((item) => item.id !== id) }))} selectedQuestionId={selectedQuestionId} onSelectQuestion={setSelectedQuestionId} /> : <FormMatePreview form={form} />}</div>
         {message && <p className="form-message form-message--error">{message}</p>}
         <footer><span>{saveStatus}</span><div><button className="ui-button ui-button--secondary" type="button">⇩ 임시 저장</button>{editMode ? <button className="ui-button" type="button" onClick={() => setEditMode(false)}>✓ 수정 완료</button> : <button className="ui-button" type="button" onClick={() => setPreviewOpen(true)}>✓ 설문 등록하기</button>}</div></footer>
       </section>

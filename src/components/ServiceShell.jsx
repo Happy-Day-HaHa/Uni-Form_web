@@ -15,7 +15,6 @@ const navItems = [
   ['/surveys', '▣', '설문 목록'],
   ['/reports', '▥', '결과 보고서'],
   ['/settings', '⚙', '설정'],
-  ['/admin', '◆', '관리자'],
 ]
 
 const notifications = [
@@ -88,7 +87,7 @@ export default function ServiceShell({ children, activePath }) {
     <button className="service-drawer-backdrop" type="button" aria-label="메뉴 닫기" onClick={() => setMobileOpen(false)} />
     <aside className="service-sidebar" aria-label="서비스 사이드바">
       <Link className="service-sidebar__brand" to="/"><BrandMark /></Link>
-      <nav aria-label="서비스 메뉴">{navItems.map(([to, icon, label], index) => <div key={to} className={index === 1 || to === '/admin' ? 'service-nav-break' : ''}><NavLink to={to} title={collapsed ? label : undefined} onClick={() => setMobileOpen(false)} className={({ isActive }) => (isActive || activePath === to) ? 'active' : ''}><span aria-hidden="true">{icon}</span><b>{label}</b>{index === 0 && <i>›</i>}</NavLink></div>)}</nav>
+      <nav aria-label="서비스 메뉴">{navItems.map(([to, icon, label], index) => <div key={to} className={index === 1 ? 'service-nav-break' : ''}><NavLink to={to} title={collapsed ? label : undefined} onClick={() => setMobileOpen(false)} className={({ isActive }) => (isActive || activePath === to) ? 'active' : ''}><span aria-hidden="true">{icon}</span><b>{label}</b>{index === 0 && <i>›</i>}</NavLink></div>)}</nav>
       <section className="service-recent" aria-label="최근 작업">
         <header><span>최근 작업</span><Link to="/formmate?new=true" aria-label="FormMate 새 작업 시작">＋</Link></header>
         <div>{recent.length ? recent.map((survey, index) => <Link key={survey.id} to={`/my-surveys?survey=${survey.id}`} title={survey.title}><span>▤</span><p><b>{survey.title}</b><small>{relativeTime(survey.updated_at || survey.created_at, index)}</small></p></Link>) : <p className="service-recent__empty">최근 작업이 없습니다.</p>}</div>
