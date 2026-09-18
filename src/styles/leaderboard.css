@@ -77,3 +77,6 @@
   .leaderboard-row{grid-template-columns:32px minmax(0,1fr) auto}
   .leaderboard-row time{display:none}
 }
+
+/* Minimal leaderboard */
+.podium,.leaderboard-list,.board-card{border-radius:10px}.podium__avatar{border-radius:8px;background:#f7fafc}.podium__avatar--gold{border-color:#e7c766;background:#fffdf5}.podium__avatar--silver{border-color:#cbd1d9;background:#fafbfc}.podium__avatar--bronze{border-color:#d8b99f;background:#fffaf6}.podium__bar{border-radius:7px 7px 0 0}.podium__bar--gold{background:#d9b84c}.podium__bar--silver{background:#aeb7c3}.podium__bar--bronze{background:#bd8a62}.reward-tiers li{border-radius:7px}.reward-tiers__rank{border-radius:6px}

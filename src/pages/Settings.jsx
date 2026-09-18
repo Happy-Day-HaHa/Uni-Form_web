@@ -5,7 +5,7 @@ import ServiceShell, { ServiceHeading } from '../components/ServiceShell'
 import { useAuth } from '../hooks/useAuth'
 import { getProfile, saveProfile } from '../services/userService'
 
-const tabs = [['account', '계정 정보'], ['notifications', '알림 설정'], ['personal', '개인화 설정'], ['service', '서비스 설정'], ['integrations', '연동 서비스'], ['data', '데이터 관리']]
+const tabs = [['account', '계정 및 보안'], ['notifications', '알림'], ['data', '데이터 관리']]
 const noticeRows = [['email', '이메일 알림', '설문 참여, 결과 완료 등 주요 알림을 이메일로 받습니다.'], ['push', '푸시 알림', '서비스 내 알림을 실시간으로 받습니다.'], ['marketing', '마케팅 알림', '새로운 기능, 이벤트, 유용한 팁을 받아보세요.']]
 
 export default function Settings() {

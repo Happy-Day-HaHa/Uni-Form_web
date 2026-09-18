@@ -36,7 +36,7 @@ export default function Signup() {
   }
 
   return <AuthLayout mode="signup">
-    <div className="auth-saas__title"><span>◎</span><div><h1>회원가입</h1><p>대학(원)생을 위한 설문 플랫폼, UniForm을 시작하세요.</p></div></div>
+    <div className="auth-saas__title"><div><h1>회원가입</h1><p>대학(원)생을 위한 설문 플랫폼, UniForm을 시작하세요.</p></div></div>
     {!isSupabaseConfigured && <div className="demo-note">데모 모드에서는 입력 없이도 전체 화면을 체험할 수 있습니다.</div>}
     <form className="form-stack" onSubmit={handleSubmit}>
       <label>닉네임<input value={form.nickname} onChange={(event) => setForm({ ...form, nickname: event.target.value })} placeholder="2~12자, 한글/영문/숫자" maxLength={12} required={isSupabaseConfigured} /></label>
@@ -54,7 +54,6 @@ export default function Signup() {
       {message && <p className="form-message form-message--error">{message}</p>}
       <button className="button button--block" disabled={submitting}>{submitting ? '가입 중...' : isSupabaseConfigured ? '회원가입' : '데모 시작하기'}</button>
     </form>
-    <div className="auth-saas__divider"><span>또는</span></div>
     <p className="auth-card__footer">이미 계정이 있나요? <Link to="/login">로그인</Link></p>
   </AuthLayout>
 }

@@ -91,16 +91,11 @@ export default function SurveyList() {
     <ServiceShell activePath="/surveys">
       <div className="catalog-content catalog-content--service" ref={listRef}>
           <section className="catalog-heading" data-catalog-reveal>
-            <div className="catalog-heading__icon" aria-hidden="true">▤</div>
             <div><h1>설문 목록</h1><p>{user ? '나와 잘 맞는 설문을 확인하고 바로 참여해보세요.' : '참여 가능한 설문을 확인하고 간편하게 시작해보세요.'}</p></div>
             <Link className="ui-button catalog-heading__action" to="/formmate">새 설문 만들기</Link>
           </section>
 
-          <section className="catalog-summary" aria-label="설문 요약">
-            <article data-catalog-reveal style={{ '--catalog-delay': '40ms' }}><span className="catalog-summary__mark">◎</span><div><small>참여 가능한 설문</small><strong>{available}<em>개</em></strong><p>지금 바로 참여할 수 있어요.</p></div></article>
-            <article data-catalog-reveal style={{ '--catalog-delay': '100ms' }}><span className="catalog-summary__mark catalog-summary__mark--violet">N</span><div><small>새로 올라온 설문</small><strong>{Math.min(surveys.length, 3)}<em>개</em></strong><p>새로운 의견을 기다리고 있어요.</p></div></article>
-            <article data-catalog-reveal style={{ '--catalog-delay': '160ms' }}><span className="catalog-summary__mark catalog-summary__mark--mint">⌁</span><div><small>평균 예상 소요시간</small><strong>{averageMinutes}<em>분</em></strong><p>부담 없이 빠르게 참여하세요.</p></div></article>
-          </section>
+          <p className="catalog-overview" data-catalog-reveal>참여 가능한 설문 <b>{available}개</b><span>평균 소요시간 {averageMinutes}분</span></p>
 
           <div data-catalog-reveal><SurveyFilters query={query} onQueryChange={setQuery} category={category} onCategoryChange={setCategory} sort={sort} onSortChange={setSort} duration={duration} onDurationChange={setDuration} /></div>
 

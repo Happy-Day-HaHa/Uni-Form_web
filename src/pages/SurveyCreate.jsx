@@ -9,13 +9,6 @@ import { validateSurvey } from '../utils/validation'
 
 const blankQuestion = (type = 'text') => ({ id: crypto.randomUUID(), title: '', type, required: true, options: (type === 'single' || type === 'multiple') ? ['선택 1', '선택 2'] : [], ...(type === 'scale' ? { min: 1, max: 5 } : {}) })
 const initialMessages = [{ role: 'assistant', text: '안녕하세요! 저는 FormMate입니다.\n어떤 설문을 만들어볼까요?' }]
-const featureItems = [
-  ['◎', '그냥 말로 작성', '자연어로 설문 주제 입력'],
-  ['✦', '맞춤형 문항 제안', '목적에 맞는 문항 구성'],
-  ['◇', '쉽게 수정 가능', '대화로 간편하게 수정'],
-  ['▥', '바로 게시', '완성 후 즉시 등록'],
-]
-
 function FormMatePreview({ form }) {
   const examples = [
     { id: 'example-1', title: '현재 학년을 선택해주세요.', type: 'single', options: ['1학년', '2학년', '3학년', '4학년', '대학원생'] },
@@ -117,8 +110,7 @@ export default function SurveyCreate() {
   }
 
   return <ServiceShell activePath="/formmate"><div className="create-saas formmate-page motion-page">
-    <header className="formmate-hero"><div><span>AI 설문 도우미</span><h1>FormMate</h1><p>대화하듯, 원하는 설문을 만들어보세요.</p></div><strong>당신의 아이디어를,<br />설문으로 만들어주는 AI</strong></header>
-    <section className="formmate-benefits" aria-label="FormMate 주요 기능">{featureItems.map(([icon, title, copy]) => <article key={title}><span>{icon}</span><div><b>{title}</b><p>{copy}</p></div></article>)}</section>
+    <header className="formmate-page-title"><h1>설문 만들기</h1><p>FormMate와 대화하면서 질문을 만들고 바로 수정하세요.</p></header>
     <section className="create-saas__workspace formmate-workspace">
       <FormMatePanel value={aiPrompt} onChange={setAiPrompt} onSend={handleAgentSend} onUndo={() => { const previous = history.at(-1); if (previous) { setForm(previous); setHistory((past) => past.slice(0, -1)); setAiMessage('마지막 변경을 되돌렸어요.') } }} canUndo={history.length > 0} selectedLabel={selectedQuestionId ? `Q${form.questions.findIndex((item) => item.id === selectedQuestionId) + 1} 선택됨` : ''} messages={aiMessages} message={aiMessage} applying={applying} suggestions={aiStep === 0 ? [] : aiStep === 1 ? ['대학생 전체', '20대 이용자'] : aiStep === 2 ? ['5분 정도', '3분 이내'] : ['개선 의견도 추가해줘.']} draftSummary={aiStep > 0 ? { title: form.title, count: form.questions.length, minutes: form.estimatedMinutes, onOpen: () => setEditMode(false) } : null} />
       <section className={`formmate-survey-panel ${editMode ? 'is-editing' : ''}`}>

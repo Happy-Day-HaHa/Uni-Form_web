@@ -34,7 +34,7 @@ export default function Leaderboard() {
           <p className="podium__caption">더 많은 참여가 더 나은 변화를 만듭니다. 가장 활발히 참여한 유저들을 만나보세요.</p>
           <div className="podium__row">
             <div className="podium__slot podium__slot--second"><div className="podium__avatar podium__avatar--silver">{second.nickname[0]}</div><b>{second.nickname}</b><span>{second.score}회</span><div className="podium__bar podium__bar--silver"><em>2</em></div></div>
-            <div className="podium__slot podium__slot--first"><span className="podium__crown" aria-hidden="true">♛</span><div className="podium__avatar podium__avatar--gold">{first.nickname[0]}</div><b>{first.nickname}</b><span>{first.score}회</span><div className="podium__bar podium__bar--gold"><em>1</em></div></div>
+            <div className="podium__slot podium__slot--first"><div className="podium__avatar podium__avatar--gold">{first.nickname[0]}</div><b>{first.nickname}</b><span>{first.score}회</span><div className="podium__bar podium__bar--gold"><em>1</em></div></div>
             <div className="podium__slot podium__slot--third"><div className="podium__avatar podium__avatar--bronze">{third.nickname[0]}</div><b>{third.nickname}</b><span>{third.score}회</span><div className="podium__bar podium__bar--bronze"><em>3</em></div></div>
           </div>
         </section>

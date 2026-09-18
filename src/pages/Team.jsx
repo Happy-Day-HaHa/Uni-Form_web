@@ -63,7 +63,6 @@ export default function Team() {
     return <ServiceShell activePath="/team"><div ref={rootRef}>
       <ServiceHeading icon="⌘" title="팀 관리" description="팀장 포함 최대 6명까지, 함께 설문을 만들고 관리할 수 있어요." />
       <section className="team-empty ui-card" data-motion-reveal>
-        <span>⌘</span>
         <h2>아직 소속된 팀이 없어요.</h2>
         <p>팀을 만들면 팀원을 초대해 설문을 함께 제작할 수 있습니다.</p>
         <form onSubmit={handleCreate}>
@@ -84,7 +83,6 @@ export default function Team() {
     <section className="team-members ui-card" data-motion-reveal>
       <header><h2>팀원</h2><span>{team.members.length}/{MAX_TEAM_SIZE}명</span></header>
       <div className="team-member-rows">{team.members.map((member) => <div className="team-member-row" key={member.id}>
-        <span className="team-member-avatar">{member.nickname[0]}</span>
         <div><b>{member.nickname}</b>{member.isLeader && <em className="team-badge team-badge--leader">팀장</em>}{member.isEditing && <em className="team-badge team-badge--editing">● {member.nickname}님이 편집 중</em>}</div>
         {isLeader && !member.isLeader && <button className="mini-button mini-button--danger" type="button" onClick={() => setRemoveTarget(member)}>내보내기</button>}
       </div>)}</div>
@@ -93,7 +91,7 @@ export default function Team() {
     <section className="team-drafts ui-card" data-motion-reveal>
       <header><h2>팀 초안</h2></header>
       <div className="managed-list">{team.drafts.map((draft) => <article className="managed-row" key={draft.id}>
-        <div className="managed-row__title"><span className="service-tone--violet">◇</span><div><h2>{draft.title}</h2><small>마지막 수정 {draft.updatedBy} · {relativeTime(draft.updatedAt)}</small></div></div>
+        <div className="managed-row__title"><div><h2>{draft.title}</h2><small>마지막 수정 {draft.updatedBy} · {relativeTime(draft.updatedAt)}</small></div></div>
         <div className="managed-actions"><Link className="ui-button ui-button--secondary" to="/formmate">이어서 작성</Link></div>
       </article>)}{!team.drafts.length && <p className="team-empty-row">진행 중인 초안이 없어요.</p>}</div>
     </section>
@@ -103,7 +101,7 @@ export default function Team() {
       <div className="managed-list">{team.surveys.map((survey) => {
         const progress = Math.min(100, Math.round((survey.response_count / Math.max(1, survey.target_count)) * 100))
         return <article className="managed-row" key={survey.id}>
-          <div className="managed-row__title"><span className="service-tone--blue">▤</span><div><h2>{survey.title}</h2><small>마감 {survey.deadline} · 마지막 수정 {survey.updatedBy} · {relativeTime(survey.updatedAt)}</small></div></div>
+          <div className="managed-row__title"><div><h2>{survey.title}</h2><small>마감 {survey.deadline} · 마지막 수정 {survey.updatedBy} · {relativeTime(survey.updatedAt)}</small></div></div>
           <div className="managed-progress"><span>{survey.response_count.toLocaleString()} / {survey.target_count.toLocaleString()}명 <b>{progress}%</b></span><div><i style={{ '--progress': `${progress}%` }} /></div></div>
           <div className="managed-actions"><Link className="managed-primary" to={`/surveys/${survey.id}/results`}>결과 보기</Link></div>
         </article>
