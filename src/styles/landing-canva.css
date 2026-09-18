@@ -18,3 +18,35 @@
 .uf-landing a.uf-button--primary{border-color:#40abfc;background:#40abfc;color:#fff;-webkit-text-fill-color:#fff}.uf-landing a.uf-button--primary:hover{border-color:#2498eb;background:#2498eb;color:#fff}.uf-landing a.uf-button--secondary{border-color:#d1d5db;background:#fff;color:#374151;-webkit-text-fill-color:#374151}.uf-landing a.uf-button--secondary:hover{border-color:#c4cad2;background:#f7fafc}.uf-landing a.uf-text-link{border-color:#8ed1ff;color:#168fda;-webkit-text-fill-color:#168fda}.uf-landing .uf-preview-button,.uf-landing .uf-chat-input button,.uf-landing .uf-survey-rows article>a{background:#40abfc;color:#fff}.uf-landing .uf-bar-chart i:nth-child(5),.uf-landing .uf-question-head i em,.uf-landing .uf-survey-rows article>div:nth-child(2)>i em{background:#40abfc}
 .uf-landing .uf-hero h1{max-width:none;font-family:'NoonnuBasicGothic','Pretendard','Noto Sans KR',sans-serif;font-size:clamp(1.7rem,6.2vw,4.8rem);font-weight:400;letter-spacing:-.045em;line-height:1.1;text-align:center;white-space:nowrap;text-wrap:nowrap}
 .uf-landing .uf-problem h2,.uf-landing .uf-process h2,.uf-landing .uf-feature__copy h2,.uf-landing .uf-final h2{font-family:'NoonnuBasicGothic','Pretendard','Noto Sans KR',sans-serif;font-weight:400;letter-spacing:-.045em}
+
+/* 2026 MVP landing content refinements */
+.uf-landing .uf-hero h1{max-width:920px;white-space:normal;text-wrap:balance}
+.uf-product-frame__bar small{padding:4px 8px;border:1px solid #d7eefe;border-radius:999px;background:#f1f9ff;color:#168fda;font-weight:700;letter-spacing:.02em}
+.uf-feature--team{background:var(--uf-soft)}
+.uf-feature--formmate{padding-top:104px;padding-bottom:104px;background:#fff}
+.uf-feature--formmate .uf-formmate-preview{min-height:400px}
+.uf-leaderboard-top{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:22px}
+.uf-leaderboard-top>div{display:grid;min-height:92px;align-content:center;padding:12px;border:1px solid #e2e5ea;border-radius:9px;background:#fff;text-align:center}
+.uf-leaderboard-top>div:nth-child(1){border-color:#e5c866;background:#fffdf5}
+.uf-leaderboard-top>div:nth-child(2){background:#fafbfc}
+.uf-leaderboard-top>div:nth-child(3){background:#fff9f4}
+.uf-leaderboard-top small{color:#667085;font-size:.52rem}
+.uf-leaderboard-top b{margin:8px 0 5px;font-size:.63rem}
+.uf-leaderboard-top strong{font-size:.78rem}
+.uf-leaderboard-preview .uf-leaderboard-head{margin-top:18px}
+.uf-leaderboard-preview .uf-rank-row{min-height:44px}
+.uf-leaderboard-note{display:grid;gap:4px;margin-top:16px;padding:13px;border-radius:8px;background:#f7fafc}
+.uf-leaderboard-note b{font-size:.59rem}
+.uf-leaderboard-note span,.uf-leaderboard-note small{color:#667085;font-size:.49rem}
+.uf-team-preview>header{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid var(--uf-line)}
+.uf-team-preview>header small{color:var(--uf-blue);font-size:.55rem;font-weight:800;letter-spacing:.13em}
+.uf-team-preview>header h3{margin:5px 0 0;font-size:1.17rem}
+.uf-team-preview>header>span{padding:7px 10px;border:1px solid var(--uf-line);border-radius:7px;color:#667085;font-size:.59rem}
+.uf-team-members{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:22px 0}
+.uf-team-members span{padding:12px;border:1px solid var(--uf-line);border-radius:8px;color:#344054;font-size:.62rem}
+.uf-team-activity{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-top:1px solid var(--uf-line);border-bottom:1px solid var(--uf-line);font-size:.58rem}
+.uf-team-activity span{color:#667085}
+.uf-team-preview>button{height:38px;margin-top:18px;padding:0 16px;border:0;border-radius:7px;background:var(--uf-blue);color:#fff;font:inherit;font-size:.58rem;font-weight:700}
+.uf-result-download{margin-top:14px;color:#168fda;font-size:.54rem;font-weight:700;text-align:right}
+@media(max-width:1040px){.uf-feature--team{grid-template-columns:1fr}}
+@media(max-width:720px){.uf-landing .uf-hero h1{font-size:clamp(2.45rem,12vw,3.35rem)}.uf-feature--formmate{padding-top:72px;padding-bottom:72px}.uf-leaderboard-top{grid-template-columns:1fr}.uf-team-members{grid-template-columns:1fr}}
