@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import BrandMark from './BrandMark'
 import '../styles/service-shell.css'
 
@@ -33,6 +33,7 @@ function useCountUp(value) {
 }
 
 export default function ServiceShell({ children, activePath }) {
+  const location = useLocation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('uniform-sidebar-collapsed') === '1')
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -54,7 +55,10 @@ export default function ServiceShell({ children, activePath }) {
     <button className="service-drawer-backdrop" type="button" aria-label="메뉴 닫기" onClick={() => setMobileOpen(false)} />
     <aside className="service-sidebar" aria-label="서비스 사이드바">
       <Link className="service-sidebar__brand" to="/"><BrandMark /></Link>
-      <nav aria-label="서비스 메뉴">{navItems.map(([to, label]) => <NavLink key={to} to={to} onClick={() => setMobileOpen(false)} className={({ isActive }) => (isActive || activePath === to) ? 'active' : ''}>{label}</NavLink>)}</nav>
+      <nav aria-label="서비스 메뉴">{navItems.map(([to, label]) => {
+        const currentPath = activePath || location.pathname
+        return <NavLink key={to} to={to} end onClick={() => setMobileOpen(false)} className={() => currentPath === to ? 'active' : ''}>{label}</NavLink>
+      })}</nav>
       <button className="service-sidebar__collapse" type="button" onClick={() => setCollapsed(true)}>사이드바 숨기기</button>
     </aside>
     <div className="service-stage"><header className="service-topbar"><button className="service-menu-button" type="button" aria-label="메뉴 열기" aria-expanded={mobileOpen || !collapsed} onClick={openMenu}>메뉴</button><Link className="service-mobile-brand" to="/"><BrandMark /></Link><Link className="service-help" to="/support">도움말</Link></header><main className="service-content motion-page">{children}</main></div>

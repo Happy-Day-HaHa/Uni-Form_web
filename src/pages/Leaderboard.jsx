@@ -10,6 +10,7 @@ export default function Leaderboard() {
   const { user } = useAuth()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
   const rootRef = useReveal([loading])
 
   useEffect(() => {
@@ -23,7 +24,10 @@ export default function Leaderboard() {
   }
 
   const [first, second, third] = data.entries
-  const rest = data.entries.slice(3, 50)
+  const pageSize = 10
+  const pageCount = Math.ceil(data.entries.length / pageSize)
+  const pageStart = (page - 1) * pageSize
+  const visibleEntries = data.entries.slice(pageStart, pageStart + pageSize)
 
   return <ServiceShell activePath="/leaderboard"><div ref={rootRef}>
     <ServiceHeading icon="♛" title="응답 횟수 리더보드" description={`이번 주 ${data.week.rangeLabel} · ${data.week.remainingLabel}`} />
@@ -40,9 +44,14 @@ export default function Leaderboard() {
         </section>
 
         <section className="leaderboard-list ui-card" data-motion-reveal>
-          <header><h2>4 ~ 50위 랭킹</h2><span>{data.entries.length}명 참여 중</span></header>
+          <header><h2>{pageStart + 1} ~ {Math.min(pageStart + pageSize, data.entries.length)}위 랭킹</h2><span>{data.entries.length}명 참여 중</span></header>
           <div className="leaderboard-table__head"><span>순위</span><span>닉네임</span><span>응답 횟수</span><span>최근 활동일</span></div>
-          <div className="leaderboard-rows">{rest.map((entry) => <div className={`leaderboard-row ${data.me?.rank === entry.rank ? 'is-me' : ''}`} key={entry.rank}><span>{entry.rank}</span><b>{entry.nickname}</b><strong>{entry.score}회</strong><time>{entry.lastActiveLabel}</time></div>)}</div>
+          <div className="leaderboard-rows">{visibleEntries.map((entry) => <div className={`leaderboard-row ${data.me?.rank === entry.rank ? 'is-me' : ''}`} key={entry.rank}><span>{entry.rank}</span><b>{entry.nickname}</b><strong>{entry.score}회</strong><time>{entry.lastActiveLabel}</time></div>)}</div>
+          <nav className="leaderboard-pagination" aria-label="리더보드 페이지">
+            <button type="button" disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>이전</button>
+            {Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => <button type="button" key={number} className={page === number ? 'is-current' : ''} aria-current={page === number ? 'page' : undefined} onClick={() => setPage(number)}>{number}</button>)}
+            <button type="button" disabled={page === pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>다음</button>
+          </nav>
         </section>
       </div>
 
