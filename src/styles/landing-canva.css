@@ -59,7 +59,7 @@
 .uf-landing .uf-hero{display:grid;width:min(100% - 48px,1240px);min-height:calc(100svh - 76px);grid-template-columns:minmax(340px,.78fr) minmax(0,1.22fr);align-items:center;gap:52px;padding:64px 0}
 .uf-landing .uf-hero__copy{max-width:480px;margin:0;text-align:left}
 .uf-landing .uf-hero h1{max-width:480px;margin:0;font-size:clamp(3.2rem,5vw,5.25rem);line-height:.98;text-align:left;white-space:normal}
-.uf-landing .uf-hero h1 em{color:#40abfc;font-style:normal}
+.uf-landing .uf-hero h1 em{display:inline;color:#40abfc;font-style:normal;transform:none}
 .uf-landing .uf-hero__copy>p{margin:24px 0 30px;font-size:.96rem;line-height:1.75}
 .uf-landing .uf-hero__actions{justify-content:flex-start}
 .uf-landing .uf-hero__product{width:100%;margin:0;text-align:left}

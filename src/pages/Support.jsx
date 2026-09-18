@@ -1,56 +1,60 @@
-import { useState } from 'react'
-import ServiceShell, { ServiceHeading } from '../components/ServiceShell'
+import { useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import BrandMark from '../components/BrandMark'
 import { SUPPORT_EMAIL } from '../constants'
-import { useReveal } from '../hooks/useReveal'
 import '../styles/support.css'
 
-const inquiryTypes = [
-  ['계정', '로그인, 회원가입, 비밀번호 관련 문의'],
-  ['설문 오류', '설문 제작·응답 중 발생한 오류 신고'],
-  ['신고', '부적절한 설문 또는 사용자 신고'],
-  ['제휴/기타', '제휴 제안, 그 외 문의'],
-]
-
+const categories = ['회원가입 / 로그인', '설문 제작', 'FormMate', '설문 참여', '리더보드', '팀 관리', '기타 문의']
 const faqItems = [
-  ['설문에 응답하면 어떻게 되나요?', '설문 응답 1건을 제출할 때마다 이번 주 응답 횟수 리더보드에 1점이 반영됩니다.'],
-  ['리더보드는 언제 초기화되나요?', '매주 월요일 00:00에 점수가 초기화되고 새로운 한 주가 시작됩니다.'],
-  ['보상은 어떻게 받나요?', '매주 TOP 10에게 안내된 보상이 지급됩니다. 순위 발표 후 등록된 이메일로 안내드려요.'],
-  ['점수가 같으면 순위는 어떻게 정하나요?', '동점일 경우 먼저 해당 점수에 도달한 사용자가 더 높은 순위로 표시됩니다.'],
-  ['UniForm은 어떤 서비스인가요?', '대학(원)생이 설문을 만들고, 응답하고, 결과를 확인하는 과정을 하나의 흐름으로 연결한 설문조사 플랫폼입니다.'],
+  ['회원가입 / 로그인', '로그인 상태가 유지되지 않아요.', '로그인 화면에서 ‘로그인 상태 유지’를 선택하면 다음 방문에도 세션이 유지됩니다. 공용 기기에서는 선택하지 않는 것을 권장합니다.'],
+  ['설문 제작', '만든 설문은 어디에서 관리하나요?', '내 설문에서 진행 상태와 응답 수를 확인하고 설문을 관리할 수 있습니다.'],
+  ['FormMate', 'FormMate가 만든 문항을 수정할 수 있나요?', '설문 미리보기의 수정하기를 누르면 제목, 설명, 질문 유형과 선택지를 직접 수정할 수 있습니다.'],
+  ['설문 참여', '설문 참여 기록은 어디에 반영되나요?', '제출이 완료된 응답은 이번 주 참여 횟수와 리더보드에 반영됩니다.'],
+  ['리더보드', '리더보드는 언제 초기화되나요?', '매주 월요일 00:00에 새로운 주간 순위가 시작됩니다.'],
+  ['팀 관리', '팀원과 설문을 함께 수정할 수 있나요?', '팀 관리에서 초대 링크를 공유하고 팀 초안과 응답 현황을 함께 관리할 수 있습니다.'],
 ]
 
 export default function Support() {
-  const [copied, setCopied] = useState(false)
+  const navigate = useNavigate()
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState('기타 문의')
   const [openFaq, setOpenFaq] = useState('')
-  const rootRef = useReveal([])
+  const [message, setMessage] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const filteredFaq = useMemo(() => {
+    const keyword = query.trim().toLocaleLowerCase('ko')
+    return faqItems.filter(([type, question, answer]) => !keyword || `${type} ${question} ${answer}`.toLocaleLowerCase('ko').includes(keyword))
+  }, [query])
 
-  async function copyEmail() {
-    try { await navigator.clipboard.writeText(SUPPORT_EMAIL); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
-    catch { /* clipboard unavailable */ }
+  function goBack() {
+    if (window.history.length > 1) navigate(-1)
+    else navigate('/')
   }
 
-  return <ServiceShell activePath="/support"><div ref={rootRef}>
-    <ServiceHeading icon="?" title="고객센터" description="궁금한 점이나 불편한 점을 알려주시면 빠르게 도와드릴게요." />
+  function submitInquiry(event) {
+    event.preventDefault()
+    if (!message.trim()) return
+    setSubmitted(true)
+  }
 
-    <section className="support-contact ui-card" data-motion-reveal>
-      <div><span>운영 이메일</span><strong>{SUPPORT_EMAIL}</strong></div>
-      <div className="support-contact__actions">
-        <button className="ui-button ui-button--secondary" type="button" onClick={copyEmail}>{copied ? '복사됨 ✓' : '주소 복사'}</button>
-        <a className="ui-button" href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('[UniForm 문의]')}`}>이메일 보내기</a>
-      </div>
-    </section>
+  const mailHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`[UniForm 문의] ${category}`)}&body=${encodeURIComponent(message)}`
 
-    <section className="support-types" data-motion-reveal>
-      <h2>문의 유형</h2>
-      <div className="support-type-grid">{inquiryTypes.map(([label, copy]) => <a className="support-type-card ui-card" key={label} href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`[UniForm 문의] ${label}`)}`}><b>{label}</b><p>{copy}</p></a>)}</div>
+  return <main className="support-standalone motion-page">
+    <header className="support-standalone__header"><Link to="/" aria-label="UniForm 홈"><BrandMark /></Link><button type="button" onClick={goBack}>← UniForm으로 돌아가기</button></header>
+    <section className="support-panel" aria-labelledby="support-title">
+      <div className="support-panel__intro"><span>고객센터</span><h1 id="support-title">무엇을 도와드릴까요?</h1><p>도움말을 검색하거나 문의 유형을 선택해 내용을 남겨주세요.</p></div>
+      <label className="support-search"><span className="sr-only">도움말 검색</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="질문이나 키워드를 입력해주세요." /></label>
+      <section className="support-faq" aria-labelledby="faq-title"><h2 id="faq-title">자주 찾는 도움</h2><div className="support-faq-list">
+        {filteredFaq.map(([type, question, answer]) => <article className={`support-faq-item ${openFaq === question ? 'is-open' : ''}`} key={question}>
+          <button type="button" onClick={() => setOpenFaq(openFaq === question ? '' : question)} aria-expanded={openFaq === question}><span><small>{type}</small>{question}</span><b aria-hidden="true">{openFaq === question ? '−' : '+'}</b></button>
+          {openFaq === question && <p>{answer}</p>}
+        </article>)}
+        {!filteredFaq.length && <p className="support-empty">일치하는 도움말이 없습니다. 아래에서 직접 문의해주세요.</p>}
+      </div></section>
+      <form className="support-inquiry" onSubmit={submitInquiry}><h2>직접 문의하기</h2><div className="support-category" role="group" aria-label="문의 유형">{categories.map((item) => <button className={category === item ? 'is-selected' : ''} type="button" key={item} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}</div><label><span>문의 내용</span><textarea value={message} onChange={(event) => { setMessage(event.target.value); setSubmitted(false) }} placeholder="겪고 있는 문제나 궁금한 내용을 자세히 적어주세요." rows="4" /></label><button className="support-submit" type="submit" disabled={!message.trim()}>문의 준비하기</button>
+        {submitted && <div className="support-ready" role="status"><div><b>문의 내용이 준비되었습니다.</b><p>현재 문의는 이메일로 접수됩니다.</p></div><a href={mailHref}>이메일로 보내기</a></div>}
+      </form>
     </section>
-
-    <section className="support-faq" data-motion-reveal>
-      <h2>자주 묻는 질문</h2>
-      <div className="support-faq-list">{faqItems.map(([question, answer]) => <div className={`support-faq-item ${openFaq === question ? 'is-open' : ''}`} key={question}>
-        <button type="button" onClick={() => setOpenFaq(openFaq === question ? '' : question)} aria-expanded={openFaq === question}>{question}<span>{openFaq === question ? '−' : '+'}</span></button>
-        {openFaq === question && <p>{answer}</p>}
-      </div>)}</div>
-    </section>
-  </div></ServiceShell>
+    <footer><span>{SUPPORT_EMAIL}</span><small>© 2026 UNIFORM</small></footer>
+  </main>
 }

@@ -61,7 +61,7 @@ export default function ServiceShell({ children, activePath }) {
       })}</nav>
       <button className="service-sidebar__collapse" type="button" onClick={() => setCollapsed(true)}>사이드바 숨기기</button>
     </aside>
-    <div className="service-stage"><header className="service-topbar"><button className="service-menu-button" type="button" aria-label="메뉴 열기" aria-expanded={mobileOpen || !collapsed} onClick={openMenu}>메뉴</button><Link className="service-mobile-brand" to="/"><BrandMark /></Link><Link className="service-help" to="/support">도움말</Link></header><main className="service-content motion-page">{children}</main></div>
+    <div className="service-stage"><header className="service-topbar"><button className="service-menu-button" type="button" aria-label="메뉴 열기" aria-expanded={mobileOpen || !collapsed} onClick={openMenu}>메뉴</button><Link className="service-mobile-brand" to="/"><BrandMark /></Link><Link className="service-help" to="/support">고객센터</Link></header><main className="service-content motion-page">{children}</main></div>
   </div>
 }
 

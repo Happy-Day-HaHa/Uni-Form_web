@@ -4,6 +4,7 @@ import { signup } from '../services/authService'
 import { isSupabaseConfigured } from '../services/supabase'
 import { validateSignup } from '../utils/validation'
 import AuthLayout from '../components/AuthLayout'
+import Checkbox from '../components/Checkbox'
 import '../styles/auth-dandy.css'
 
 const genderOptions = ['남성', '여성', '응답하지 않음']
@@ -14,7 +15,7 @@ const enrollmentOptions = ['재학', '휴학', '졸업', '해당 없음']
 export default function Signup() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ nickname: '', email: '', password: '', gender: '응답하지 않음', grade: '해당 없음', major: '해당 없음', enrollmentStatus: '해당 없음' })
-  const [agreeTerms, setAgreeTerms] = useState(false)
+  const [agreements, setAgreements] = useState({ terms: false, privacy: false, marketing: false })
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -23,7 +24,7 @@ export default function Signup() {
     if (!isSupabaseConfigured) return navigate('/surveys')
     const validationMessage = validateSignup(form)
     if (validationMessage) return setMessage(validationMessage)
-    if (!agreeTerms) return setMessage('이용약관 및 개인정보 처리방침에 동의해주세요.')
+    if (!agreements.terms || !agreements.privacy) return setMessage('필수 약관에 모두 동의해주세요.')
     try {
       setSubmitting(true)
       await signup(form)
@@ -50,7 +51,13 @@ export default function Signup() {
         <label>전공 계열<select value={form.major} onChange={(event) => setForm({ ...form, major: event.target.value })}>{majorOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
         <label>재학 상태<select value={form.enrollmentStatus} onChange={(event) => setForm({ ...form, enrollmentStatus: event.target.value })}>{enrollmentOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
       </div>
-      <label className="auth-saas__agree"><input type="checkbox" checked={agreeTerms} onChange={(event) => setAgreeTerms(event.target.checked)} /> <span>[필수] <Link to="/support">이용약관</Link> 및 개인정보 처리방침에 동의합니다.</span></label>
+      <fieldset className="auth-agreements">
+        <legend>약관 동의</legend>
+        <Checkbox className="auth-agreements__all" checked={Object.values(agreements).every(Boolean)} indeterminate={Object.values(agreements).some(Boolean) && !Object.values(agreements).every(Boolean)} onChange={(event) => setAgreements({ terms: event.target.checked, privacy: event.target.checked, marketing: event.target.checked })}>전체 동의</Checkbox>
+        <Checkbox checked={agreements.terms} onChange={(event) => setAgreements({ ...agreements, terms: event.target.checked })}><span>[필수] 이용약관에 동의합니다.</span></Checkbox>
+        <Checkbox checked={agreements.privacy} onChange={(event) => setAgreements({ ...agreements, privacy: event.target.checked })}><span>[필수] 개인정보 처리방침에 동의합니다.</span></Checkbox>
+        <Checkbox checked={agreements.marketing} onChange={(event) => setAgreements({ ...agreements, marketing: event.target.checked })}><span>[선택] 서비스 소식과 혜택을 받습니다.</span></Checkbox>
+      </fieldset>
       {message && <p className="form-message form-message--error">{message}</p>}
       <button className="button button--block" disabled={submitting}>{submitting ? '가입 중...' : isSupabaseConfigured ? '회원가입' : '데모 시작하기'}</button>
     </form>
