@@ -44,6 +44,26 @@
   vertical-align: middle;
 }
 
+.question__required-mark {
+  margin-left: 5px;
+  color: #e33c59;
+  font-size: 1em;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.question--error {
+  border-color: #f1a8b5 !important;
+  box-shadow: 0 0 0 3px rgba(227, 60, 89, 0.08) !important;
+}
+
+.question__error {
+  margin: 12px 0 0;
+  color: #c72f49;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
 .question .option-grid,
 .question .scale-grid,
 .question textarea,

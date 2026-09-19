@@ -26,9 +26,19 @@
 
 .team-empty-row{margin:6px 4px;color:var(--saas-muted);font-size:.78rem}
 
+.team-drafts .managed-row{grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center}
+.team-drafts .managed-row__title{min-width:0}
+.team-drafts .managed-row__title small{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:8px}
+.team-drafts .managed-actions{grid-column:2;justify-self:end}
+.team-drafts .managed-actions a{min-width:154px;justify-content:center;white-space:nowrap}
+.team-draft-status{padding:3px 8px;border-radius:999px;background:#eaf7ff;color:#167fc6;font-size:.58rem;font-style:normal;font-weight:800}
+
 .team-disband{display:block;margin:20px auto 0;padding:0;border:0;background:none;color:#dc334f;font-size:.76rem;font-weight:750;cursor:pointer}
 
 @media(max-width:650px){
   .team-empty form{flex-direction:column}
   .team-empty form input{min-width:0}
+  .team-drafts .managed-row{grid-template-columns:1fr;gap:14px}
+  .team-drafts .managed-actions{grid-column:1;width:100%;justify-self:stretch}
+  .team-drafts .managed-actions a{width:100%}
 }

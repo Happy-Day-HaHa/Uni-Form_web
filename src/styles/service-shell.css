@@ -125,3 +125,30 @@
 /* Keep settings on the shared page baseline. */
 .service-content:has(>.settings-page){padding-top:40px}.settings-page{display:block;align-self:start}.settings-page>.service-heading{display:grid;min-height:64px;align-items:start;margin:0}.settings-page>.service-heading h1{margin-top:0}.settings-page>.settings-tabs{margin-top:16px}
 @media(max-width:780px){.service-content:has(>.settings-page){padding-top:30px}.settings-page>.settings-tabs{margin-top:12px}}
+
+/* Settings: compact, row-based account controls. */
+.service-content:has(>.settings-page){padding-top:24px}
+.settings-page{max-width:980px}
+.settings-page>.service-heading{min-height:auto}
+.settings-page>.settings-tabs{margin-top:20px}
+.settings-tabs{display:flex;gap:28px;overflow-x:auto;border-bottom:1px solid #e5e7eb}
+.settings-tabs button{min-height:44px;padding:0 2px;border:0;border-bottom:2px solid transparent;color:#64748b;font:inherit;font-size:.72rem;font-weight:700;white-space:nowrap;cursor:pointer}
+.settings-tabs button.is-active{border-bottom-color:#40abfc;color:#168fda}
+.settings-sections{display:grid}
+.settings-section{padding:26px 0;border-bottom:1px solid #e5e7eb}
+.settings-section>header{margin-bottom:18px}
+.settings-section>header h2{margin:0;font-size:1rem}
+.settings-section>header p{margin:6px 0 0;color:#6b7280;font-size:.7rem}
+.settings-section .settings-fields{max-width:720px}
+.settings-section .settings-row{max-width:860px}
+.settings-save{position:static;display:flex;justify-content:flex-end;gap:8px;padding:22px 0 0;background:#fff}
+
+@media(max-width:780px){
+  .service-content:has(>.settings-page){padding-top:20px}
+  .settings-page>.settings-tabs{margin-top:14px}
+  .settings-tabs{gap:20px}
+  .settings-section{padding:22px 0}
+  .settings-fields label{grid-template-columns:1fr;gap:7px}
+  .settings-row{align-items:flex-start;padding:13px 0}
+  .settings-save{display:grid;grid-template-columns:1fr 1fr}
+}

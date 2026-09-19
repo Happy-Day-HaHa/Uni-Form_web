@@ -91,8 +91,8 @@ export default function Team() {
     <section className="team-drafts ui-card" data-motion-reveal>
       <header><h2>팀 초안</h2></header>
       <div className="managed-list">{team.drafts.map((draft) => <article className="managed-row" key={draft.id}>
-        <div className="managed-row__title"><div><h2>{draft.title}</h2><small>마지막 수정 {draft.updatedBy} · {relativeTime(draft.updatedAt)}</small></div></div>
-        <div className="managed-actions"><Link className="ui-button ui-button--secondary" to="/formmate">이어서 작성</Link></div>
+        <div className="managed-row__title"><div><h2>{draft.title}</h2><small><em className="team-draft-status">작성 중</em> 마지막 수정 {draft.updatedBy} · {relativeTime(draft.updatedAt)}</small></div></div>
+        <div className="managed-actions"><Link className="ui-button ui-button--secondary" to="/formmate">이어서 작성하기 <span aria-hidden="true">→</span></Link></div>
       </article>)}{!team.drafts.length && <p className="team-empty-row">진행 중인 초안이 없어요.</p>}</div>
     </section>
 
