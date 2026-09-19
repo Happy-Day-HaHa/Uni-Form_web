@@ -1,0 +1,18 @@
+.survey-pain-section{position:relative;min-height:820px;overflow:hidden;padding:100px 24px 44px;background:radial-gradient(circle at 50% 68%,rgba(64,171,252,.14),rgba(64,171,252,.045) 34%,rgba(255,255,255,1) 72%);text-align:center}
+.survey-pain-heading{position:relative;z-index:2;margin:0 auto}
+.survey-pain-heading>span{display:block;margin-bottom:18px;color:#40abfc;font-size:.66rem;font-weight:750;letter-spacing:.28em}
+.survey-pain-heading h2{margin:0;color:#0f172a;font-family:'NoonnuBasicGothic','Pretendard','Noto Sans KR',sans-serif;font-size:clamp(3rem,4vw,3.5rem);font-weight:400;line-height:1.2;letter-spacing:-.045em}
+.survey-pain-heading h2 em{color:#40abfc;font-style:normal}
+.survey-pain-heading p{margin:24px auto 0;color:#64748b;font-size:clamp(.9rem,1.15vw,1.05rem);font-weight:450;line-height:1.72;word-break:keep-all}
+.survey-pain-spiral{position:relative;width:min(1400px,calc(100% + 48px));height:430px;margin:28px auto 0}
+.survey-pain-card{display:flex;width:100%;height:100%;flex-direction:column;padding:20px 24px;border:1px solid rgba(64,171,252,.15);border-radius:18px;background:rgba(255,255,255,.96);box-shadow:0 14px 40px rgba(15,23,42,.055),0 4px 12px rgba(15,23,42,.025);text-align:left;backdrop-filter:blur(12px)}
+.survey-pain-card header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.survey-pain-card header span{padding:5px 10px;border-radius:999px;background:rgba(64,171,252,.1);color:#2798ea;font-size:.63rem;font-weight:700;line-height:1.2}
+.survey-pain-card header b{height:27px;color:rgba(64,171,252,.28);font-family:Georgia,serif;font-size:2.35rem;font-weight:700;line-height:.78}
+.survey-pain-card>p{margin:13px 0 0;color:#111827;font-size:.86rem;font-weight:650;line-height:1.55;letter-spacing:-.025em;white-space:pre-line;word-break:keep-all}
+.survey-pain-card>small{margin-top:auto;color:#94a3b8;font-size:.63rem;font-weight:550}
+.survey-pain-card:hover{box-shadow:0 16px 44px rgba(15,23,42,.07),0 4px 12px rgba(15,23,42,.025)}
+.survey-pain-note{position:relative;z-index:2;margin:-10px auto 0;color:#94a3b8;font-size:.58rem;letter-spacing:-.01em}
+@media(max-width:1024px){.survey-pain-section{min-height:790px;padding-top:88px}.survey-pain-spiral{height:420px}.survey-pain-heading h2{font-size:clamp(2.7rem,6vw,3.35rem)}}
+@media(max-width:640px){.survey-pain-section{min-height:720px;padding:72px 14px 34px}.survey-pain-heading>span{margin-bottom:15px;font-size:.6rem}.survey-pain-heading h2{font-size:clamp(2.05rem,9.8vw,2.35rem);line-height:1.22}.survey-pain-heading p{margin-top:19px;font-size:.78rem;line-height:1.7}.survey-pain-heading p br{display:none}.survey-pain-spiral{width:calc(100% + 28px);height:390px;margin-top:22px}.survey-pain-card{padding:18px 19px;border-radius:15px}.survey-pain-card>p{margin-top:11px;font-size:.76rem}.survey-pain-card>small{font-size:.58rem}.survey-pain-note{max-width:310px;margin:-4px auto 0;font-size:.53rem;line-height:1.5}}
+@media(prefers-reduced-motion:reduce){.survey-pain-card:hover{box-shadow:0 14px 40px rgba(15,23,42,.055),0 4px 12px rgba(15,23,42,.025)}}
