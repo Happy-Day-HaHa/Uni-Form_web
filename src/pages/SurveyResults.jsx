@@ -4,7 +4,7 @@ import ResultOverview from '../components/result/ResultOverview'
 import ServiceShell from '../components/ServiceShell'
 import { useAuth } from '../hooks/useAuth'
 import { getOwnedSurveyResults } from '../services/responseService'
-import { downloadAllCharts, downloadQuestionChart, isChartable } from '../utils/chartExport'
+import { downloadQuestionChart, isChartable } from '../utils/chartExport'
 
 const PIE_COLORS = ['#40abfc', '#82ccff', '#b9e4ff', '#94a3b8', '#cbd5e1']
 
@@ -29,13 +29,17 @@ function valuesFor(question, responses) {
 
 function analyzeQuestion(question, responses) {
   const values = valuesFor(question, responses)
-  if (question.type === 'text' || question.type === 'long') return { type: 'text', values }
+  const responseCount = responses.filter((response) => {
+    const answer = response.answers?.[question.id]
+    return answer !== undefined && answer !== null && answer !== '' && (!Array.isArray(answer) || answer.length > 0)
+  }).length
+  if (question.type === 'text' || question.type === 'long') return { type: 'text', values, responseCount }
   const options = question.type === 'scale'
     ? Array.from({ length: Number(question.max || 5) - Number(question.min || 1) + 1 }, (_, index) => Number(question.min || 1) + index)
     : question.options || []
   const counts = options.map((option) => ({ option, count: values.filter((value) => String(value) === String(option)).length }))
   const average = question.type === 'scale' && values.length ? values.reduce((sum, value) => sum + Number(value), 0) / values.length : null
-  return { type: question.type, values, counts, average, max: Math.max(1, ...counts.map((item) => item.count)) }
+  return { type: question.type, values, responseCount, counts, average, max: Math.max(1, ...counts.map((item) => item.count)) }
 }
 
 function ResultSkeleton() {
@@ -52,11 +56,11 @@ function ResultState({ code, onRetry, surveyId }) {
   return <section className="result-state"><span>{code === 'FORBIDDEN' ? '!' : code === 'NOT_FOUND' ? '?' : '↻'}</span><h1>{title}</h1><p>{copy}</p><div>{code === 'NETWORK' && <button className="ui-button" onClick={onRetry}>다시 시도</button>}<Link className="ui-button ui-button--secondary" to="/my-surveys">내 설문으로 돌아가기</Link>{code === 'FORBIDDEN' && <Link className="ui-button ui-button--secondary" to={`/surveys/${surveyId}`}>설문 보기</Link>}</div></section>
 }
 
-function QuestionAnalysis({ question, analysis, index, compact = false }) {
-  const total = analysis.values.length
-  return <article className={`result-analysis ${compact ? 'result-analysis--compact' : ''}`}>
-    <header><span>Q{index + 1}</span><div><h2>{question.title}</h2><p>{total.toLocaleString()}개 응답{analysis.average !== null ? ` · 평균 ${analysis.average.toFixed(1)} / ${question.max || 5}` : ''}</p></div>{isChartable(question) && <button className="result-analysis__png" type="button" onClick={() => downloadQuestionChart(question, analysis, index)}>PNG 다운로드</button>}</header>
-    {analysis.type === 'text' ? <div className="result-text-list">{analysis.values.slice(0, compact ? 3 : 8).map((answer, answerIndex) => <p key={`${question.id}-${answerIndex}`}>{answer}</p>)}</div>
+function QuestionAnalysis({ question, analysis, index }) {
+  const total = analysis.responseCount
+  return <article className="result-analysis">
+    <header><span>Q{index + 1}</span><div><h2>{question.title}</h2><p>{total.toLocaleString()}개 응답{analysis.average !== null ? ` · 평균 ${analysis.average.toFixed(1)} / ${question.max || 5}` : ''}</p></div>{isChartable(question) && <button className="result-analysis__png" type="button" onClick={() => downloadQuestionChart(question, analysis, index)}>이미지로 저장</button>}</header>
+    {analysis.type === 'text' ? <div className="result-text-list">{analysis.values.slice(0, 8).map((answer, answerIndex) => <p key={`${question.id}-${answerIndex}`}>{answer}</p>)}</div>
       : question.type === 'single' ? <div className="result-pie-wrap">
           <div className="result-pie" style={{ background: buildConicGradient(analysis.counts, total) }}><span>{total}<small>응답</small></span></div>
           <ul className="result-pie-legend">{analysis.counts.map((item, colorIndex) => <li key={item.option} style={{ '--tone': PIE_COLORS[colorIndex % PIE_COLORS.length] }}><i />{item.option}<b>{total ? Math.round((item.count / total) * 100) : 0}%</b></li>)}</ul>
@@ -71,7 +75,6 @@ export default function SurveyResults() {
   const { user } = useAuth()
   const [state, setState] = useState({ status: 'loading', result: null, error: null })
   const [tab, setTab] = useState('summary')
-  const [toast, setToast] = useState('')
 
   const load = useCallback(() => {
     setState({ status: 'loading', result: null, error: null })
@@ -81,18 +84,8 @@ export default function SurveyResults() {
   }, [surveyId, user.id])
 
   useEffect(load, [load])
-  useEffect(() => { if (!toast) return undefined; const timer = window.setTimeout(() => setToast(''), 1400); return () => window.clearTimeout(timer) }, [toast])
 
   const analyses = useMemo(() => state.result?.survey.questions?.map((question) => analyzeQuestion(question, state.result.responses)) || [], [state.result])
-
-  function share() {
-    const url = `${window.location.origin}/surveys/${surveyId}`
-    if (!navigator.clipboard) {
-      setToast('주소창의 링크를 복사해주세요.')
-      return
-    }
-    navigator.clipboard.writeText(url).then(() => setToast('설문 링크를 복사했습니다.')).catch(() => setToast('주소창의 링크를 복사해주세요.'))
-  }
 
   if (state.status === 'loading') return <ServiceShell activePath="/my-surveys"><ResultSkeleton /></ServiceShell>
   if (state.status === 'error') return <ServiceShell activePath="/my-surveys"><ResultState code={state.error?.code} onRetry={load} surveyId={surveyId} /></ServiceShell>
@@ -103,14 +96,13 @@ export default function SurveyResults() {
 
   return <ServiceShell activePath="/my-surveys"><div className="result-dashboard">
     <nav className="result-dashboard__breadcrumb" aria-label="현재 위치"><Link to="/my-surveys">내 설문</Link><span>/</span><Link to={`/my-surveys/${survey.id}/manage`}>{survey.title}</Link><span>/</span><strong>결과</strong></nav>
-    <header className="result-dashboard__header"><div><div className="result-dashboard__title"><div><h1>{survey.title}</h1><p>{survey.description}</p></div></div><ul><li>응답 {responses.length.toLocaleString()}건</li><li>목표 {target.toLocaleString()}명</li><li>{survey.status === 'active' ? '모집 중' : '모집 종료'}</li></ul></div><div><button className="result-action" type="button" onClick={share}>공유하기</button>{responses.length > 0 && questions.some(isChartable) && <button className="result-action result-action--primary" type="button" onClick={() => downloadAllCharts(survey.title, questions, analyses)}>그래프 이미지 저장</button>}</div></header>
+    <header className="result-dashboard__header"><div><div className="result-dashboard__title"><div><h1>{survey.title}</h1><p>{survey.description}</p></div></div><ul><li>응답 {responses.length.toLocaleString()}개</li><li>목표 {target.toLocaleString()}명</li><li>{survey.status === 'active' ? '모집 중' : '모집 종료'}</li></ul></div><div><Link className="result-action" to={`/my-surveys/${survey.id}/manage`}>관리로 돌아가기</Link></div></header>
 
-    {responses.length === 0 ? <section className="result-empty"><span>◎</span><h2>아직 응답이 없어요.</h2><p>설문을 공유하면 첫 응답을 받을 수 있습니다.</p><button className="ui-button" type="button" onClick={share}>설문 공유하기</button></section> : <>
+    {responses.length === 0 ? <section className="result-empty"><span>◎</span><h2>아직 응답이 없어요.</h2><p>응답이 제출되면 이곳에서 문항별 결과를 확인할 수 있습니다.</p><Link className="ui-button ui-button--secondary" to={`/my-surveys/${survey.id}/manage`}>관리로 돌아가기</Link></section> : <>
       <nav className="result-tabs" aria-label="결과 보기 방식">{[['summary', '요약'], ['questions', '문항별 결과']].map(([value, label]) => <button className={tab === value ? 'active' : ''} type="button" onClick={() => setTab(value)} key={value}>{label}</button>)}</nav>
 
-      {tab === 'summary' && <section className="result-summary-view"><ResultOverview survey={survey} sampleCount={responses.length} /><div className="result-summary-questions">{questions.slice(0, 2).map((question, index) => <QuestionAnalysis key={question.id} question={question} analysis={analyses[index]} index={index} compact />)}</div></section>}
+      {tab === 'summary' && <section className="result-summary-view"><ResultOverview survey={survey} sampleCount={responses.length} /></section>}
       {tab === 'questions' && <section className="result-analysis-list">{questions.map((question, index) => <QuestionAnalysis key={question.id} question={question} analysis={analyses[index]} index={index} />)}</section>}
     </>}
-    {toast && <div className="service-toast" role="status">{toast}</div>}
   </div></ServiceShell>
 }
