@@ -193,8 +193,7 @@ export default function SurveyCoverflow({
     if (wasDrag) return
     if (index !== selected) { goTo(index); return }
     const isOwner = survey.creator_id === userId
-    const canViewResults = isOwner && survey.response_count > 0
-    if (isOwner) { if (canViewResults) navigate(`/surveys/${survey.id}/results`) }
+    if (isOwner) navigate(`/my-surveys/${survey.id}/manage`)
     else navigate(`/surveys/${survey.id}`)
   }
 
@@ -223,7 +222,6 @@ export default function SurveyCoverflow({
           <div className="survey-coverflow__stage">
             {surveys.map((survey, index) => {
               const isOwner = survey.creator_id === userId
-              const canViewResults = isOwner && survey.response_count > 0
               return (
                 <div
                   key={survey.id}
@@ -240,9 +238,7 @@ export default function SurveyCoverflow({
                   <ProgressBar value={survey.response_count || 0} max={survey.target_count} />
                   <footer>
                     <span>{isOwner ? `목표 ${survey.target_count}명` : `약 ${survey.estimated_minutes || 5}분`}</span>
-                    {isOwner ? (canViewResults
-                      ? <Link className="survey-coverflow__action" to={`/surveys/${survey.id}/results`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>결과 보기 <span>→</span></Link>
-                      : <span className="survey-coverflow__waiting">응답 대기 중</span>)
+                    {isOwner ? <Link className="survey-coverflow__action" to={`/my-surveys/${survey.id}/manage`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>관리하기 <span>→</span></Link>
                       : <Link className="survey-coverflow__action" to={`/surveys/${survey.id}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>응답하기 <span>→</span></Link>}
                   </footer>
                 </div>

@@ -8,7 +8,6 @@ const navItems = [
   ['/my-surveys', '내 설문'],
   ['/formmate', '설문 만들기'],
   ['/surveys', '설문 목록'],
-  ['/reports', '결과 보기'],
   ['/team', '팀 관리'],
   ['/leaderboard', '리더보드'],
   ['/settings', '설정'],

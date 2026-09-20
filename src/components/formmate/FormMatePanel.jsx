@@ -1,15 +1,29 @@
+import { useEffect, useRef } from 'react'
+
 const starterMessages = [
   { role: 'assistant', text: '안녕하세요! 어떤 설문을 만들고 싶으신가요? 먼저 이번 설문의 목적을 알려주세요.' },
 ]
 
 export default function FormMatePanel({ value, onChange, onCreateDraft, onSend, onUndo, canUndo = false, selectedLabel = '', messages = starterMessages, message = '', buttonLabel = '보내기', applying = false, suggestions = [], draftSummary = null }) {
+  const composerRef = useRef(null)
+
+  useEffect(() => {
+    const textarea = composerRef.current
+    if (!textarea) return
+    textarea.style.height = '0px'
+    const nextHeight = Math.min(96, Math.max(40, textarea.scrollHeight))
+    textarea.style.height = `${nextHeight}px`
+    textarea.style.overflowY = textarea.scrollHeight > 96 ? 'auto' : 'hidden'
+  }, [value])
+
   function submit(event) {
     event.preventDefault()
+    if (!value.trim() || applying) return
     if (onSend) onSend(value)
     else onCreateDraft?.()
   }
 
-  function keyDown(event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }
+  function keyDown(event) { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }
   return <aside className="formmate-agent">
     <header><div><h2>FormMate</h2><p>대화로 설문 초안을 만들어보세요.</p></div><i>{applying ? '반영 중' : '준비됨'}</i></header>
     <div className="formmate-agent__messages" aria-live="polite">{messages.map((item, index) => <div className={`formmate-message formmate-message--${item.role}`} key={`${item.role}-${index}`}><p>{item.text}</p></div>)}
@@ -19,7 +33,7 @@ export default function FormMatePanel({ value, onChange, onCreateDraft, onSend, 
     </div>
     {suggestions.length > 0 && <div className="formmate-agent__suggestions">{suggestions.map((item) => <button type="button" key={item} onClick={() => onChange(item)}>{item}</button>)}</div>}
     {selectedLabel && <div className="formmate-context"><span>{selectedLabel}</span><button type="button" onClick={() => onChange('')}>×</button></div>}
-    <form className="formmate-agent__composer" onSubmit={submit}><textarea value={value} onChange={(event) => onChange(event.target.value)} onKeyDown={keyDown} rows="2" placeholder="원하는 설문을 자유롭게 요청해보세요." /><button type="submit" aria-label={buttonLabel} disabled={applying}>보내기</button></form>
+    <form className="formmate-agent__composer" onSubmit={submit}><textarea ref={composerRef} value={value} onChange={(event) => onChange(event.target.value)} onKeyDown={keyDown} rows="1" placeholder="추가로 요청할 내용을 입력하세요." /><button type="submit" aria-label={buttonLabel} disabled={applying || !value.trim()}><span aria-hidden="true">→</span><span className="sr-only">{buttonLabel}</span></button></form>
     <div className="formmate-quick-actions">{['주제 추천', '문항 추가', '말투 변경', '대상 설정'].map((item) => <button type="button" key={item} onClick={() => onChange(item)}>{item}</button>)}</div>
     {canUndo && <button className="formmate-undo" type="button" onClick={onUndo}>마지막 변경 되돌리기</button>}
     {message && <small className="formmate-agent__status">{message}</small>}

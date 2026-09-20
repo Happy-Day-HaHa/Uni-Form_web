@@ -42,13 +42,14 @@ export default function FormMateSurveyEditor({
 
   return <div className="formmate-inline-editor">
     <section className="formmate-editor-meta" aria-label="설문 기본 정보">
-      <label><b>설문 제목 <em>*</em></b><span><input maxLength="100" value={form.title} onChange={(event) => onChange({ title: event.target.value })} placeholder="설문 제목을 입력해주세요." /><small>{form.title.length}/100</small></span></label>
-      <label><b>설문 설명</b><span><input maxLength="200" value={form.description} onChange={(event) => onChange({ description: event.target.value })} placeholder="설문에 대한 설명을 입력해주세요." /><small>{form.description.length}/200</small></span></label>
+      <div className="formmate-editor-field" data-editor-key="title"><header><span>01</span><b>설문 제목 <em>*</em></b></header><label><span><input maxLength="100" value={form.title} onChange={(event) => onChange({ title: event.target.value })} placeholder="설문 제목을 입력해주세요." /><small>{form.title.length}/100</small></span></label></div>
+      <div className="formmate-editor-field" data-editor-key="description"><header><span>02</span><b>설문 설명</b></header><label><span><input maxLength="200" value={form.description} onChange={(event) => onChange({ description: event.target.value })} placeholder="설문에 대한 설명을 입력해주세요." /><small>{form.description.length}/200</small></span></label></div>
+      <div className="formmate-editor-field" data-editor-key="basic"><header><span>03</span><b>기본 정보</b></header><div className="formmate-editor-basic"><label><b>목표 응답 인원</b><span><input type="number" min="1" max="1000" value={form.targetCount} onChange={(event) => onChange({ targetCount: Number(event.target.value) })} /><small>명</small></span></label><label><b>마감일</b><span><input type="date" value={form.deadline || ''} onChange={(event) => onChange({ deadline: event.target.value })} /></span></label></div></div>
     </section>
 
-    <section className="formmate-editor-section" aria-label="설문 문항 편집">
+    <section className="formmate-editor-section" aria-label="설문 문항 편집" data-editor-key="questions">
       <header className="formmate-editor-toolbar">
-        <div><h3>문항 구성</h3><span>{questionCount}개 문항</span></div>
+        <div><b>04</b><h3>설문 문항</h3><span>{questionCount}개 문항</span></div>
         <div className="formmate-editor-progress" aria-label={`${questionCount}개 문항 중 ${activeIndex + 1}번째 문항`}><i><span style={{ width: `${questionCount ? ((activeIndex + 1) / questionCount) * 100 : 0}%` }} /></i><b>{questionCount ? activeIndex + 1 : 0} / {questionCount}</b></div>
         <button type="button" onClick={onAddQuestion} disabled={questionCount >= 30}>＋ 질문 추가</button>
         <button type="button" aria-label="문항 메뉴">•••</button>
@@ -57,15 +58,15 @@ export default function FormMateSurveyEditor({
       <div className="formmate-edit-list">
         {form.questions.map((question, questionIndex) => {
           const hasOptions = question.type === 'single' || question.type === 'multiple'
-          return <article className={`formmate-edit-question ${selectedQuestionId === question.id ? 'is-selected' : ''}`} key={question.id} onFocus={() => onSelectQuestion(question.id)} onClick={() => onSelectQuestion(question.id)}>
-            <div className="formmate-edit-question__index"><b>{questionIndex + 1}</b><span aria-hidden="true">⠿</span></div>
+          return <article className={`formmate-edit-question ${selectedQuestionId === question.id ? 'is-selected' : ''}`} key={question.id} data-editor-key={`question-${question.id}`} onFocus={() => onSelectQuestion(question.id)} onClick={() => onSelectQuestion(question.id)}>
+            <div className="formmate-edit-question__index"><b>Q{questionIndex + 1}</b><span aria-hidden="true">⠿</span></div>
             <div className="formmate-edit-question__body">
+              <label className="formmate-edit-question__title"><input maxLength="200" value={question.title} onChange={(event) => onQuestionChange(question.id, { title: event.target.value })} placeholder="질문을 입력해주세요." /><small>{question.title.length}/200</small></label>
               <div className="formmate-edit-question__controls">
                 <label><span className="sr-only">문항 유형</span><select value={question.type} onChange={(event) => onQuestionChange(question.id, { type: event.target.value })}>{questionTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
                 <label className="formmate-required-toggle"><input type="checkbox" checked={question.required !== false} onChange={(event) => onQuestionChange(question.id, { required: event.target.checked })} /><i /><span>필수</span></label>
                 <button type="button" className="formmate-question-delete" aria-label={`${questionIndex + 1}번 문항 삭제`} disabled={questionCount <= 1} onClick={() => onDeleteQuestion(question.id)}>⌫</button>
               </div>
-              <label className="formmate-edit-question__title"><input maxLength="200" value={question.title} onChange={(event) => onQuestionChange(question.id, { title: event.target.value })} placeholder="질문을 입력해주세요." /><small>{question.title.length}/200</small></label>
               {hasOptions && <div className="formmate-option-list">
                 {(question.options || []).map((option, optionIndex) => <div className="formmate-option-row" key={`${question.id}-${optionIndex}`}><span aria-hidden="true">⠿</span><input value={option} maxLength="100" onChange={(event) => updateOption(question, optionIndex, event.target.value)} aria-label={`${questionIndex + 1}번 문항 ${optionIndex + 1}번째 선택지`} /><button type="button" aria-label="선택지 수정" onClick={(event) => event.currentTarget.previousElementSibling?.focus()}>✎</button><button type="button" aria-label="선택지 삭제" disabled={(question.options || []).length <= 2} onClick={() => removeOption(question, optionIndex)}>♲</button></div>)}
                 <button className="formmate-option-add" type="button" onClick={() => addOption(question)} disabled={(question.options || []).length >= 10}>＋ 선택지 추가</button>

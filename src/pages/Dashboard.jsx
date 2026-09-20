@@ -14,7 +14,7 @@ const activities = [
   ['AI 서비스 사용 경험 조사에 참여했어요.', '설문 목록으로 이동합니다.', '2시간 전', '/surveys/ai-campus-use'],
   ['설문 문항이 정상적으로 제출됐어요.', '캠퍼스 생활 만족도 조사', '3시간 전', '/my-surveys'],
   ['새로운 설문이 등록됐어요.', '최근 설문을 확인해보세요.', '1일 전', '/my-surveys'],
-  ['설문 결과를 확인했어요.', '분석 보고서를 다시 열 수 있어요.', '2일 전', '/reports'],
+  ['설문 결과를 확인했어요.', '내 설문 관리에서 다시 확인할 수 있어요.', '2일 전', '/my-surveys'],
 ]
 
 export default function Dashboard() {
@@ -59,16 +59,16 @@ export default function Dashboard() {
   return <ServiceShell activePath="/dashboard"><div ref={rootRef} className="dashboard-final">
     <ServiceHeading icon="▦" title="대시보드" description="지금, 필요한 설문과 주요 활동을 한눈에 확인해보세요." action={<select className="service-select dashboard-range" value={range} onChange={(event) => changeRange(event.target.value)} aria-label="대시보드 기간"><option value="7">최근 7일</option><option value="30">최근 30일</option><option value="90">최근 3개월</option></select>} />
     {error && <div className="component-error" role="alert">{error}<button type="button" onClick={() => window.location.reload()}>다시 시도</button></div>}
-    <nav className="dashboard-core-actions" aria-label="빠른 실행"><Link to="/formmate">설문 만들기</Link><Link to="/my-surveys">내 설문 보기</Link><Link to="/reports">결과 보기</Link></nav>
+    <nav className="dashboard-core-actions" aria-label="빠른 실행"><Link to="/formmate">설문 만들기</Link><Link to="/my-surveys">내 설문 보기</Link></nav>
     <section className="service-metrics">
       <MetricCard to="/my-surveys?status=active" icon="▤" label="진행 중인 설문" value={active} unit="개" note="현재 응답을 모으고 있어요." />
       <MetricCard to="/my-surveys?sort=responses" tone="violet" icon="◎" label="누적 응답 수" value={responses} unit="건" note="내 설문에 모인 전체 응답이에요." />
-      <MetricCard to="/reports" tone="mint" icon="▥" label="분석 가능한 설문" value={analyzable} unit="개" note="결과를 지금 확인할 수 있어요." />
+      <MetricCard to="/my-surveys?sort=responses" tone="mint" icon="▥" label="분석 가능한 설문" value={analyzable} unit="개" note="내 설문 관리에서 결과를 확인하세요." />
       <MetricCard to="/surveys" tone="amber" icon="↗" label="이번 주 참여 횟수" value={12} unit="회" note="지난주보다 4회 늘었어요." />
     </section>
 
     <section className="service-grid dashboard-primary"><article className="service-panel ui-card"><div className="service-panel__head"><div><h2>주간 설문 참여 추이</h2><p>최근 서비스 활동 흐름을 확인할 수 있어요.</p></div><div className="chart-controls" role="group" aria-label="차트 기준"><button className={metric === 'responses' ? 'active' : ''} type="button" onClick={() => setMetric('responses')}>응답 수</button><button className={metric === 'surveys' ? 'active' : ''} type="button" onClick={() => setMetric('surveys')}>설문 수</button></div></div>{chartLoading || loading ? <div className="mini-chart skeleton-block" aria-label="차트 불러오는 중" /> : <div className="mini-chart" aria-label="주간 설문 참여 막대 그래프">{data.map((value, index) => <span key={`${metric}-${range}-${index}`} className={index === 4 ? 'is-current' : ''} title={`${labels[index]} · ${metric === 'responses' ? '응답 수' : '설문 수'} ${value}${metric === 'responses' ? '건' : '개'}`} style={{ '--bar': `${value / max * 100}%`, '--delay': `${index * 25}ms` }}><b>{value}</b><i>{labels[index]}</i></span>)}</div>}</article>
-      <article className="service-panel ui-card"><div className="service-panel__head"><div><h2>최근 활동</h2><p>최근에 수행한 활동을 확인해보세요.</p></div><Link to="/reports">전체보기</Link></div><div className="service-list">{activities.map(([title, copy, time, to]) => <Link className="service-list-row" key={title} to={to}><div><h3>{title}</h3><p>{copy}</p></div><time>{time}</time></Link>)}</div></article></section>
+      <article className="service-panel ui-card"><div className="service-panel__head"><div><h2>최근 활동</h2><p>최근에 수행한 활동을 확인해보세요.</p></div><Link to="/my-surveys">전체보기</Link></div><div className="service-list">{activities.map(([title, copy, time, to]) => <Link className="service-list-row" key={title} to={to}><div><h3>{title}</h3><p>{copy}</p></div><time>{time}</time></Link>)}</div></article></section>
 
   </div></ServiceShell>
 }
