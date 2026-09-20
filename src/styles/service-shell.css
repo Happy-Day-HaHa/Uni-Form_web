@@ -258,6 +258,10 @@
 .dashboard-activity .dashboard-activity__all:hover{background:transparent;color:#168fda}
 .dashboard-activity .dashboard-activity__all span{font-size:.78rem}
 
+/* Keep the My Surveys management action in the UniForm sky-blue system. */
+.managed-actions .managed-primary{min-height:40px;padding:0 18px;border-color:#40abfc;background:#40abfc;color:#fff;box-shadow:none}
+.managed-actions .managed-primary:hover{border-color:#2498eb;background:#2498eb;box-shadow:none;transform:translateY(-1px)}
+
 @media(max-width:780px){
   .formmate-page .formmate-agent__composer{grid-template-columns:minmax(0,1fr) 38px;min-height:50px}
   .dashboard-activity .service-panel__head{align-items:flex-start}

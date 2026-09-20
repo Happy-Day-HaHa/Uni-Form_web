@@ -60,13 +60,25 @@
 .result-text-list p{padding:13px 2px;border:0;border-bottom:1px solid #eef1f4;border-radius:0;background:#fff;color:#475569}
 .result-bars>div>span{white-space:normal;line-height:1.45}
 
+/* Minimal question cards for the default, question-by-question result view. */
+.service-stage:has(.result-dashboard){background:#f8fafc}
+.result-analysis-list{gap:14px}
+.result-analysis,.result-analysis--compact{padding:22px 24px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;box-shadow:none}
+.result-analysis:last-child{border-bottom:1px solid #e5e7eb}
+.result-analysis h2 em{margin-left:6px;color:#ef4444;font-style:normal;font-weight:750}
+.result-analysis__png{display:inline-flex;align-items:center;gap:5px;color:#168fda;font-size:.66rem;font-weight:700}
+.result-analysis__png::before{content:'↓';font-size:.8rem}
+.result-pie-legend li{min-width:0}
+.result-pie-legend li>span{min-width:0;overflow-wrap:anywhere}
+.result-pie-legend b{white-space:nowrap}
+
 @media(max-width:700px){
   .result-dashboard__header{padding-top:4px}
   .result-dashboard__header>div:last-child{display:flex;justify-content:flex-start}
   .result-dashboard>.result-summary-view>.result-stats{grid-template-columns:1fr}
   .result-dashboard>.result-summary-view>.result-stats article{border-right:0;border-bottom:1px solid #e5e7eb}
   .result-dashboard>.result-summary-view>.result-stats article:last-child{border-bottom:0}
-  .result-analysis{padding:22px 0}
+  .result-analysis{padding:18px}
   .result-analysis>header{flex-wrap:wrap}
   .result-analysis__png{margin-left:auto}
   .result-pie-wrap{width:100%}

@@ -59,11 +59,11 @@ function ResultState({ code, onRetry, surveyId }) {
 function QuestionAnalysis({ question, analysis, index }) {
   const total = analysis.responseCount
   return <article className="result-analysis">
-    <header><span>Q{index + 1}</span><div><h2>{question.title}</h2><p>{total.toLocaleString()}개 응답{analysis.average !== null ? ` · 평균 ${analysis.average.toFixed(1)} / ${question.max || 5}` : ''}</p></div>{isChartable(question) && <button className="result-analysis__png" type="button" onClick={() => downloadQuestionChart(question, analysis, index)}>이미지로 저장</button>}</header>
+    <header><span>Q{index + 1}.</span><div><h2>{question.title}{question.required !== false && <em>*</em>}</h2><p>응답 {total.toLocaleString()}개{analysis.average !== null ? ` · 평균 ${analysis.average.toFixed(1)} / ${question.max || 5}` : ''}</p></div>{isChartable(question) && <button className="result-analysis__png" type="button" onClick={() => downloadQuestionChart(question, analysis, index)}>이미지로 저장</button>}</header>
     {analysis.type === 'text' ? <div className="result-text-list">{analysis.values.slice(0, 8).map((answer, answerIndex) => <p key={`${question.id}-${answerIndex}`}>{answer}</p>)}</div>
       : question.type === 'single' ? <div className="result-pie-wrap">
           <div className="result-pie" style={{ background: buildConicGradient(analysis.counts, total) }}><span>{total}<small>응답</small></span></div>
-          <ul className="result-pie-legend">{analysis.counts.map((item, colorIndex) => <li key={item.option} style={{ '--tone': PIE_COLORS[colorIndex % PIE_COLORS.length] }}><i />{item.option}<b>{total ? Math.round((item.count / total) * 100) : 0}%</b></li>)}</ul>
+          <ul className="result-pie-legend">{analysis.counts.map((item, colorIndex) => <li key={item.option} style={{ '--tone': PIE_COLORS[colorIndex % PIE_COLORS.length] }}><i /><span>{item.option}</span><b>{item.count} ({total ? Math.round((item.count / total) * 100) : 0}%)</b></li>)}</ul>
         </div>
       : question.type === 'scale' ? <div className="result-vbars">{analysis.counts.map((item) => { const percent = total ? Math.round((item.count / total) * 100) : 0; return <div key={item.option}><i style={{ '--bar': `${percent}%` }} /><b>{item.option}</b><small>{item.count}명</small></div> })}</div>
       : <div className="result-bars">{analysis.counts.map(({ option, count }) => { const percent = total ? Math.round((count / total) * 100) : 0; return <div key={option}><span>{option}</span><i><b style={{ '--bar': `${percent}%` }} /></i><strong>{percent}%</strong><small>{count}명</small></div> })}</div>}
@@ -74,7 +74,7 @@ export default function SurveyResults() {
   const { surveyId } = useParams()
   const { user } = useAuth()
   const [state, setState] = useState({ status: 'loading', result: null, error: null })
-  const [tab, setTab] = useState('summary')
+  const [tab, setTab] = useState('questions')
 
   const load = useCallback(() => {
     setState({ status: 'loading', result: null, error: null })
@@ -99,7 +99,7 @@ export default function SurveyResults() {
     <header className="result-dashboard__header"><div><div className="result-dashboard__title"><div><h1>{survey.title}</h1><p>{survey.description}</p></div></div><ul><li>응답 {responses.length.toLocaleString()}개</li><li>목표 {target.toLocaleString()}명</li><li>{survey.status === 'active' ? '모집 중' : '모집 종료'}</li></ul></div><div><Link className="result-action" to={`/my-surveys/${survey.id}/manage`}>관리로 돌아가기</Link></div></header>
 
     {responses.length === 0 ? <section className="result-empty"><span>◎</span><h2>아직 응답이 없어요.</h2><p>응답이 제출되면 이곳에서 문항별 결과를 확인할 수 있습니다.</p><Link className="ui-button ui-button--secondary" to={`/my-surveys/${survey.id}/manage`}>관리로 돌아가기</Link></section> : <>
-      <nav className="result-tabs" aria-label="결과 보기 방식">{[['summary', '요약'], ['questions', '문항별 결과']].map(([value, label]) => <button className={tab === value ? 'active' : ''} type="button" onClick={() => setTab(value)} key={value}>{label}</button>)}</nav>
+      <nav className="result-tabs" aria-label="결과 보기 방식">{[['questions', '문항별 결과'], ['summary', '요약']].map(([value, label]) => <button className={tab === value ? 'active' : ''} type="button" onClick={() => setTab(value)} key={value}>{label}</button>)}</nav>
 
       {tab === 'summary' && <section className="result-summary-view"><ResultOverview survey={survey} sampleCount={responses.length} /></section>}
       {tab === 'questions' && <section className="result-analysis-list">{questions.map((question, index) => <QuestionAnalysis key={question.id} question={question} analysis={analyses[index]} index={index} />)}</section>}
