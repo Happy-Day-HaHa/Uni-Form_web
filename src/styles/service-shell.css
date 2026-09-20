@@ -184,3 +184,65 @@
   .survey-manage__overview{grid-template-columns:1fr 1fr}.survey-manage__overview article:nth-child(2){border-right:0}.survey-manage__overview article:nth-child(-n+2){border-bottom:1px solid #e5e7eb}
 }
 @media(max-width:520px){.survey-manage__overview{grid-template-columns:1fr}.survey-manage__overview article{border-right:0;border-bottom:1px solid #e5e7eb}.survey-manage__overview article:nth-child(2){border-bottom:1px solid #e5e7eb}.survey-manage__overview article:last-child{border-bottom:0}}
+
+/* Settings, FormMate and survey preview refinement. */
+.service-content:has(>.settings-page){padding-top:16px}
+.settings-page>.service-heading{min-height:auto}
+.settings-page>.service-heading h1{font-size:2rem}
+.settings-page>.service-heading p{font-size:.8rem}
+.settings-page>.settings-tabs{margin-top:16px}
+.settings-section{padding:20px 0}
+.settings-section>header{margin-bottom:16px}
+
+.formmate-page .formmate-agent{grid-template-rows:auto minmax(0,1fr) auto auto auto auto auto;border-color:#e5e7eb;background:#fff;font-family:inherit}
+.formmate-page .formmate-agent>header{display:flex;min-height:64px;align-items:center;padding:12px 16px;border-bottom:1px solid #e5e7eb;background:#fff}
+.formmate-page .formmate-agent>header h2{margin:0;color:#111827;font-size:1rem;font-weight:700;letter-spacing:-.02em}
+.formmate-page .formmate-agent>header p{margin:3px 0 0;color:#64748b;font-size:.72rem;line-height:1.5}
+.formmate-page .formmate-agent__messages{gap:12px;padding:16px;background:#fff}
+.formmate-page .formmate-message{font-family:inherit}
+.formmate-page .formmate-message p{max-width:88%;margin:0;padding:10px 12px;border:0;border-radius:11px;background:#f7f9fc;color:#1f2937;font-family:inherit;font-size:.8rem;font-weight:400;line-height:1.6;white-space:pre-line}
+.formmate-page .formmate-message--user p{border-radius:11px;background:#f1f8fe;color:#1f2937}
+.formmate-examples{gap:7px;margin:0;padding:12px;border-radius:10px;background:#f8fafc}
+.formmate-examples>span{color:#64748b;font-size:.68rem}
+.formmate-examples button{padding:8px 10px;border-color:#e5e7eb;border-radius:8px;color:#475569;font-family:inherit;font-size:.72rem;line-height:1.5}
+.formmate-examples button:hover{border-color:#9ed8ff;color:#168fda;transform:none}
+.formmate-page .formmate-agent__suggestions{padding:8px 10px 0}
+.formmate-page .formmate-agent__suggestions button,.formmate-quick-actions button{font-family:inherit}
+.formmate-page .formmate-agent__composer{margin:8px 10px 0;border-color:#d7dee8;background:#fff}
+.formmate-page .formmate-agent__composer:focus-within{border-color:#40abfc;box-shadow:0 0 0 3px rgba(64,171,252,.1)}
+.formmate-page .formmate-agent__composer textarea{color:#1f2937;font-family:inherit;font-size:.78rem}
+.formmate-page .formmate-agent__composer textarea::placeholder{color:#94a3b8}
+.formmate-quick-actions{padding:9px 10px 11px}
+.formmate-quick-actions button{border-color:#e5e7eb;border-radius:8px;color:#64748b;font-size:.64rem}
+.formmate-draft-card{margin-left:0;width:100%;border-color:#e5e7eb;border-radius:10px}
+
+.formmate-survey-panel{border-color:#e5e7eb;background:#fff}
+.formmate-survey-panel>header{min-height:58px;border-color:#e5e7eb}
+.formmate-survey-panel>header span{border-radius:6px;background:#f1f8fe;color:#168fda}
+.formmate-survey-panel__content{padding:0;background:#fff}
+.formmate-preview-body{min-height:100%;padding:28px 32px;background:#fff;color:#111827}
+.formmate-preview-intro{padding-bottom:22px;border-bottom:1px solid #e5e7eb}
+.formmate-preview-intro h3{margin:0;font-size:1.45rem;font-weight:700;letter-spacing:-.035em}
+.formmate-preview-intro p{margin:8px 0 0;color:#64748b;font-size:.78rem;line-height:1.65}
+.formmate-preview-intro>div{display:flex;flex-wrap:wrap;gap:0;margin-top:12px;color:#64748b;font-size:.66rem}
+.formmate-preview-intro>div span+span::before{content:'·';margin:0 8px;color:#c0c8d2}
+.formmate-preview-questions{display:grid;gap:0}
+.formmate-preview-questions fieldset{display:grid;gap:10px;padding:22px 0;border:0;border-bottom:1px solid #e5e7eb}
+.formmate-preview-questions fieldset:last-child{border-bottom:0}
+.formmate-preview-questions legend{margin:0 0 5px;color:#1f2937;font-size:.84rem;font-weight:650;line-height:1.55}
+.formmate-preview-questions legend b{color:#168fda}
+.formmate-preview-questions legend em{margin-left:4px;color:#e33c59;font-style:normal}
+.formmate-preview-questions legend small{display:inline;margin-left:8px;padding:0;background:transparent;color:#94a3b8;font-size:.58rem;font-weight:500}
+.formmate-preview-questions label{color:#475569;font-size:.76rem}
+.formmate-preview-questions textarea{width:100%;min-height:46px!important;padding:12px;border-color:#e5e7eb;border-radius:8px;background:#fff;font:inherit;font-size:.75rem}
+.catalog-heading__action,.service-heading>.ui-button,.dashboard-core-actions a:first-child{width:auto;padding-inline:20px;white-space:nowrap}
+
+@media(max-width:780px){
+  .service-content:has(>.settings-page){padding-top:14px}
+  .settings-page>.settings-tabs{margin-top:12px}
+  .settings-section{padding:18px 0}
+  .formmate-page .formmate-agent>header{min-height:60px;padding:10px 14px}
+  .formmate-preview-body{padding:22px 18px}
+  .formmate-preview-intro h3{font-size:1.25rem}
+  .catalog-heading__action,.service-heading>.ui-button{width:100%}
+}

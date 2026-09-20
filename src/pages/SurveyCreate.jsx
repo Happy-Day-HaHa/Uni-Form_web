@@ -8,19 +8,17 @@ import { createSurvey } from '../services/surveyService'
 import { validateSurvey } from '../utils/validation'
 
 const blankQuestion = (type = 'text') => ({ id: crypto.randomUUID(), title: '', type, required: true, options: (type === 'single' || type === 'multiple') ? ['선택 1', '선택 2'] : [], ...(type === 'scale' ? { min: 1, max: 5 } : {}) })
-const initialMessages = [{ role: 'assistant', text: '안녕하세요! 저는 FormMate입니다.\n어떤 설문을 만들어볼까요?' }]
+const initialMessages = [{ role: 'assistant', text: '안녕하세요. 어떤 설문을 만들고 싶으신가요?' }]
 const questionTypeLabels = { single: '단일 선택', multiple: '복수 선택', scale: '척도형', text: '단답형', long: '장문형' }
 function FormMatePreview({ form }) {
   const questions = form.questions.filter((question) => question.title.trim())
   const visibleQuestions = questions.length ? questions : form.questions
   return <div className="formmate-preview-body">
-    <section className="formmate-preview-block" data-preview-key="title"><span>01</span><div><small>설문 제목</small><h3>{form.title || '설문 제목을 입력해주세요.'}</h3></div></section>
-    <section className="formmate-preview-block" data-preview-key="description"><span>02</span><div><small>설문 설명</small><p>{form.description || '설문에 대한 설명을 입력해주세요.'}</p></div></section>
-    <section className="formmate-preview-block" data-preview-key="basic"><span>03</span><div><small>기본 정보</small><dl><div><dt>목표 응답 인원</dt><dd>{Number(form.targetCount || 0).toLocaleString()}명</dd></div><div><dt>마감일</dt><dd>{form.deadline || '미설정'}</dd></div></dl></div></section>
-    <section className="formmate-preview-question-section"><header><span>04</span><div><small>설문 문항</small><strong>{visibleQuestions.length}개 문항</strong></div></header><div className="formmate-preview-questions">{visibleQuestions.map((question, index) => {
+    <header className="formmate-preview-intro" data-preview-key="title"><h3>{form.title || '설문 제목을 입력해주세요.'}</h3><p data-preview-key="description">{form.description || '설문에 대한 설명을 입력해주세요.'}</p><div data-preview-key="basic"><span>약 {Number(form.estimatedMinutes || 1)}분</span><span>{visibleQuestions.length}개 문항</span>{form.deadline && <span>{form.deadline} 마감</span>}</div></header>
+    <div className="formmate-preview-questions">{visibleQuestions.map((question, index) => {
       const options = question.type === 'scale' ? Array.from({ length: Number(question.max || 5) - Number(question.min || 1) + 1 }, (_, offset) => Number(question.min || 1) + offset) : question.options || []
       return <fieldset key={question.id} data-preview-key={`question-${question.id}`}><legend><b>Q{index + 1}.</b> {question.title || '질문을 입력해주세요.'}{question.required !== false && <em>*</em>}<small>{questionTypeLabels[question.type] || question.type}</small></legend>{question.type === 'text' || question.type === 'long' ? <textarea readOnly rows={question.type === 'long' ? 3 : 1} placeholder="답변을 입력해주세요." /> : options.map((option) => <label key={option}><input type={question.type === 'multiple' ? 'checkbox' : 'radio'} name={`preview-${question.id}`} disabled /> <span>{option}</span></label>)}</fieldset>
-    })}</div></section>
+    })}</div>
   </div>
 }
 

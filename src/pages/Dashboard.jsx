@@ -59,7 +59,7 @@ export default function Dashboard() {
   return <ServiceShell activePath="/dashboard"><div ref={rootRef} className="dashboard-final">
     <ServiceHeading icon="▦" title="대시보드" description="지금, 필요한 설문과 주요 활동을 한눈에 확인해보세요." action={<select className="service-select dashboard-range" value={range} onChange={(event) => changeRange(event.target.value)} aria-label="대시보드 기간"><option value="7">최근 7일</option><option value="30">최근 30일</option><option value="90">최근 3개월</option></select>} />
     {error && <div className="component-error" role="alert">{error}<button type="button" onClick={() => window.location.reload()}>다시 시도</button></div>}
-    <nav className="dashboard-core-actions" aria-label="빠른 실행"><Link to="/formmate">설문 만들기</Link><Link to="/my-surveys">내 설문 보기</Link></nav>
+    <nav className="dashboard-core-actions" aria-label="빠른 실행"><Link to="/formmate">FormMate로 설문 만들기</Link><Link to="/my-surveys">내 설문 보기</Link></nav>
     <section className="service-metrics">
       <MetricCard to="/my-surveys?status=active" icon="▤" label="진행 중인 설문" value={active} unit="개" note="현재 응답을 모으고 있어요." />
       <MetricCard to="/my-surveys?sort=responses" tone="violet" icon="◎" label="누적 응답 수" value={responses} unit="건" note="내 설문에 모인 전체 응답이에요." />

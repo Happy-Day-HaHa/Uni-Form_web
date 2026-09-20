@@ -92,7 +92,7 @@ export default function SurveyList() {
       <div className="catalog-content catalog-content--service" ref={listRef}>
           <section className="catalog-heading" data-catalog-reveal>
             <div><h1>설문 목록</h1><p>{user ? '나와 잘 맞는 설문을 확인하고 바로 참여해보세요.' : '참여 가능한 설문을 확인하고 간편하게 시작해보세요.'}</p></div>
-            <Link className="ui-button catalog-heading__action" to="/formmate">새 설문 만들기</Link>
+            <Link className="ui-button catalog-heading__action" to="/formmate">FormMate로 설문 만들기</Link>
           </section>
 
           <p className="catalog-overview" data-catalog-reveal>참여 가능한 설문 <b>{available}개</b><span>평균 소요시간 {averageMinutes}분</span></p>

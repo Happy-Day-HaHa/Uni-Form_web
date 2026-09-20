@@ -58,7 +58,7 @@ export default function MySurveys() {
   async function remove() { const survey = confirmSurvey; await deleteSurvey(survey.id); setSurveys((current) => current.filter((item) => item.id !== survey.id)); setConfirmSurvey(null); notify('설문을 삭제했습니다.') }
 
   return <ServiceShell activePath="/my-surveys"><div ref={rootRef}>
-    <ServiceHeading icon="▤" title="내 설문" description="만든 설문을 관리하고 응답 현황과 다음 액션을 확인하세요." action={<Link className="ui-button" to="/formmate">✦ FormMate로 설문 만들기</Link>} />
+    <ServiceHeading icon="▤" title="내 설문" description="만든 설문을 관리하고 응답 현황과 다음 액션을 확인하세요." action={<Link className="ui-button" to="/formmate">FormMate로 설문 만들기</Link>} />
     <section className="service-metrics">
       <MetricCard icon="↗" label="진행 중 설문" value={counts.active} unit="개" note="현재 응답을 수집하고 있어요." />
       <MetricCard tone="amber" icon="!" label="검토 필요" value={counts.stalled} unit="개" note="응답이 저조한 설문이 있어요." />
