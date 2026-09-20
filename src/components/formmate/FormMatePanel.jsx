@@ -33,7 +33,7 @@ export default function FormMatePanel({ value, onChange, onCreateDraft, onSend, 
     </div>
     {suggestions.length > 0 && <div className="formmate-agent__suggestions">{suggestions.map((item) => <button type="button" key={item} onClick={() => onChange(item)}>{item}</button>)}</div>}
     {selectedLabel && <div className="formmate-context"><span>{selectedLabel}</span><button type="button" onClick={() => onChange('')}>×</button></div>}
-    <form className="formmate-agent__composer" onSubmit={submit}><textarea ref={composerRef} value={value} onChange={(event) => onChange(event.target.value)} onKeyDown={keyDown} rows="1" placeholder="추가로 요청할 내용을 입력하세요." /><button type="submit" aria-label={buttonLabel} disabled={applying || !value.trim()}><span aria-hidden="true">→</span><span className="sr-only">{buttonLabel}</span></button></form>
+    <form className="formmate-agent__composer" onSubmit={submit}><textarea ref={composerRef} value={value} onChange={(event) => onChange(event.target.value)} onKeyDown={keyDown} rows="1" placeholder="추가 요청을 입력하세요..." aria-label="FormMate에게 보낼 메시지" /><button type="submit" aria-label={buttonLabel} title={buttonLabel} disabled={applying || !value.trim()}><span aria-hidden="true">→</span></button></form>
     <div className="formmate-quick-actions">{['주제 추천', '문항 추가', '말투 변경', '대상 설정'].map((item) => <button type="button" key={item} onClick={() => onChange(item)}>{item}</button>)}</div>
     {canUndo && <button className="formmate-undo" type="button" onClick={onUndo}>마지막 변경 되돌리기</button>}
     {message && <small className="formmate-agent__status">{message}</small>}

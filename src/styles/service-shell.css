@@ -246,3 +246,19 @@
   .formmate-preview-intro h3{font-size:1.25rem}
   .catalog-heading__action,.service-heading>.ui-button{width:100%}
 }
+
+/* Stable compact FormMate composer and dashboard activity action. */
+.formmate-page .formmate-agent__composer{display:grid;grid-template-columns:minmax(0,1fr) 38px;min-height:52px;align-items:end;gap:6px;margin:8px 10px 10px;padding:5px 5px 5px 11px;overflow:hidden;border:1px solid #e5e7eb;border-radius:11px;background:#fff}
+.formmate-page .formmate-agent__composer textarea{display:block;width:100%;height:40px;min-height:40px!important;max-height:96px;margin:0;padding:9px 0;border:0!important;background:transparent;box-shadow:none!important;color:#1f2937;font:inherit;font-size:.78rem;line-height:1.5;resize:none}
+.formmate-page .formmate-agent__composer button{display:grid;width:38px;min-width:38px;height:38px;min-height:38px;align-self:end;padding:0;border:0;border-radius:8px;background:#40abfc;color:#fff;line-height:1;place-items:center}
+.formmate-page .formmate-agent__composer button span{display:block;font-size:1.05rem;line-height:1;transform:none}
+.formmate-page .formmate-agent__composer button:disabled{background:#edf1f5;color:#9aa7b8}
+.dashboard-activity .service-panel__head{align-items:center}
+.dashboard-activity .dashboard-activity__all{display:inline-flex;min-height:auto;align-items:center;gap:5px;padding:4px 0;border:0;border-radius:0;background:transparent;color:#64748b;font-size:.7rem;font-weight:600;white-space:nowrap}
+.dashboard-activity .dashboard-activity__all:hover{background:transparent;color:#168fda}
+.dashboard-activity .dashboard-activity__all span{font-size:.78rem}
+
+@media(max-width:780px){
+  .formmate-page .formmate-agent__composer{grid-template-columns:minmax(0,1fr) 38px;min-height:50px}
+  .dashboard-activity .service-panel__head{align-items:flex-start}
+}

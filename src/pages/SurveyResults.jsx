@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth'
 import { getOwnedSurveyResults } from '../services/responseService'
 import { downloadAllCharts, downloadQuestionChart, isChartable } from '../utils/chartExport'
 
-const PIE_COLORS = ['#397ff1', '#78adf9', '#59cfb4', '#60c4c4', '#9468e8', '#f2994a', '#eb5757', '#56ccf2', '#bb6bd9', '#27ae60']
+const PIE_COLORS = ['#40abfc', '#82ccff', '#b9e4ff', '#94a3b8', '#cbd5e1']
 
 function buildConicGradient(counts, total) {
   if (!total) return '#eef1f6'
@@ -100,22 +100,15 @@ export default function SurveyResults() {
   const { survey, responses } = state.result
   const questions = survey.questions || []
   const target = Math.max(1, Number(survey.target_count || 1))
-  const achievement = Math.round((responses.length / target) * 100)
-  const answeredCells = responses.reduce((sum, response) => sum + questions.filter((question) => response.answers?.[question.id] !== undefined && response.answers?.[question.id] !== '').length, 0)
-  const completionRate = responses.length && questions.length ? Math.round((answeredCells / (responses.length * questions.length)) * 100) : 0
-  const firstChoice = analyses.find((analysis) => analysis.counts?.length)
-  const leading = firstChoice ? [...firstChoice.counts].sort((a, b) => b.count - a.count)[0] : null
-  const summary = leading ? `가장 많이 선택된 응답은 ‘${leading.option}’입니다. 전체 ${responses.length.toLocaleString()}개의 응답을 기준으로 문항별 흐름을 확인해보세요.` : '주관식 답변에서 반복되는 의견을 문항별로 확인해보세요.'
 
   return <ServiceShell activePath="/my-surveys"><div className="result-dashboard">
     <nav className="result-dashboard__breadcrumb" aria-label="현재 위치"><Link to="/my-surveys">내 설문</Link><span>/</span><Link to={`/my-surveys/${survey.id}/manage`}>{survey.title}</Link><span>/</span><strong>결과</strong></nav>
-    <header className="result-dashboard__header"><div><div className="result-dashboard__title"><span>▥</span><div><h1>{survey.title}</h1><p>{survey.description}</p></div></div><ul><li>목표 응답 {target.toLocaleString()}명</li><li>상태 {survey.status === 'active' ? '진행 중' : '종료'}</li><li>문항 {questions.length}개</li></ul></div><div><button className="result-action" type="button" onClick={share}>공유하기</button>{responses.length > 0 && questions.some(isChartable) && <button className="result-action result-action--primary" type="button" onClick={() => downloadAllCharts(survey.title, questions, analyses)}>전체 그래프 다운로드</button>}</div></header>
+    <header className="result-dashboard__header"><div><div className="result-dashboard__title"><div><h1>{survey.title}</h1><p>{survey.description}</p></div></div><ul><li>응답 {responses.length.toLocaleString()}건</li><li>목표 {target.toLocaleString()}명</li><li>{survey.status === 'active' ? '모집 중' : '모집 종료'}</li></ul></div><div><button className="result-action" type="button" onClick={share}>공유하기</button>{responses.length > 0 && questions.some(isChartable) && <button className="result-action result-action--primary" type="button" onClick={() => downloadAllCharts(survey.title, questions, analyses)}>그래프 이미지 저장</button>}</div></header>
 
     {responses.length === 0 ? <section className="result-empty"><span>◎</span><h2>아직 응답이 없어요.</h2><p>설문을 공유하면 첫 응답을 받을 수 있습니다.</p><button className="ui-button" type="button" onClick={share}>설문 공유하기</button></section> : <>
-      <ResultOverview survey={survey} sampleCount={responses.length} completionRate={completionRate} summary={summary} />
       <nav className="result-tabs" aria-label="결과 보기 방식">{[['summary', '요약'], ['questions', '문항별 결과']].map(([value, label]) => <button className={tab === value ? 'active' : ''} type="button" onClick={() => setTab(value)} key={value}>{label}</button>)}</nav>
 
-      {tab === 'summary' && <section className="result-summary-grid"><article className="result-insight"><span>핵심 흐름</span><strong>{leading ? leading.option : '주관식 중심 설문'}</strong><p>{summary}</p></article><article className="result-achievement"><header><div><span>목표 달성률</span><strong>{achievement}%</strong></div><small>{responses.length.toLocaleString()} / {target.toLocaleString()}명</small></header><div><i style={{ '--progress': `${Math.min(100, achievement)}%` }} /></div><p>{achievement >= 100 ? '목표 응답 수를 달성했습니다.' : `${Math.max(0, target - responses.length).toLocaleString()}명의 응답이 더 필요합니다.`}</p></article>{questions.slice(0, 2).map((question, index) => <QuestionAnalysis key={question.id} question={question} analysis={analyses[index]} index={index} compact />)}</section>}
+      {tab === 'summary' && <section className="result-summary-view"><ResultOverview survey={survey} sampleCount={responses.length} /><div className="result-summary-questions">{questions.slice(0, 2).map((question, index) => <QuestionAnalysis key={question.id} question={question} analysis={analyses[index]} index={index} compact />)}</div></section>}
       {tab === 'questions' && <section className="result-analysis-list">{questions.map((question, index) => <QuestionAnalysis key={question.id} question={question} analysis={analyses[index]} index={index} />)}</section>}
     </>}
     {toast && <div className="service-toast" role="status">{toast}</div>}
