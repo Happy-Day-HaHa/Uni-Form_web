@@ -58,8 +58,9 @@ function ResultState({ code, onRetry, surveyId }) {
 
 function QuestionAnalysis({ question, analysis, index }) {
   const total = analysis.responseCount
+  const hasAverage = Number.isFinite(analysis.average)
   return <article className="result-analysis">
-    <header><span>Q{index + 1}.</span><div><h2>{question.title}{question.required !== false && <em>*</em>}</h2><p>응답 {total.toLocaleString()}개{analysis.average !== null ? ` · 평균 ${analysis.average.toFixed(1)} / ${question.max || 5}` : ''}</p></div>{isChartable(question) && <button className="result-analysis__png" type="button" onClick={() => downloadQuestionChart(question, analysis, index)}>이미지로 저장</button>}</header>
+    <header><span>Q{index + 1}.</span><div><h2>{question.title}{question.required !== false && <em>*</em>}</h2><p>응답 {total.toLocaleString()}개{hasAverage ? ` · 평균 ${analysis.average.toFixed(1)} / ${question.max || 5}` : ''}</p></div>{isChartable(question) && <button className="result-analysis__png" type="button" onClick={() => downloadQuestionChart(question, analysis, index)}>이미지로 저장</button>}</header>
     {analysis.type === 'text' ? <div className="result-text-list">{analysis.values.slice(0, 8).map((answer, answerIndex) => <p key={`${question.id}-${answerIndex}`}>{answer}</p>)}</div>
       : question.type === 'single' ? <div className="result-pie-wrap">
           <div className="result-pie" style={{ background: buildConicGradient(analysis.counts, total) }}><span>{total}<small>응답</small></span></div>
