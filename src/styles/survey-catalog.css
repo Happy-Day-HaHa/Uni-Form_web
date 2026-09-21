@@ -281,3 +281,6 @@
   white-space: nowrap;
   border: 0;
 }
+.catalog-row__badges { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 8px; vertical-align: middle; }
+.catalog-row__badges em { padding: 4px 8px; border-radius: 999px; background: #eef7ff; color: #258bd9; font-size: 12px; font-style: normal; font-weight: 700; }
+.catalog-row__action:disabled { cursor: not-allowed; background: #edf1f5; color: #8290a5; box-shadow: none; }

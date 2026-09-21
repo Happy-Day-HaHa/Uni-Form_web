@@ -22,6 +22,7 @@ export default function Leaderboard() {
   if (loading || !data) {
     return <ServiceShell activePath="/leaderboard"><div className="leaderboard-skeleton" aria-label="리더보드를 불러오는 중">{[0, 1, 2].map((item) => <div className="skeleton-block" key={item} />)}</div></ServiceShell>
   }
+  if (!data.available) return <ServiceShell activePath="/leaderboard"><section className="result-state"><span>◎</span><h1>리더보드 집계를 준비 중이에요.</h1><p>실제 응답 기록을 집계하는 서버 기능이 연결되면 순위를 확인할 수 있습니다.</p><div><Link className="ui-button" to="/surveys">설문 둘러보기</Link></div></section></ServiceShell>
 
   const [first, second, third] = data.entries
   const pageSize = 10

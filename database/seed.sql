@@ -10,7 +10,7 @@ begin
   end if;
 
   if not exists (select 1 from public.surveys where title = '더 나은 캠퍼스 라이프를 위한 설문') then
-    insert into public.surveys (creator_id, title, description, category, questions, audience, target_count, response_count, reward_points, remaining_budget, estimated_minutes)
-    values (seed_creator, '더 나은 캠퍼스 라이프를 위한 설문', '대학생의 공간 이용과 생활 습관을 알아봅니다.', '교육', '[{"id":"q1","type":"single","title":"캠퍼스에서 가장 자주 이용하는 공간은?","options":["도서관","학생회관","카페","강의실"]},{"id":"q2","type":"scale","title":"현재 캠퍼스 생활에 얼마나 만족하나요?","min":1,"max":5},{"id":"q3","type":"text","title":"가장 개선되었으면 하는 점을 알려주세요."}]'::jsonb, '{"age_groups":["10대","20대"]}'::jsonb, 120, 0, 320, 38400, 4);
+    insert into public.surveys (creator_id, title, description, category, questions, audience, target_count, response_count, reward_points, remaining_budget, estimated_minutes, deadline)
+    values (seed_creator, '더 나은 캠퍼스 라이프를 위한 설문', '대학생의 공간 이용과 생활 습관을 알아봅니다.', '교육', '[{"id":"q1","type":"single","title":"캠퍼스에서 가장 자주 이용하는 공간은?","options":["도서관","학생회관","카페","강의실"]},{"id":"q2","type":"scale","title":"현재 캠퍼스 생활에 얼마나 만족하나요?","min":1,"max":5},{"id":"q3","type":"text","title":"가장 개선되었으면 하는 점을 알려주세요."}]'::jsonb, '{}'::jsonb, 100, 0, 0, 0, 4, ((now() at time zone 'Asia/Seoul')::date + 30));
   end if;
 end $$;

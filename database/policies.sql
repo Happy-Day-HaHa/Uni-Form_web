@@ -13,8 +13,8 @@ create policy "users_read_own_transactions" on public.point_transactions for sel
 
 revoke insert, delete on public.users from authenticated;
 revoke update (point_balance, email, created_at) on public.users from authenticated;
-grant update (name, age_group, region, interests, updated_at) on public.users to authenticated;
-revoke insert, delete on public.surveys from authenticated;
-revoke update (creator_id, response_count, reward_points, remaining_budget) on public.surveys from authenticated;
+revoke update on public.users from authenticated;
+grant update (nickname, gender, grade, major, enrollment_status, updated_at) on public.users to authenticated;
+revoke insert, update, delete on public.surveys from authenticated;
 revoke insert, update, delete on public.responses from authenticated;
 revoke insert, update, delete on public.point_transactions from authenticated;

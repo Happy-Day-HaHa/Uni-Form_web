@@ -10,7 +10,7 @@ function mockDraft() {
   return { id: 'team-draft-1', title: '동아리 활동 만족도 조사 (초안)', updatedBy: '박도현', updatedAt: new Date(Date.now() - 3 * 3600000).toISOString() }
 }
 function mockSurvey() {
-  return { id: 'team-survey-1', title: '학과 새내기 배움터 만족도 조사', response_count: 64, target_count: 150, deadline: '2026-09-30', updatedBy: '이서진', updatedAt: new Date(Date.now() - 26 * 3600000).toISOString() }
+  return { id: 'team-survey-1', title: '학과 새내기 배움터 만족도 조사', response_count: 64, target_count: 100, deadline: '2026-09-30', updatedBy: '이서진', updatedAt: new Date(Date.now() - 26 * 3600000).toISOString() }
 }
 
 function readTeam() {

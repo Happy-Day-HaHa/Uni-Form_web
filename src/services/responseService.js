@@ -2,6 +2,17 @@ import { supabase } from './supabase'
 import { getAllDemoSurveys, isDemoSurveyFixture } from './surveyService'
 
 const textSamples = ['사용 흐름이 더 단순해지면 좋겠어요.', '모바일에서도 편하게 참여하고 싶어요.', '결과를 한눈에 비교할 수 있으면 좋겠습니다.', '지금 구성도 전반적으로 만족스러워요.', '안내 문구가 조금 더 구체적이면 좋겠어요.']
+const demoRespondedKey = 'uni-form-demo-responded-surveys'
+
+export async function getRespondedSurveyIds(userId) {
+  if (!userId) return []
+  if (!supabase) {
+    try { return JSON.parse(localStorage.getItem(demoRespondedKey) || '[]') } catch { return [] }
+  }
+  const { data, error } = await supabase.from('responses').select('survey_id').eq('respondent_id', userId)
+  if (error) throw error
+  return [...new Set((data || []).map((item) => item.survey_id))]
+}
 
 function createDemoResponses(survey) {
   return Array.from({ length: Number(survey.response_count || 0) }, (_, index) => ({
@@ -24,7 +35,12 @@ export class ResultAccessError extends Error {
 }
 
 export async function submitSurveyResponse(surveyId, answers) {
-  if (!supabase) return { response_id: crypto.randomUUID() }
+  if (!supabase) {
+    const ids = await getRespondedSurveyIds('demo-user')
+    if (ids.includes(surveyId)) throw new Error('이미 응답을 완료한 설문입니다.')
+    localStorage.setItem(demoRespondedKey, JSON.stringify([...ids, surveyId]))
+    return { response_id: crypto.randomUUID() }
+  }
   const { data, error } = await supabase.rpc('submit_survey_response', { target_survey_id: surveyId, submitted_answers: answers })
   if (error) throw error
   return data

@@ -5,8 +5,8 @@ import SurveyFilters from '../components/survey/SurveyFilters'
 import SurveyRow from '../components/survey/SurveyRow'
 import { useAuth } from '../hooks/useAuth'
 import { getSurveys } from '../services/surveyService'
-import { getProfile } from '../services/userService'
-import { matchesProfile } from '../utils/surveyFilter'
+import { getRespondedSurveyIds } from '../services/responseService'
+import { getMyTeam } from '../services/teamService'
 import '../styles/survey-catalog.css'
 
 export default function SurveyList() {
@@ -18,7 +18,8 @@ export default function SurveyList() {
   const [query, setQuery] = useState(params.get('q') || '')
   const [debouncedQuery, setDebouncedQuery] = useState(query)
   const [category, setCategory] = useState(params.get('category') || '전체')
-  const [sort, setSort] = useState(params.get('sort') || '최신순')
+  const [respondedIds, setRespondedIds] = useState([])
+  const [teamSurveyIds, setTeamSurveyIds] = useState([])
   const [duration, setDuration] = useState(params.get('duration') || '전체 시간')
   const [newSurveyId] = useState(() => {
     try { const id = sessionStorage.getItem('uni-form-new-survey') || ''; sessionStorage.removeItem('uni-form-new-survey'); return id } catch { return '' }
@@ -27,8 +28,8 @@ export default function SurveyList() {
   const listRef = useRef(null)
 
   useEffect(() => {
-    Promise.all([getSurveys(), user ? getProfile(user.id) : Promise.resolve(null)])
-      .then(([items, profile]) => setSurveys(profile ? items.filter((survey) => matchesProfile(survey, profile)) : items))
+    Promise.all([getSurveys(), getRespondedSurveyIds(user?.id), getMyTeam()])
+      .then(([items, ids, team]) => { setSurveys(items); setRespondedIds(ids); setTeamSurveyIds((team?.surveys || []).map((survey) => survey.id)) })
       .catch((reason) => setError(reason.message))
       .finally(() => setLoading(false))
   }, [user])
@@ -38,10 +39,9 @@ export default function SurveyList() {
     const next = {}
     if (debouncedQuery) next.q = debouncedQuery
     if (category !== '전체') next.category = category
-    if (sort !== '최신순') next.sort = sort
     if (duration !== '전체 시간') next.duration = duration
     setParams(next, { replace: true })
-  }, [category, debouncedQuery, duration, setParams, sort])
+  }, [category, debouncedQuery, duration, setParams])
 
   const visibleSurveys = useMemo(() => {
     const keyword = debouncedQuery.trim().toLocaleLowerCase('ko')
@@ -56,14 +56,10 @@ export default function SurveyList() {
       return matchesKeyword && matchesCategory && matchesDuration
     })
 
-    return [...filtered].sort((a, b) => {
-      if (sort === '인기순') return (b.response_count || 0) - (a.response_count || 0)
-      if (sort === '소요시간순') return (a.estimated_minutes || 5) - (b.estimated_minutes || 5)
-      return String(b.created_at || b.id).localeCompare(String(a.created_at || a.id))
-    })
-  }, [category, debouncedQuery, duration, sort, surveys])
+    return [...filtered].sort((a, b) => String(b.created_at || b.id).localeCompare(String(a.created_at || a.id)))
+  }, [category, debouncedQuery, duration, surveys])
 
-  useEffect(() => { setVisibleCount(20) }, [category, debouncedQuery, duration, sort])
+  useEffect(() => { setVisibleCount(20) }, [category, debouncedQuery, duration])
   const pagedSurveys = visibleSurveys.slice(0, visibleCount)
 
   useEffect(() => {
@@ -82,7 +78,7 @@ export default function SurveyList() {
     return () => observer.disconnect()
   }, [pagedSurveys])
 
-  const available = surveys.filter((survey) => (survey.response_count || 0) < (survey.target_count || 1)).length
+  const available = surveys.length
   const averageMinutes = surveys.length
     ? Math.round(surveys.reduce((sum, survey) => sum + Number(survey.estimated_minutes || 5), 0) / surveys.length)
     : 0
@@ -97,7 +93,7 @@ export default function SurveyList() {
 
           <p className="catalog-overview" data-catalog-reveal>참여 가능한 설문 <b>{available}개</b><span>평균 소요시간 {averageMinutes}분</span></p>
 
-          <div data-catalog-reveal><SurveyFilters query={query} onQueryChange={setQuery} category={category} onCategoryChange={setCategory} sort={sort} onSortChange={setSort} duration={duration} onDurationChange={setDuration} /></div>
+          <div data-catalog-reveal><SurveyFilters query={query} onQueryChange={setQuery} category={category} onCategoryChange={setCategory} duration={duration} onDurationChange={setDuration} /></div>
 
           {!loading && !error && <p className="catalog-count" data-catalog-reveal>총 <strong>{visibleSurveys.length}개</strong>의 설문이 있습니다.</p>}
           {loading && <div className="catalog-skeleton" aria-label="설문을 불러오고 있어요">{Array.from({ length: 4 }, (_, index) => <div key={index}><span /><p /><i /></div>)}</div>}
@@ -105,8 +101,8 @@ export default function SurveyList() {
 
           {!loading && !error && (
             <section className="catalog-list" aria-live="polite">
-              {pagedSurveys.map((survey, index) => <SurveyRow key={survey.id} survey={survey} index={index} user={user} newSurveyId={newSurveyId} />)}
-              {!visibleSurveys.length && <div className="catalog-empty"><b>조건에 맞는 설문이 없습니다.</b><span>검색어나 필터를 바꿔보세요.</span><button className="ui-button ui-button--secondary" type="button" onClick={() => { setQuery(''); setCategory('전체'); setSort('최신순'); setDuration('전체 시간') }}>필터 초기화</button></div>}
+              {pagedSurveys.map((survey, index) => <SurveyRow key={survey.id} survey={survey} index={index} user={user} responded={respondedIds.includes(survey.id)} isTeamSurvey={teamSurveyIds.includes(survey.id)} newSurveyId={newSurveyId} />)}
+              {!visibleSurveys.length && <div className="catalog-empty"><b>조건에 맞는 설문이 없습니다.</b><span>검색어나 필터를 바꿔보세요.</span><button className="ui-button ui-button--secondary" type="button" onClick={() => { setQuery(''); setCategory('전체'); setDuration('전체 시간') }}>필터 초기화</button></div>}
             </section>
           )}
           {!loading && !error && visibleCount < visibleSurveys.length && <button className="catalog-load-more" type="button" onClick={() => setVisibleCount((count) => count + 20)}>더 보기 ({visibleSurveys.length - visibleCount}개 더 있음)</button>}

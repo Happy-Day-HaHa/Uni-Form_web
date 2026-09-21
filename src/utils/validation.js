@@ -24,7 +24,9 @@ export function validateNickname(nickname) {
   return ''
 }
 
-export function validateSurvey({ title, questions, targetCount }) {
+import { getKstDateString } from './surveyPolicy'
+
+export function validateSurvey({ title, questions, targetCount, deadline }) {
   if (title.trim().length < 3) return '설문 제목을 3자 이상 입력해주세요.'
 
   const filled = questions.filter((question) => question.title.trim())
@@ -41,6 +43,8 @@ export function validateSurvey({ title, questions, targetCount }) {
     }
   }
 
-  if (targetCount < 1) return '목표 인원은 1명 이상이어야 합니다.'
+  if (targetCount < 1 || targetCount > 100) return '목표 인원은 1명 이상 100명 이하로 입력해주세요.'
+  if (!deadline) return '마감일을 입력해주세요.'
+  if (deadline <= getKstDateString()) return '마감일은 오늘 이후 날짜로 선택해주세요.'
   return ''
 }

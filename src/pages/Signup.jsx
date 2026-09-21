@@ -15,7 +15,7 @@ const enrollmentOptions = ['재학', '휴학', '졸업', '해당 없음']
 export default function Signup() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ nickname: '', email: '', password: '', gender: '응답하지 않음', grade: '해당 없음', major: '해당 없음', enrollmentStatus: '해당 없음' })
-  const [agreements, setAgreements] = useState({ terms: false, privacy: false, marketing: false })
+  const [agreements, setAgreements] = useState({ age14: false, terms: false, privacy: false, marketing: false })
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -24,11 +24,11 @@ export default function Signup() {
     if (!isSupabaseConfigured) return navigate('/surveys')
     const validationMessage = validateSignup(form)
     if (validationMessage) return setMessage(validationMessage)
-    if (!agreements.terms || !agreements.privacy) return setMessage('필수 약관에 모두 동의해주세요.')
+    if (!agreements.age14 || !agreements.terms || !agreements.privacy) return setMessage('필수 항목에 모두 동의해주세요.')
     try {
       setSubmitting(true)
       await signup(form)
-      navigate('/surveys')
+      navigate('/verify-email', { state: { email: form.email } })
     } catch (error) {
       setMessage(error.message)
     } finally {
@@ -53,7 +53,8 @@ export default function Signup() {
       </div>
       <fieldset className="auth-agreements">
         <legend>약관 동의</legend>
-        <Checkbox className="auth-agreements__all" checked={Object.values(agreements).every(Boolean)} indeterminate={Object.values(agreements).some(Boolean) && !Object.values(agreements).every(Boolean)} onChange={(event) => setAgreements({ terms: event.target.checked, privacy: event.target.checked, marketing: event.target.checked })}>전체 동의</Checkbox>
+        <Checkbox className="auth-agreements__all" checked={Object.values(agreements).every(Boolean)} indeterminate={Object.values(agreements).some(Boolean) && !Object.values(agreements).every(Boolean)} onChange={(event) => setAgreements({ age14: event.target.checked, terms: event.target.checked, privacy: event.target.checked, marketing: event.target.checked })}>전체 동의</Checkbox>
+        <Checkbox checked={agreements.age14} onChange={(event) => setAgreements({ ...agreements, age14: event.target.checked })}><span>[필수] 만 14세 이상입니다.</span></Checkbox>
         <Checkbox checked={agreements.terms} onChange={(event) => setAgreements({ ...agreements, terms: event.target.checked })}><span>[필수] 이용약관에 동의합니다.</span></Checkbox>
         <Checkbox checked={agreements.privacy} onChange={(event) => setAgreements({ ...agreements, privacy: event.target.checked })}><span>[필수] 개인정보 처리방침에 동의합니다.</span></Checkbox>
         <Checkbox checked={agreements.marketing} onChange={(event) => setAgreements({ ...agreements, marketing: event.target.checked })}><span>[선택] 서비스 소식과 혜택을 받습니다.</span></Checkbox>

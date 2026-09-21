@@ -26,7 +26,7 @@ export default function SurveyCreate() {
   const navigate = useNavigate()
   const location = useLocation()
   const initialPrompt = location.state?.formMatePrompt || ''
-  const [form, setForm] = useState({ title: '', description: '', category: '교육', targetCount: 50, estimatedMinutes: 5, deadline: '', ageGroup: '전체', visibility: '전체 공개', questions: [blankQuestion()] })
+  const [form, setForm] = useState({ title: '', description: '', category: '교육', targetCount: 50, estimatedMinutes: 5, deadline: '', questions: [blankQuestion()] })
   const [aiPrompt, setAiPrompt] = useState(initialPrompt)
   const [aiStep, setAiStep] = useState(0)
   const [aiPurpose, setAiPurpose] = useState(initialPrompt)
@@ -94,12 +94,8 @@ export default function SurveyCreate() {
         const subject = value.replace(/[.?!]$/u, '')
         setAiPurpose(subject)
         commitForm((current) => ({ ...current, title: current.title || `${subject} 조사`, description: current.description || `${subject}에 대한 경험과 의견을 알아보기 위한 설문입니다.` }))
-        reply = '목적을 반영했어요. 이 설문에 참여할 대상은 누구인가요?'
+        reply = '목적을 반영했어요. 응답에는 몇 분 정도 걸리면 좋을까요?'
       } else if (aiStep === 1) {
-        const group = ['10대', '20대', '30대', '40대', '50대 이상'].find((item) => value.includes(item)) || '전체'
-        commitForm((current) => ({ ...current, ageGroup: group }))
-        reply = '대상 조건을 반영했어요. 응답에는 몇 분 정도 걸리면 좋을까요?'
-      } else if (aiStep === 2) {
         const minutes = Math.min(20, Math.max(1, Number(value.match(/\d+/)?.[0] || 5)))
         const subject = aiPurpose || '이번 주제'
         commitForm((current) => ({ ...current, estimatedMinutes: minutes, questions: [
@@ -121,16 +117,16 @@ export default function SurveyCreate() {
 
   async function handleSubmit(event) {
     event?.preventDefault()
-    const validationMessage = validateSurvey({ title: form.title, questions: form.questions, targetCount: form.targetCount })
+    const validationMessage = validateSurvey({ title: form.title, questions: form.questions, targetCount: form.targetCount, deadline: form.deadline })
     if (validationMessage) return setMessage(validationMessage)
-    const payload = { title: form.title, description: form.description, category: form.category, target_count: Number(form.targetCount), estimated_minutes: Number(form.estimatedMinutes), deadline: form.deadline || null, questions: form.questions.filter((question) => question.title.trim()), audience: form.ageGroup === '전체' ? {} : { age_groups: [form.ageGroup] }, visibility: form.visibility }
+    const payload = { title: form.title, description: form.description, category: form.category, target_count: Number(form.targetCount), estimated_minutes: Number(form.estimatedMinutes), deadline: form.deadline, questions: form.questions.filter((question) => question.title.trim()).map((question) => question.type === 'scale' ? { ...question, min: 1, max: 5 } : question) }
     try { setSubmitting(true); await createSurvey(payload); navigate('/surveys') } catch (error) { setMessage(error.message) } finally { setSubmitting(false) }
   }
 
   return <ServiceShell activePath="/formmate"><div className="create-saas formmate-page motion-page">
     <header className="formmate-page-title"><h1>설문 만들기</h1><p>FormMate와 대화하면서 질문을 만들고 바로 수정하세요.</p></header>
     <section className="create-saas__workspace formmate-workspace">
-      <FormMatePanel value={aiPrompt} onChange={setAiPrompt} onSend={handleAgentSend} onUndo={() => { const previous = history.at(-1); if (previous) { setForm(previous); setHistory((past) => past.slice(0, -1)); setAiMessage('마지막 변경을 되돌렸어요.') } }} canUndo={history.length > 0} selectedLabel={selectedQuestionId ? `Q${form.questions.findIndex((item) => item.id === selectedQuestionId) + 1} 선택됨` : ''} messages={aiMessages} message={aiMessage} applying={applying} suggestions={aiStep === 0 ? [] : aiStep === 1 ? ['대학생 전체', '20대 이용자'] : aiStep === 2 ? ['5분 정도', '3분 이내'] : ['개선 의견도 추가해줘.']} draftSummary={aiStep > 0 ? { title: form.title, count: form.questions.length, minutes: form.estimatedMinutes, onOpen: () => setEditMode(false) } : null} />
+      <FormMatePanel value={aiPrompt} onChange={setAiPrompt} onSend={handleAgentSend} onUndo={() => { const previous = history.at(-1); if (previous) { setForm(previous); setHistory((past) => past.slice(0, -1)); setAiMessage('마지막 변경을 되돌렸어요.') } }} canUndo={history.length > 0} selectedLabel={selectedQuestionId ? `Q${form.questions.findIndex((item) => item.id === selectedQuestionId) + 1} 선택됨` : ''} messages={aiMessages} message={aiMessage} applying={applying} suggestions={aiStep === 0 ? [] : aiStep === 1 ? ['5분 정도', '3분 이내'] : ['개선 의견도 추가해줘.']} draftSummary={aiStep > 0 ? { title: form.title, count: form.questions.length, minutes: form.estimatedMinutes, onOpen: () => setEditMode(false) } : null} />
       <section className={`formmate-survey-panel ${editMode ? 'is-editing' : ''}`}>
         <header><div><h2>{editMode ? '설문 편집' : '미리보기'}</h2>{editMode && <span>편집 중</span>}</div><button type="button" onClick={() => editMode ? setEditMode(false) : openEditorAtCurrentPosition()}>{editMode ? '편집 취소' : '수정하기'}</button></header>
         <div className="formmate-survey-panel__content" ref={surveyPanelContentRef}>{editMode ? <FormMateSurveyEditor form={form} onChange={(patch) => commitForm(patch)} onQuestionChange={(id, patch) => { const current = form.questions.find((item) => item.id === id); updateQuestion(id, patch.type && patch.type !== current.type ? { ...blankQuestion(patch.type), id, title: current.title, required: current.required } : patch) }} onAddQuestion={() => commitForm((current) => ({ ...current, questions: [...current.questions, blankQuestion('single')] }))} onDeleteQuestion={(id) => commitForm((current) => ({ ...current, questions: current.questions.filter((item) => item.id !== id) }))} selectedQuestionId={selectedQuestionId} onSelectQuestion={setSelectedQuestionId} /> : <FormMatePreview form={form} />}</div>
@@ -138,5 +134,5 @@ export default function SurveyCreate() {
         <footer><span>{saveStatus}</span><div><button className="ui-button ui-button--secondary" type="button">임시 저장</button>{editMode ? <button className="ui-button" type="button" onClick={() => setEditMode(false)}>수정 완료</button> : <button className="ui-button" type="button" onClick={() => setPreviewOpen(true)}>설문 등록하기</button>}</div></footer>
       </section>
     </section>
-  </div><Modal open={previewOpen} title="설문을 UniForm에 적용할까요?" onClose={() => setPreviewOpen(false)}><div className="survey-preview-list"><p><b>{form.title || '제목 없는 설문'}</b><br />{form.questions.filter((question) => question.title.trim()).length}개 문항 · 약 {form.estimatedMinutes}분 · 목표 {form.targetCount}명</p>{form.questions.filter((question) => question.title.trim()).map((question, index) => <div key={question.id}><span>{String(index + 1).padStart(2, '0')}</span><b>{question.title}</b></div>)}</div><div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" onClick={() => setPreviewOpen(false)}>편집 계속하기</button><button className="ui-button" type="button" disabled={submitting} onClick={handleSubmit}>{submitting ? '적용 중…' : '설문 적용하기'}</button></div></Modal></ServiceShell>
+  </div><Modal open={previewOpen} title="설문을 게시할까요?" onClose={() => setPreviewOpen(false)}><div className="survey-preview-list"><p><b>{form.title || '제목 없는 설문'}</b><br />{form.questions.filter((question) => question.title.trim()).length}개 문항 · 약 {form.estimatedMinutes}분 · 목표 {form.targetCount}명</p>{form.questions.filter((question) => question.title.trim()).map((question, index) => <div key={question.id}><span>{String(index + 1).padStart(2, '0')}</span><b>{question.title}</b></div>)}</div><ul className="publish-notices"><li>게시 후에는 설문 내용과 마감일을 수정할 수 없어요.</li><li>마감 30일 후 설문 원문은 파기돼요.</li><li>금지 내용을 포함한 설문은 운영자가 삭제할 수 있어요.</li></ul><div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" onClick={() => setPreviewOpen(false)}>편집 계속하기</button><button className="ui-button" type="button" disabled={submitting} onClick={handleSubmit}>{submitting ? '게시 중…' : '설문 게시하기'}</button></div></Modal></ServiceShell>
 }

@@ -39,7 +39,7 @@ function drawPie(ctx, counts, total) {
   }
   ctx.font = '13px "Pretendard", sans-serif'
   counts.forEach((item, index) => {
-    const percent = total ? Math.round((item.count / total) * 100) : 0
+    const percent = total ? ((item.count / total) * 100).toFixed(1) : '0.0'
     const y = 90 + index * 26
     ctx.fillStyle = PALETTE[index % PALETTE.length]
     ctx.fillRect(340, y - 11, 12, 12)
@@ -66,7 +66,7 @@ function drawHorizontalBars(ctx, counts, total) {
     ctx.fillStyle = PALETTE[index % PALETTE.length]
     ctx.fillRect(trackX, y + 8, trackWidth * percent, rowHeight - 20)
     ctx.fillStyle = '#101938'
-    ctx.fillText(`${Math.round(percent * 100)}%`, WIDTH - 70, y + rowHeight / 2 + 4)
+    ctx.fillText(`${(percent * 100).toFixed(1)}%`, WIDTH - 70, y + rowHeight / 2 + 4)
   })
 }
 

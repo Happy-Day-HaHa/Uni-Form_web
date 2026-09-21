@@ -4,7 +4,8 @@ import ResultOverview from '../components/result/ResultOverview'
 import ServiceShell from '../components/ServiceShell'
 import { useAuth } from '../hooks/useAuth'
 import { getOwnedSurveyResults } from '../services/responseService'
-import { downloadQuestionChart, isChartable } from '../utils/chartExport'
+import { downloadAllCharts, downloadQuestionChart, isChartable } from '../utils/chartExport'
+import { maskSensitiveText } from '../utils/maskSensitiveText'
 
 const PIE_COLORS = ['#40abfc', '#82ccff', '#b9e4ff', '#94a3b8', '#cbd5e1']
 
@@ -48,7 +49,7 @@ function ResultSkeleton() {
 
 function ResultState({ code, onRetry, surveyId }) {
   const states = {
-    FORBIDDEN: ['이 결과를 확인할 권한이 없습니다.', '설문 제작자만 원본 응답과 상세 분석을 확인할 수 있어요.'],
+    FORBIDDEN: ['이 결과를 확인할 권한이 없습니다.', '설문 제작자만 원본 응답과 문항별 결과를 확인할 수 있어요.'],
     NOT_FOUND: ['설문을 찾을 수 없습니다.', '삭제되었거나 주소가 올바르지 않은 설문입니다.'],
     NETWORK: ['결과를 불러오지 못했습니다.', '잠시 후 다시 시도해주세요.'],
   }
@@ -61,13 +62,13 @@ function QuestionAnalysis({ question, analysis, index }) {
   const hasAverage = Number.isFinite(analysis.average)
   return <article className="result-analysis">
     <header><span>Q{index + 1}.</span><div><h2>{question.title}{question.required !== false && <em>*</em>}</h2><p>응답 {total.toLocaleString()}개{hasAverage ? ` · 평균 ${analysis.average.toFixed(1)} / ${question.max || 5}` : ''}</p></div>{isChartable(question) && <button className="result-analysis__png" type="button" onClick={() => downloadQuestionChart(question, analysis, index)}>이미지로 저장</button>}</header>
-    {analysis.type === 'text' ? <div className="result-text-list">{analysis.values.slice(0, 8).map((answer, answerIndex) => <p key={`${question.id}-${answerIndex}`}>{answer}</p>)}</div>
+    {analysis.type === 'text' ? <div className="result-text-list">{analysis.values.map((answer, answerIndex) => <p key={`${question.id}-${answerIndex}`}>{maskSensitiveText(answer)}</p>)}</div>
       : question.type === 'single' ? <div className="result-pie-wrap">
           <div className="result-pie" style={{ background: buildConicGradient(analysis.counts, total) }}><span>{total}<small>응답</small></span></div>
-          <ul className="result-pie-legend">{analysis.counts.map((item, colorIndex) => <li key={item.option} style={{ '--tone': PIE_COLORS[colorIndex % PIE_COLORS.length] }}><i /><span>{item.option}</span><b>{item.count} ({total ? Math.round((item.count / total) * 100) : 0}%)</b></li>)}</ul>
+          <ul className="result-pie-legend">{analysis.counts.map((item, colorIndex) => <li key={item.option} style={{ '--tone': PIE_COLORS[colorIndex % PIE_COLORS.length] }}><i /><span>{item.option}</span><b>{item.count} ({total ? ((item.count / total) * 100).toFixed(1) : '0.0'}%)</b></li>)}</ul>
         </div>
-      : question.type === 'scale' ? <div className="result-vbars">{analysis.counts.map((item) => { const percent = total ? Math.round((item.count / total) * 100) : 0; return <div key={item.option}><i style={{ '--bar': `${percent}%` }} /><b>{item.option}</b><small>{item.count}명</small></div> })}</div>
-      : <div className="result-bars">{analysis.counts.map(({ option, count }) => { const percent = total ? Math.round((count / total) * 100) : 0; return <div key={option}><span>{option}</span><i><b style={{ '--bar': `${percent}%` }} /></i><strong>{percent}%</strong><small>{count}명</small></div> })}</div>}
+      : question.type === 'scale' ? <div className="result-vbars">{analysis.counts.map((item) => { const percent = total ? (item.count / total) * 100 : 0; return <div key={item.option}><i style={{ '--bar': `${percent}%` }} /><b>{item.option}</b><small>{item.count}명 · {percent.toFixed(1)}%</small></div> })}</div>
+      : <div className="result-bars">{analysis.counts.map(({ option, count }) => { const percent = total ? (count / total) * 100 : 0; return <div key={option}><span>{option}</span><i><b style={{ '--bar': `${percent}%` }} /></i><strong>{percent.toFixed(1)}%</strong><small>{count}명</small></div> })}</div>}
   </article>
 }
 
@@ -97,7 +98,7 @@ export default function SurveyResults() {
 
   return <ServiceShell activePath="/my-surveys"><div className="result-dashboard">
     <nav className="result-dashboard__breadcrumb" aria-label="현재 위치"><Link to="/my-surveys">내 설문</Link><span>/</span><Link to={`/my-surveys/${survey.id}/manage`}>{survey.title}</Link><span>/</span><strong>결과</strong></nav>
-    <header className="result-dashboard__header"><div><div className="result-dashboard__title"><div><h1>{survey.title}</h1><p>{survey.description}</p></div></div><ul><li>응답 {responses.length.toLocaleString()}개</li><li>목표 {target.toLocaleString()}명</li><li>{survey.status === 'active' ? '모집 중' : '모집 종료'}</li></ul></div><div><Link className="result-action" to={`/my-surveys/${survey.id}/manage`}>관리로 돌아가기</Link></div></header>
+    <header className="result-dashboard__header"><div><div className="result-dashboard__title"><div><h1>{survey.title}</h1><p>{survey.description}</p></div></div><ul><li>응답 {responses.length.toLocaleString()}개</li><li>목표 {target.toLocaleString()}명</li><li>{survey.status === 'active' ? '모집 중' : '모집 종료'}</li></ul></div><div><button className="result-action" type="button" onClick={() => downloadAllCharts(survey.title, questions, analyses)}>전체 그래프 내려받기</button><Link className="result-action" to={`/my-surveys/${survey.id}/manage`}>관리로 돌아가기</Link></div></header>
 
     {responses.length === 0 ? <section className="result-empty"><span>◎</span><h2>아직 응답이 없어요.</h2><p>응답이 제출되면 이곳에서 문항별 결과를 확인할 수 있습니다.</p><Link className="ui-button ui-button--secondary" to={`/my-surveys/${survey.id}/manage`}>관리로 돌아가기</Link></section> : <>
       <nav className="result-tabs" aria-label="결과 보기 방식">{[['questions', '문항별 결과'], ['summary', '요약']].map(([value, label]) => <button className={tab === value ? 'active' : ''} type="button" onClick={() => setTab(value)} key={value}>{label}</button>)}</nav>

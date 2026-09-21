@@ -1,3 +1,5 @@
+import { supabase } from './supabase'
+
 const nicknames = [
   '하윤서', '박도현', '이서진', '최은우', '정하람', '김도윤', '오지안', '윤서준',
   '강나은', '조은결', '임소율', '한지호', '신유담', '배시온', '류하준', '문채원',
@@ -9,16 +11,16 @@ const nicknames = [
 ]
 
 const REWARD_TIERS = [
-  { rank: 1, label: '문화상품권 5만원권' },
-  { rank: 2, label: '문화상품권 3만원권' },
-  { rank: 3, label: '문화상품권 1만원권' },
+  { rank: 1, label: '보상은 추후 공지' },
+  { rank: 2, label: '보상은 추후 공지' },
+  { rank: 3, label: '보상은 추후 공지' },
 ]
 
 const POLICY_NOTES = [
   '실제 설문에 정상적으로 참여한 응답만 집계됩니다.',
   '중복 응답, 불성실한 응답은 집계에서 제외될 수 있어요.',
-  '동점자는 최근 활동일이 빠른 순으로 정렬됩니다.',
-  '운영 정책에 따라 사전 공지 없이 변경될 수 있습니다.',
+  '동점자의 보상 대상자는 무작위 추첨으로 선정됩니다.',
+  '운영 기준 변경 시 시즌 시작 전에 공지해요.',
 ]
 
 function seededScore(index) {
@@ -63,6 +65,7 @@ export function getWeekMeta() {
 }
 
 export async function getLeaderboard(userId, { myWeeklyScore = 7 } = {}) {
+  if (supabase) return { entries: [], me: null, week: getWeekMeta(), rewards: REWARD_TIERS, policyNotes: POLICY_NOTES, lastWeekRank: null, available: false }
   const entries = buildWeeklyEntries()
 
   let me = null
@@ -79,6 +82,6 @@ export async function getLeaderboard(userId, { myWeeklyScore = 7 } = {}) {
     week: getWeekMeta(),
     rewards: REWARD_TIERS,
     policyNotes: POLICY_NOTES,
-    lastWeekRank: myWeeklyScore > 0 ? 31 : null,
+    lastWeekRank: myWeeklyScore > 0 ? 31 : null, available: true,
   }
 }

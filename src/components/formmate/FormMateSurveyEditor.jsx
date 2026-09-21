@@ -1,3 +1,5 @@
+import { getTomorrowKstDateString } from '../../utils/surveyPolicy'
+
 const questionTypes = [
   ['single', '객관식 (단일선택)'],
   ['multiple', '객관식 (복수선택)'],
@@ -44,7 +46,7 @@ export default function FormMateSurveyEditor({
     <section className="formmate-editor-meta" aria-label="설문 기본 정보">
       <div className="formmate-editor-field" data-editor-key="title"><header><span>01</span><b>설문 제목 <em>*</em></b></header><label><span><input maxLength="100" value={form.title} onChange={(event) => onChange({ title: event.target.value })} placeholder="설문 제목을 입력해주세요." /><small>{form.title.length}/100</small></span></label></div>
       <div className="formmate-editor-field" data-editor-key="description"><header><span>02</span><b>설문 설명</b></header><label><span><input maxLength="200" value={form.description} onChange={(event) => onChange({ description: event.target.value })} placeholder="설문에 대한 설명을 입력해주세요." /><small>{form.description.length}/200</small></span></label></div>
-      <div className="formmate-editor-field" data-editor-key="basic"><header><span>03</span><b>기본 정보</b></header><div className="formmate-editor-basic"><label><b>목표 응답 인원</b><span><input type="number" min="1" max="1000" value={form.targetCount} onChange={(event) => onChange({ targetCount: Number(event.target.value) })} /><small>명</small></span></label><label><b>마감일</b><span><input type="date" value={form.deadline || ''} onChange={(event) => onChange({ deadline: event.target.value })} /></span></label></div></div>
+      <div className="formmate-editor-field" data-editor-key="basic"><header><span>03</span><b>기본 정보</b></header><div className="formmate-editor-basic"><label><b>목표 응답 인원</b><span><input type="number" min="1" max="100" value={form.targetCount} onChange={(event) => onChange({ targetCount: Number(event.target.value) })} /><small>명</small></span></label><label><b>마감일</b><span><input type="date" min={getTomorrowKstDateString()} required value={form.deadline || ''} onChange={(event) => onChange({ deadline: event.target.value })} /></span></label></div></div>
     </section>
 
     <section className="formmate-editor-section" aria-label="설문 문항 편집" data-editor-key="questions">
@@ -68,10 +70,10 @@ export default function FormMateSurveyEditor({
                 <button type="button" className="formmate-question-delete" aria-label={`${questionIndex + 1}번 문항 삭제`} disabled={questionCount <= 1} onClick={() => onDeleteQuestion(question.id)}>⌫</button>
               </div>
               {hasOptions && <div className="formmate-option-list">
-                {(question.options || []).map((option, optionIndex) => <div className="formmate-option-row" key={`${question.id}-${optionIndex}`}><span aria-hidden="true">⠿</span><input value={option} maxLength="100" onChange={(event) => updateOption(question, optionIndex, event.target.value)} aria-label={`${questionIndex + 1}번 문항 ${optionIndex + 1}번째 선택지`} /><button type="button" aria-label="선택지 수정" onClick={(event) => event.currentTarget.previousElementSibling?.focus()}>✎</button><button type="button" aria-label="선택지 삭제" disabled={(question.options || []).length <= 2} onClick={() => removeOption(question, optionIndex)}>♲</button></div>)}
+                {(question.options || []).map((option, optionIndex) => <div className="formmate-option-row" key={`${question.id}-${optionIndex}`}><span aria-hidden="true">⠿</span><input value={option} maxLength="50" onChange={(event) => updateOption(question, optionIndex, event.target.value)} aria-label={`${questionIndex + 1}번 문항 ${optionIndex + 1}번째 선택지`} /><button type="button" aria-label="선택지 수정" onClick={(event) => event.currentTarget.previousElementSibling?.focus()}>✎</button><button type="button" aria-label="선택지 삭제" disabled={(question.options || []).length <= 2} onClick={() => removeOption(question, optionIndex)}>♲</button></div>)}
                 <button className="formmate-option-add" type="button" onClick={() => addOption(question)} disabled={(question.options || []).length >= 10}>＋ 선택지 추가</button>
               </div>}
-              {question.type === 'scale' && <div className="formmate-scale-options"><label>최솟값<input type="number" min="0" max="9" value={question.min ?? 1} onChange={(event) => onQuestionChange(question.id, { min: Number(event.target.value) })} /></label><span>—</span><label>최댓값<input type="number" min="2" max="10" value={question.max ?? 5} onChange={(event) => onQuestionChange(question.id, { max: Number(event.target.value) })} /></label></div>}
+              {question.type === 'scale' && <div className="formmate-scale-options"><strong>1</strong><span>—</span><strong>5</strong><small>척도는 1~5로 고정됩니다.</small></div>}
               {(question.type === 'text' || question.type === 'long') && <div className="formmate-answer-placeholder">응답자가 여기에 답변을 입력합니다.</div>}
             </div>
           </article>
