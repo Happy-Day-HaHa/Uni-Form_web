@@ -10,6 +10,7 @@ import { getSurvey } from '../services/surveyService'
 import { SUPPORT_EMAIL } from '../constants'
 import { isSurveyOpen } from '../utils/surveyPolicy'
 import { getLeaderboard } from '../services/leaderboardService'
+import { validateResponseAnswers } from '../utils/validation'
 
 function isAnswered(question, answers) {
   const value = answers[question.id]
@@ -40,6 +41,8 @@ export default function SurveyResponse() {
   if (!isSurveyOpen(survey)) return <ServiceShell activePath="/surveys"><div className="empty-state result-gate"><b>CLOSED</b><h1>{survey.title}</h1><p>마감된 설문입니다.</p><Link className="ui-button" to="/surveys">설문 목록으로</Link></div></ServiceShell>
 
   async function submitNow() {
+    const validationMessage = validateResponseAnswers(survey.questions, answers)
+    if (validationMessage) { setMessage(validationMessage); return }
     try { setSubmitting(true); await submitSurveyResponse(survey.id, answers); const leaderboard = await getLeaderboard(user.id); setWeeklyActivity(leaderboard.me); setSubmitted(true) } catch (error) { setMessage(error.message) } finally { setSubmitting(false) }
   }
 

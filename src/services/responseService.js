@@ -1,5 +1,7 @@
 import { supabase } from './supabase'
 import { getAllDemoSurveys, isDemoSurveyFixture } from './surveyService'
+import { isSurveyOpen } from '../utils/surveyPolicy'
+import { validateResponseAnswers } from '../utils/validation'
 
 const textSamples = ['사용 흐름이 더 단순해지면 좋겠어요.', '모바일에서도 편하게 참여하고 싶어요.', '결과를 한눈에 비교할 수 있으면 좋겠습니다.', '지금 구성도 전반적으로 만족스러워요.', '안내 문구가 조금 더 구체적이면 좋겠어요.']
 const demoRespondedKey = 'uni-form-demo-responded-surveys'
@@ -36,6 +38,10 @@ export class ResultAccessError extends Error {
 
 export async function submitSurveyResponse(surveyId, answers) {
   if (!supabase) {
+    const survey = getAllDemoSurveys().find((item) => item.id === surveyId)
+    if (!survey || !isSurveyOpen(survey)) throw new Error('마감된 설문입니다.')
+    const validationMessage = validateResponseAnswers(survey.questions, answers)
+    if (validationMessage) throw new Error(validationMessage)
     const ids = await getRespondedSurveyIds('demo-user')
     if (ids.includes(surveyId)) throw new Error('이미 응답을 완료한 설문입니다.')
     localStorage.setItem(demoRespondedKey, JSON.stringify([...ids, surveyId]))

@@ -24,9 +24,9 @@ export function validateNickname(nickname) {
   return ''
 }
 
-import { getKstDateString } from './surveyPolicy'
+import { isValidDeadline } from './surveyPolicy.js'
 
-export function validateSurvey({ title, questions, targetCount, deadline }) {
+export function validateSurvey({ title, questions, targetCount, deadline }, now = new Date()) {
   if (title.trim().length < 3) return '설문 제목을 3자 이상 입력해주세요.'
 
   const filled = questions.filter((question) => question.title.trim())
@@ -44,7 +44,14 @@ export function validateSurvey({ title, questions, targetCount, deadline }) {
   }
 
   if (targetCount < 1 || targetCount > 100) return '목표 인원은 1명 이상 100명 이하로 입력해주세요.'
-  if (!deadline) return '마감일을 입력해주세요.'
-  if (deadline <= getKstDateString()) return '마감일은 오늘 이후 날짜로 선택해주세요.'
+  if (!deadline) return '마감일을 설정해주세요.'
+  if (!isValidDeadline(deadline, now)) return '마감일은 오늘 또는 이후 날짜로 설정해주세요.'
+  return ''
+}
+
+export function validateResponseAnswers(questions, answers) {
+  if ((questions || []).some((question) => question.type === 'text' && typeof answers?.[question.id] === 'string' && answers[question.id].length > 100)) {
+    return '단답형 답변은 최대 100자까지 입력할 수 있습니다.'
+  }
   return ''
 }

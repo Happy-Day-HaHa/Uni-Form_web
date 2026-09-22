@@ -1,4 +1,4 @@
-import { getTomorrowKstDateString } from '../../utils/surveyPolicy'
+import { getKstDateString } from '../../utils/surveyPolicy'
 
 const questionTypes = [
   ['single', '객관식 (단일선택)'],
@@ -46,7 +46,7 @@ export default function FormMateSurveyEditor({
     <section className="formmate-editor-meta" aria-label="설문 기본 정보">
       <div className="formmate-editor-field" data-editor-key="title"><header><span>01</span><b>설문 제목 <em>*</em></b></header><label><span><input maxLength="100" value={form.title} onChange={(event) => onChange({ title: event.target.value })} placeholder="설문 제목을 입력해주세요." /><small>{form.title.length}/100</small></span></label></div>
       <div className="formmate-editor-field" data-editor-key="description"><header><span>02</span><b>설문 설명</b></header><label><span><input maxLength="200" value={form.description} onChange={(event) => onChange({ description: event.target.value })} placeholder="설문에 대한 설명을 입력해주세요." /><small>{form.description.length}/200</small></span></label></div>
-      <div className="formmate-editor-field" data-editor-key="basic"><header><span>03</span><b>기본 정보</b></header><div className="formmate-editor-basic"><label><b>목표 응답 인원</b><span><input type="number" min="1" max="100" value={form.targetCount} onChange={(event) => onChange({ targetCount: Number(event.target.value) })} /><small>명</small></span></label><label><b>마감일</b><span><input type="date" min={getTomorrowKstDateString()} required value={form.deadline || ''} onChange={(event) => onChange({ deadline: event.target.value })} /></span></label></div></div>
+      <div className="formmate-editor-field" data-editor-key="basic"><header><span>03</span><b>기본 정보</b></header><div className="formmate-editor-basic"><label><b>목표 응답 인원</b><span><input type="number" min="1" max="100" value={form.targetCount} onChange={(event) => onChange({ targetCount: Number(event.target.value) })} /><small>명</small></span></label><label><b>마감일</b><span><input type="date" min={getKstDateString()} required value={form.deadline || ''} onChange={(event) => onChange({ deadline: event.target.value })} /></span></label></div></div>
     </section>
 
     <section className="formmate-editor-section" aria-label="설문 문항 편집" data-editor-key="questions">

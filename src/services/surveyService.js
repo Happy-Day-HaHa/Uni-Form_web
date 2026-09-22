@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { canDeleteSurvey, getKstDateString, isSurveyOpen } from '../utils/surveyPolicy'
+import { canDeleteSurvey, getKstDateString, isSurveyOpen, isValidDeadline } from '../utils/surveyPolicy'
 
 export const demoSurveys = [
   { id: 'ai-campus-use', creator_id: 'sample-user-3', title: '대학생의 AI 서비스 사용 경험 조사', description: '대학생의 생성형 AI 서비스 이용 경험과 인식을 알아보는 설문입니다.', target_count: 50, response_count: 63, estimated_minutes: 5, deadline: '2026-12-20', category: '테크', status: 'active', questions: [{ id: 'q1', type: 'single', title: '가장 자주 사용하는 AI 서비스는 무엇인가요?', options: ['대화형 AI', '이미지 생성', '번역·요약', '사용하지 않음'] }, { id: 'q2', type: 'scale', title: 'AI 서비스가 학업에 얼마나 도움이 되나요?', min: 1, max: 5 }] },
@@ -31,6 +31,7 @@ export async function getSurvey(surveyId) {
 }
 export async function createSurvey(payload) {
   if (!supabase) {
+    if (!isValidDeadline(payload.deadline)) throw new Error('마감일은 오늘 또는 이후 날짜로 설정해주세요.')
     const survey = { id: crypto.randomUUID(), creator_id: 'demo-user', response_count: 0, status: 'active', ...payload }
     localStorage.setItem(demoStorageKey, JSON.stringify([survey, ...getDemoCreatedSurveys()]))
     try { sessionStorage.setItem('uni-form-new-survey', survey.id) } catch { /* animation hint is optional */ }
