@@ -1,4 +1,5 @@
-import { supabase } from './supabase'
+// TODO(백엔드 연동 다음 단계): apiClient로 교체 전까지는 데모 데이터 분기로 동작한다.
+const supabase = null
 import { getAllDemoSurveys, isDemoSurveyFixture } from './surveyService'
 
 const textSamples = ['사용 흐름이 더 단순해지면 좋겠어요.', '모바일에서도 편하게 참여하고 싶어요.', '결과를 한눈에 비교할 수 있으면 좋겠습니다.', '지금 구성도 전반적으로 만족스러워요.', '안내 문구가 조금 더 구체적이면 좋겠어요.']

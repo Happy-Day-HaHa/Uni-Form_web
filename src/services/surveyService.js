@@ -1,4 +1,5 @@
-import { supabase } from './supabase'
+// TODO(백엔드 연동 다음 단계): apiClient로 교체 전까지는 데모 데이터 분기로 동작한다.
+const supabase = null
 import { canDeleteSurvey, getKstDateString, isSurveyOpen } from '../utils/surveyPolicy'
 
 export const demoSurveys = [

@@ -1,4 +1,5 @@
-import { supabase } from './supabase'
+// TODO(백엔드 연동 다음 단계): apiClient로 교체 전까지는 데모 데이터 분기로 동작한다.
+const supabase = null
 
 const nicknames = [
   '하윤서', '박도현', '이서진', '최은우', '정하람', '김도윤', '오지안', '윤서준',
