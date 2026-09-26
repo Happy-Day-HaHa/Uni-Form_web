@@ -25,7 +25,7 @@ export default function SurveyManage() {
   useEffect(() => {
     getSurvey(surveyId).then((item) => {
       if (!item) throw new Error('설문을 찾을 수 없습니다.')
-      const canManage = item.creator_id === user.id || (demoMode && isDemoSurveyFixture(item.id))
+      const canManage = (item.is_owner ?? item.creator_id === user.id) || (demoMode && isDemoSurveyFixture(item.id))
       if (!canManage) throw new Error('이 설문을 관리할 권한이 없습니다.')
       setSurvey(item)
     }).catch((loadError) => setError(loadError.message)).finally(() => setLoading(false))

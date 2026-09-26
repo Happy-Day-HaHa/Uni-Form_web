@@ -5,7 +5,7 @@ import { getDeadlineLabel, isSurveyOpen, isTargetReached } from '../../utils/sur
 export default function SurveyRow({ survey, index = 0, user, responded = false, isTeamSurvey = false, newSurveyId = '' }) {
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
-  const isOwner = survey.creator_id === user?.id
+  const isOwner = survey.is_owner ?? survey.creator_id === user?.id
   const target = Math.max(Number(survey.target_count || 1), 1)
   const responses = Number(survey.response_count || 0)
   const progress = Math.min(100, Math.round((responses / target) * 100))

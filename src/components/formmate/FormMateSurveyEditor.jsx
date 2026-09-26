@@ -74,6 +74,10 @@ export default function FormMateSurveyEditor({
                 <button className="formmate-option-add" type="button" onClick={() => addOption(question)} disabled={(question.options || []).length >= 10}>＋ 선택지 추가</button>
               </div>}
               {question.type === 'scale' && <div className="formmate-scale-options"><strong>1</strong><span>—</span><strong>5</strong><small>척도는 1~5로 고정됩니다.</small></div>}
+              {question.type === 'scale' && <div className="formmate-option-list">
+                <div className="formmate-option-row"><span aria-hidden="true">1</span><input value={question.minLabel || ''} maxLength="50" onChange={(event) => onQuestionChange(question.id, { minLabel: event.target.value })} placeholder="1점의 의미 (예: 전혀 그렇지 않다)" aria-label={`${questionIndex + 1}번 문항 1점 설명`} /></div>
+                <div className="formmate-option-row"><span aria-hidden="true">5</span><input value={question.maxLabel || ''} maxLength="50" onChange={(event) => onQuestionChange(question.id, { maxLabel: event.target.value })} placeholder="5점의 의미 (예: 매우 그렇다)" aria-label={`${questionIndex + 1}번 문항 5점 설명`} /></div>
+              </div>}
               {(question.type === 'text' || question.type === 'long') && <div className="formmate-answer-placeholder">응답자가 여기에 답변을 입력합니다.</div>}
             </div>
           </article>

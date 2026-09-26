@@ -1,5 +1,4 @@
-// TODO(백엔드 연동 다음 단계): apiClient로 교체 전까지는 데모 데이터 분기로 동작한다.
-const supabase = null
+import { ApiError, apiClient, getAccessToken, getRefreshToken, isApiConfigured } from './apiClient'
 import { canDeleteSurvey, getKstDateString, isSurveyOpen } from '../utils/surveyPolicy'
 
 export const demoSurveys = [
@@ -18,73 +17,233 @@ export function getDemoCreatedSurveys() {
 export function getAllDemoSurveys() { return [...getDemoCreatedSurveys(), ...demoSurveys] }
 export function isDemoSurveyFixture(surveyId) { return demoSurveys.some((survey) => survey.id === surveyId) }
 
-export async function getSurveys() {
-  if (!supabase) return getAllDemoSurveys().filter(isSurveyOpen)
-  const { data, error } = await supabase.from('surveys').select('*').eq('status', 'active').gte('deadline', getKstDateString()).order('created_at', { ascending: false })
-  if (error) throw error
-  return data
-}
-export async function getSurvey(surveyId) {
-  if (!supabase) return getAllDemoSurveys().find((survey) => survey.id === surveyId) || null
-  const { data, error } = await supabase.from('surveys').select('*').eq('id', surveyId).single()
-  if (error) throw error
-  return data
-}
-export async function createSurvey(payload) {
-  if (!supabase) {
-    const survey = { id: crypto.randomUUID(), creator_id: 'demo-user', response_count: 0, status: 'active', ...payload }
-    localStorage.setItem(demoStorageKey, JSON.stringify([survey, ...getDemoCreatedSurveys()]))
-    try { sessionStorage.setItem('uni-form-new-survey', survey.id) } catch { /* animation hint is optional */ }
-    return survey
+// ── 백엔드 ↔ 화면 모델 변환 ──────────────────────────────────────────────
+// 화면은 기존 데모 데이터 모양(snake_case, 문항 type single/multiple/scale/text/long,
+// 보기는 문자열 배열)을 그대로 쓰고, 백엔드와 주고받을 때만 변환한다.
+const QUESTION_TYPE_FROM_API = { SINGLE_CHOICE: 'single', MULTI_CHOICE: 'multiple', SCALE: 'scale', SHORT_ANSWER: 'text', NARRATIVE: 'long' }
+const QUESTION_TYPE_TO_API = Object.fromEntries(Object.entries(QUESTION_TYPE_FROM_API).map(([api, ui]) => [ui, api]))
+const STATUS_FROM_API = { DRAFT: 'draft', RECRUITING: 'active', CLOSED: 'closed', ARCHIVED: 'archived', REMOVED: 'removed' }
+export const DEFAULT_SCALE_LABELS = { min: '전혀 그렇지 않다', max: '매우 그렇다' }
+
+// 백엔드 문항(또는 FormMate 제안의 after) → 화면 문항.
+// id는 백엔드 stableKey다. serverId가 있는 문항만 PATCH 때 id를 보낸다(새 문항은 id 없이 보내야 함).
+export function fromApiQuestion(question) {
+  const type = QUESTION_TYPE_FROM_API[question.type] || 'text'
+  const options = question.options || []
+  return {
+    id: question.id || crypto.randomUUID(),
+    serverId: question.id || null,
+    type,
+    title: question.questionText || '',
+    required: question.required !== false,
+    options: options.map((option) => option.label),
+    etcLabel: options.find((option) => option.isEtc)?.label ?? null,
+    ...(type === 'multiple' ? { minSelect: question.minSelect ?? null, maxSelect: question.maxSelect ?? null } : {}),
+    ...(type === 'scale' ? { min: 1, max: 5, minLabel: question.minScaleLabel ?? '', maxLabel: question.maxScaleLabel ?? '' } : {}),
   }
-  const { data, error } = await supabase.rpc('create_survey', { survey_payload: payload })
-  if (error) throw error
-  const createdId = typeof data === 'string' ? data : data?.id
-  if (createdId) try { sessionStorage.setItem('uni-form-new-survey', createdId) } catch { /* animation hint is optional */ }
-  if (!createdId) return data
-  const { data: created, error: fetchError } = await supabase.from('surveys').select('*').eq('id', createdId).single()
-  if (fetchError) throw fetchError
-  return created
 }
 
+function toApiQuestion(question) {
+  const type = QUESTION_TYPE_TO_API[question.type] || 'SHORT_ANSWER'
+  const payload = { type, questionText: question.title || '', required: question.required !== false }
+  if (question.serverId) payload.id = question.serverId
+  if (type === 'SINGLE_CHOICE' || type === 'MULTI_CHOICE') {
+    const options = question.options || []
+    payload.options = options.map((label) => ({ label, ...(type === 'SINGLE_CHOICE' && question.etcLabel && label === question.etcLabel ? { isEtc: true } : {}) }))
+    if (type === 'MULTI_CHOICE') {
+      // 화면에 선택 개수 입력칸이 없으므로 기본값은 "1개 이상, 보기 수 이하".
+      const maxSelect = Math.min(question.maxSelect || options.length, options.length)
+      payload.minSelect = Math.min(question.minSelect || 1, Math.max(maxSelect, 1))
+      payload.maxSelect = maxSelect
+    }
+  }
+  if (type === 'SCALE') {
+    payload.minScaleLabel = question.minLabel || ''
+    payload.maxScaleLabel = question.maxLabel || ''
+  }
+  return payload
+}
+
+function toKstDate(isoString) { return isoString ? getKstDateString(new Date(isoString)) : '' }
+
+// SurveyResponseDto / SurveyDetailResponseDto / SurveyListItemResponseDto → 화면 설문
+// category·estimated_minutes·response_count는 백엔드에 아직 없다.
+export function fromApiSurvey(survey) {
+  return {
+    id: survey.id,
+    title: survey.title || '',
+    description: survey.description || '',
+    status: STATUS_FROM_API[survey.status] || String(survey.status || '').toLowerCase(),
+    target_count: survey.targetCount ?? null,
+    deadline: toKstDate(survey.deadlineAt),
+    created_at: survey.publishedAt || survey.createdAt || null,
+    owner_type: survey.ownerType ?? null,
+    owner_nickname: survey.ownerNickname ?? null,
+    is_owner: survey.isOwner ?? null,
+    version: survey.version ?? null,
+    question_count: survey.questionCount ?? survey.questions?.length ?? 0,
+    questions: survey.questions ? survey.questions.map(fromApiQuestion) : undefined,
+  }
+}
+
+// SurveyCreate의 편집 form ↔ 초안
+export function draftToForm(survey) {
+  return {
+    title: survey.title || '',
+    description: survey.description || '',
+    targetCount: survey.targetCount ?? 50,
+    deadline: toKstDate(survey.deadlineAt),
+    questions: (survey.questions || []).map(fromApiQuestion),
+  }
+}
+
+function formToDraftPatch(form, version) {
+  const targetCount = Number(form.targetCount)
+  return {
+    version,
+    title: form.title,
+    description: form.description || null,
+    targetCount: Number.isInteger(targetCount) && targetCount > 0 ? targetCount : null,
+    deadlineDate: form.deadline || null,
+    questions: form.questions.map(toApiQuestion),
+  }
+}
+
+function requireSignedIn(message) {
+  if (!getAccessToken() && !getRefreshToken()) throw new ApiError({ status: 401, message, code: 'NOT_SIGNED_IN' })
+}
+
+// TODO(4단계 마이페이지): /mypage/* 연동 전까지 API 모드에서는 막아둔다(가짜 성공 방지).
+function notConnectedYet() {
+  return new ApiError({ status: 0, message: '아직 백엔드와 연결되지 않은 기능입니다.', code: 'NOT_CONNECTED' })
+}
+
+// ── 설문 목록 / 상세 ──────────────────────────────────────────────────────
+export async function getSurveyPage({ cursor, limit = 20 } = {}) {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (cursor) params.set('cursor', cursor)
+  const data = await apiClient.get(`/surveys?${params}`)
+  return { items: data.items.map(fromApiSurvey), nextCursor: data.nextCursor }
+}
+
+// 목록 화면이 클라이언트에서 검색·필터를 하므로 모집 중 설문을 모두 받아온다(최대 maxPages쪽).
+export async function getSurveys({ maxPages = 10 } = {}) {
+  if (!isApiConfigured) return getAllDemoSurveys().filter(isSurveyOpen)
+  requireSignedIn('로그인하면 모집 중인 설문을 볼 수 있어요.')
+  const surveys = []
+  let cursor = null
+  for (let page = 0; page < maxPages; page += 1) {
+    const result = await getSurveyPage({ cursor, limit: 50 })
+    surveys.push(...result.items)
+    cursor = result.nextCursor
+    if (!cursor) break
+  }
+  return surveys
+}
+
+export async function getSurvey(surveyId) {
+  if (!isApiConfigured) return getAllDemoSurveys().find((survey) => survey.id === surveyId) || null
+  requireSignedIn('로그인하면 설문을 볼 수 있어요.')
+  return fromApiSurvey(await apiClient.get(`/surveys/${encodeURIComponent(surveyId)}`))
+}
+
+// ── 초안 (API 모드 전용) ──────────────────────────────────────────────────
+// 모두 백엔드 SurveyResponseDto 원본을 돌려준다. 화면 form으로는 draftToForm으로 바꾼다.
+export async function createDraft({ title, description } = {}) {
+  const payload = { title: title?.trim() || '제목 없는 설문' }
+  if (description?.trim()) payload.description = description.trim()
+  return apiClient.post('/surveys/drafts', payload)
+}
+
+export async function getDraft(surveyId) {
+  return apiClient.get(`/surveys/drafts/${encodeURIComponent(surveyId)}`)
+}
+
+// 409(버전 충돌)이면 SurveyVersionConflictError를 던진다. latestSurvey에 서버의 최신 초안이 들어 있다.
+export class SurveyVersionConflictError extends Error {
+  constructor(apiError) {
+    super(apiError.message)
+    this.name = 'SurveyVersionConflictError'
+    this.status = 409
+    this.latestSurvey = apiError.data?.latestSurvey ?? null
+  }
+}
+
+function rethrowConflict(error) {
+  if (error instanceof ApiError && error.status === 409 && error.data?.latestSurvey) throw new SurveyVersionConflictError(error)
+  throw error
+}
+
+export async function updateDraft(surveyId, form, version) {
+  try {
+    return await apiClient.patch(`/surveys/drafts/${encodeURIComponent(surveyId)}`, formToDraftPatch(form, version))
+  } catch (error) {
+    return rethrowConflict(error)
+  }
+}
+
+// 게시 요건 위반이면 400과 함께 위반 항목이 error.messages에 모두 담긴다.
+export async function publishDraft(surveyId) {
+  const published = await apiClient.post(`/surveys/drafts/${encodeURIComponent(surveyId)}/publish`)
+  try { sessionStorage.setItem('uni-form-new-survey', published.id) } catch { /* animation hint is optional */ }
+  return published
+}
+
+// ── FormMate (API 모드 전용) ──────────────────────────────────────────────
+// 응답: { aiReply, proposedChanges: [{ id, type, summary, after }] }
+// type: ADD_QUESTION | UPDATE_QUESTION | DELETE_QUESTION | UPDATE_OPTION, DELETE_QUESTION은 after가 null.
+export async function sendFormMateMessage(surveyId, message) {
+  const data = await apiClient.post(`/surveys/drafts/${encodeURIComponent(surveyId)}/formmate/message`, { message })
+  return {
+    aiReply: data.aiReply,
+    proposedChanges: (data.proposedChanges || []).map((change) => ({ ...change, question: change.after ? fromApiQuestion(change.after) : null })),
+  }
+}
+
+// 응답: { newVersion }. 적용된 문항 내용은 오지 않으므로 호출 후 getDraft로 다시 불러온다.
+// revert: true면 이미 적용한 제안을 되돌린다.
+export async function applyFormMateChanges(surveyId, { changeIds, version, revert = false }) {
+  try {
+    return await apiClient.post(`/surveys/drafts/${encodeURIComponent(surveyId)}/formmate/apply`, { changeIds, version, ...(revert ? { revert: true } : {}) })
+  } catch (error) {
+    return rethrowConflict(error)
+  }
+}
+
+// ── 데모 모드 전용 (API 모드 연동은 이후 단계) ─────────────────────────────
+export async function createSurvey(payload) {
+  const survey = { id: crypto.randomUUID(), creator_id: 'demo-user', response_count: 0, status: 'active', ...payload }
+  localStorage.setItem(demoStorageKey, JSON.stringify([survey, ...getDemoCreatedSurveys()]))
+  try { sessionStorage.setItem('uni-form-new-survey', survey.id) } catch { /* animation hint is optional */ }
+  return survey
+}
+
+// TODO(4단계 마이페이지): GET /mypage/surveys로 교체
 export async function getMySurveys(userId) {
-  if (!supabase) return getAllDemoSurveys().filter((survey) => survey.creator_id === userId)
-  const { data, error } = await supabase.from('surveys').select('*').eq('creator_id', userId).order('created_at', { ascending: false })
-  if (error) throw error
-  return data
+  return getAllDemoSurveys().filter((survey) => survey.creator_id === userId)
 }
 
 export async function updateSurvey(surveyId, patch) {
-  if (!supabase) {
-    const created = getDemoCreatedSurveys()
-    const next = created.map((survey) => survey.id === surveyId ? { ...survey, ...patch, updated_at: new Date().toISOString() } : survey)
-    localStorage.setItem(demoStorageKey, JSON.stringify(next))
-    return next.find((survey) => survey.id === surveyId) || { id: surveyId, ...patch }
-  }
-  const { data, error } = await supabase.from('surveys').update(patch).eq('id', surveyId).select().single()
-  if (error) throw error
-  return data
+  const created = getDemoCreatedSurveys()
+  const next = created.map((survey) => survey.id === surveyId ? { ...survey, ...patch, updated_at: new Date().toISOString() } : survey)
+  localStorage.setItem(demoStorageKey, JSON.stringify(next))
+  return next.find((survey) => survey.id === surveyId) || { id: surveyId, ...patch }
 }
 
 export async function deleteSurvey(surveyId) {
-  if (!supabase) {
-    const survey = getDemoCreatedSurveys().find((item) => item.id === surveyId)
-    if (!canDeleteSurvey(survey)) throw new Error('임시저장 상태이며 응답이 없는 설문만 삭제할 수 있어요.')
-    localStorage.setItem(demoStorageKey, JSON.stringify(getDemoCreatedSurveys().filter((item) => item.id !== surveyId)))
-    return
-  }
-  const { error } = await supabase.rpc('delete_draft_survey', { target_survey_id: surveyId })
-  if (error) throw error
+  if (isApiConfigured) throw notConnectedYet()
+  const survey = getDemoCreatedSurveys().find((item) => item.id === surveyId)
+  if (!canDeleteSurvey(survey)) throw new Error('임시저장 상태이며 응답이 없는 설문만 삭제할 수 있어요.')
+  localStorage.setItem(demoStorageKey, JSON.stringify(getDemoCreatedSurveys().filter((item) => item.id !== surveyId)))
 }
 
 export async function closeSurvey(surveyId) {
-  if (!supabase) return updateSurvey(surveyId, { status: 'closed' })
-  const { data, error } = await supabase.rpc('close_survey', { target_survey_id: surveyId })
-  if (error) throw error
-  return data
+  if (isApiConfigured) throw notConnectedYet()
+  return updateSurvey(surveyId, { status: 'closed' })
 }
 
 export async function duplicateSurvey(survey) {
+  if (isApiConfigured) throw notConnectedYet()
   const futureDeadline = survey.deadline > getKstDateString() ? survey.deadline : getKstDateString(new Date(Date.now() + 30 * 86400000))
   return createSurvey({
     title: `${survey.title} 사본`, description: survey.description, category: survey.category,
