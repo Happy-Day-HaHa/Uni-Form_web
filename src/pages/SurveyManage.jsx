@@ -4,7 +4,6 @@ import ServiceShell from '../components/ServiceShell'
 import Modal from '../components/Modal'
 import { useAuth } from '../hooks/useAuth'
 import { closeSurvey as closeSurveyRequest, getSurvey, isDemoSurveyFixture } from '../services/surveyService'
-import { getTeamSurveyRole } from '../services/teamService'
 import { getSurveyLifecycleStatus, isTargetReached } from '../utils/surveyPolicy'
 
 function statusLabel(status) {
@@ -26,14 +25,14 @@ export default function SurveyManage() {
   const [teamMemberOnly, setTeamMemberOnly] = useState(false)
 
   useEffect(() => {
-    getSurvey(surveyId).then(async (item) => {
+    getSurvey(surveyId).then((item) => {
       if (!item) throw new Error('설문을 찾을 수 없습니다.')
-      // 팀 설문은 isOwner가 항상 false라서, 내 팀 설문인지·내가 그 팀의 팀장인지를 따로 확인한다(마감·보관은 팀장만 가능).
+      // 팀 설문은 isOwner가 항상 false라서 백엔드의 canManage(팀장, 해산됐으면 해산 당시 팀장)로 판단한다.
       if (item.owner_type === 'TEAM') {
-        const role = await getTeamSurveyRole(item.id, item.owner_nickname)
-        if (role === 'member') setTeamMemberOnly(true)
-        if (role === 'member') throw new Error('팀 설문은 팀장만 관리할 수 있어요. 결과는 결과 화면에서 확인할 수 있어요.')
-        if (role !== 'leader') throw new Error('이 설문을 관리할 권한이 없습니다.')
+        if (!item.can_manage) {
+          setTeamMemberOnly(true)
+          throw new Error('팀 설문은 팀장만 관리할 수 있어요. 팀원이라면 결과 화면에서 결과를 확인할 수 있어요.')
+        }
       } else {
         const canManage = (item.is_owner ?? item.creator_id === user.id) || (demoMode && isDemoSurveyFixture(item.id))
         if (!canManage) throw new Error('이 설문을 관리할 권한이 없습니다.')

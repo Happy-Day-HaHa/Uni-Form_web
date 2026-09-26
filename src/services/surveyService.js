@@ -82,6 +82,8 @@ export function fromApiSurvey(survey) {
     owner_type: survey.ownerType ?? null,
     owner_nickname: survey.ownerNickname ?? null,
     is_owner: survey.isOwner ?? null,
+    // 관리(마감·보관 등) 가능 여부. 개인 설문은 isOwner와 같고, 팀 설문은 내가 그 팀의 팀장(해산됐으면 해산 당시 팀장)인지.
+    can_manage: survey.canManage ?? null,
     version: survey.version ?? null,
     question_count: survey.questionCount ?? survey.questions?.length ?? 0,
     questions: survey.questions ? survey.questions.map(fromApiQuestion) : undefined,
@@ -209,7 +211,7 @@ export async function applyFormMateChanges(surveyId, { changeIds, version, rever
 
 // ── 내 설문 (마이페이지) ─────────────────────────────────────────────────
 // GET /mypage/surveys 항목(MySurveyResponseDto) → 화면 설문. 본인 설문 + 소속 팀 설문이 함께 온다.
-// 백엔드는 isOwner를 주지 않는다. 팀 설문의 마감·보관은 팀장만 가능해서, 권한은 서버 응답(403)으로 판단한다.
+// canManage: 팀 설문은 팀장(해산된 팀이면 해산 당시 팀장)만 true. teamDisbandedAt: 해산된 팀의 설문이면 해산 시각.
 function fromApiMySurvey(survey, index) {
   return {
     id: survey.id,
@@ -218,6 +220,8 @@ function fromApiMySurvey(survey, index) {
     status: STATUS_FROM_API[survey.status] || String(survey.status || '').toLowerCase(),
     owner_type: survey.ownerType,
     owner_name: survey.ownerName,
+    can_manage: survey.canManage ?? null,
+    team_disbanded_at: survey.teamDisbandedAt ?? null,
     question_count: survey.questionCount,
     response_count: survey.responseCount,
     target_count: survey.targetCount,
