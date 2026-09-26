@@ -1,4 +1,4 @@
-export default function QuestionItem({ question, value, onChange, index, error = false }) {
+export default function QuestionItem({ question, value, onChange, index, error = false, etcValue = '', onEtcChange }) {
   const name = `question-${question.id}`
   const number = String(index + 1).padStart(2, '0')
   const required = question.required === true
@@ -11,6 +11,7 @@ export default function QuestionItem({ question, value, onChange, index, error =
       <strong>{question.title}{required ? <em className="question__required-mark">*</em> : <small className="question__optional-tag">선택</small>}</strong>
     </div>
     {question.type === 'single' && <div className="option-grid">{question.options.map((option) => <label key={option}><input type="radio" name={name} value={option} checked={value === option} onChange={(event) => onChange(event.target.value)} /><span>{option}</span></label>)}</div>}
+    {question.type === 'single' && question.etcLabel && value === question.etcLabel && <input type="text" maxLength={50} value={etcValue} onChange={(event) => onEtcChange?.(event.target.value)} placeholder="기타 내용을 입력해주세요. (최대 50자)" aria-label={`${number}번 문항 기타 입력`} />}
     {question.type === 'multiple' && <div className="option-grid">{question.options.map((option) => { const selected = Array.isArray(value) && value.includes(option); return <label key={option}><input type="checkbox" checked={selected} onChange={() => { const current = Array.isArray(value) ? value : []; onChange(selected ? current.filter((item) => item !== option) : [...current, option]) }} /><span>{option}</span></label> })}</div>}
     {question.type === 'scale' && <div className="scale-grid">{Array.from({ length: question.max - question.min + 1 }, (_, offset) => question.min + offset).map((option) => <label key={option}><input type="radio" name={name} value={option} checked={Number(value) === option} onChange={() => onChange(option)} /><span>{option}</span></label>)}</div>}
     {question.type === 'text' && <input type="text" maxLength={50} value={value || ''} onChange={(event) => onChange(event.target.value)} placeholder="자유롭게 입력해주세요. (최대 50자)" />}
