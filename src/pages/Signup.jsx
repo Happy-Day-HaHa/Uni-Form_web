@@ -27,8 +27,8 @@ export default function Signup() {
     if (!agreements.age14 || !agreements.terms || !agreements.privacy) return setMessage('필수 항목에 모두 동의해주세요.')
     try {
       setSubmitting(true)
-      const created = await signup({ ...form, marketingOptIn: agreements.marketing })
-      navigate('/verify-email', { state: { email: form.email, verificationToken: created?.emailVerificationToken } })
+      await signup({ ...form, marketingOptIn: agreements.marketing })
+      navigate('/verify-email', { state: { email: form.email } })
     } catch (error) {
       setMessage(error.message)
     } finally {

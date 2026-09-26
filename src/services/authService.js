@@ -24,8 +24,7 @@ export async function login({ email, password }) {
   return { ...tokens, user }
 }
 
-// 응답: { id, email, status, emailVerificationToken }
-// 메일 발송이 붙기 전까지 백엔드가 인증 토큰을 응답에 그대로 내려준다.
+// 응답: { id, email, status }. 인증 링크(/verify-email?token=...)는 가입한 이메일로 발송된다.
 export async function signup({ email, password, nickname, gender, grade, major, enrollmentStatus, marketingOptIn = false }) {
   return apiClient.post('/auth/signup', {
     email,
@@ -42,6 +41,16 @@ export async function signup({ email, password, nickname, gender, grade, major, 
 
 export async function verifyEmail(token) {
   return apiClient.post('/auth/verify-email', { token }, { auth: false })
+}
+
+// 재설정 링크(/reset-password?token=...)를 메일로 보낸다. 가입 여부와 관계없이 항상 같은 성공 응답이 온다(계정 존재를 드러내지 않음).
+export async function requestPasswordReset(email) {
+  return apiClient.post('/auth/password/reset-request', { email }, { auth: false })
+}
+
+// 토큰이 없거나 만료됐거나 이미 쓰였으면 모두 400 "유효하지 않거나 만료된 재설정 토큰입니다."(code 없음).
+export async function confirmPasswordReset(token, newPassword) {
+  return apiClient.post('/auth/password/reset-confirm', { token, newPassword }, { auth: false })
 }
 
 // 백엔드 토큰은 stateless라 서버 호출 없이 로컬 토큰만 지운다.
