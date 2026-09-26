@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { login } from '../services/authService'
 import { isApiConfigured } from '../services/apiClient'
 import { validateAuth } from '../utils/validation'
@@ -9,6 +9,9 @@ import '../styles/auth-dandy.css'
 
 export default function Login() {
   const navigate = useNavigate()
+  // 로그인이 필요한 화면(예: 팀 초대 링크)에서 넘어왔으면 로그인 후 그 화면으로 돌아간다.
+  const location = useLocation()
+  const redirectTo = location.state?.from ? `${location.state.from.pathname}${location.state.from.search || ''}` : '/surveys'
   const [form, setForm] = useState({ email: '', password: '' })
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -37,7 +40,7 @@ export default function Login() {
     try {
       setSubmitting(true)
       await login(form)
-      navigate('/surveys')
+      navigate(redirectTo, { replace: true })
     } catch (error) {
       setMessage(error.message)
     } finally {

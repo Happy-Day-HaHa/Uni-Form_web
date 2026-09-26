@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useReveal } from '../hooks/useReveal'
 import { isApiConfigured } from '../services/apiClient'
 import { closeSurvey, deleteSurvey, duplicateSurvey, getMySurveys } from '../services/surveyService'
+import { getMyTeams, teamRoleByName } from '../services/teamService'
 import { canDeleteSurvey, getSurveyLifecycleStatus, isTargetReached } from '../utils/surveyPolicy'
 
 function surveyState(survey) {
@@ -31,11 +32,14 @@ export default function MySurveys() {
   const [actionError, setActionError] = useState('')
   const [modalError, setModalError] = useState('')
   const [busy, setBusy] = useState(false)
+  // 팀 설문의 내 역할(팀장/팀원)을 알기 위한 내 팀 목록. 실패해도 목록은 보여준다.
+  const [myTeams, setMyTeams] = useState([])
   const menuRef = useRef(null)
   const rootRef = useReveal([surveys.length, debouncedQuery, status, sort])
 
   const loadSurveys = useCallback(() => {
     setLoadError('')
+    if (isApiConfigured) getMyTeams(user.id).then(setMyTeams).catch(() => setMyTeams([]))
     return getMySurveys(user.id).then(setSurveys).catch((error) => setLoadError(`내 설문을 불러오지 못했어요. ${error.message}`)).finally(() => setLoading(false))
   }, [user.id])
   useEffect(() => { loadSurveys() }, [demoMode, loadSurveys])
@@ -124,10 +128,13 @@ export default function MySurveys() {
     {loading ? <div className="catalog-skeleton" aria-label="설문을 불러오는 중">{Array.from({ length: 4 }, (_, index) => <div key={index}><span /><p /><i /></div>)}</div> : <section className="managed-list">{display.map((survey, index) => {
       const progress = Math.min(100, Math.round(Number(survey.response_count || 0) / Math.max(1, Number(survey.target_count || 1)) * 100))
       const [stateKey, stateLabel] = surveyState(survey)
+      // 팀 설문: 마감·관리 화면은 팀장만, 팀원은 결과 보기만 가능하다.
+      const teamRole = survey.owner_type === 'TEAM' ? teamRoleByName(myTeams, survey.owner_name) : null
+      const canManage = survey.owner_type !== 'TEAM' || teamRole === 'leader'
       return <article className="managed-row ui-card" key={survey.id} data-motion-reveal style={{ '--delay': `${Math.min(index, 4) * 50}ms` }}>
-        <div className="managed-row__title"><span className={`service-tone--${['violet', 'amber', 'rose', 'mint', 'blue'][index % 5]}`}>{['◇', '○', '▤', '◎', '✦'][index % 5]}</span><div><div className="managed-title-line"><h2>{survey.title}</h2><em className={`survey-state survey-state--${stateKey}`}>{stateLabel}</em>{isTargetReached(survey) && <em className="survey-state survey-state--success">목표 달성</em>}</div><p>{survey.description}</p><small>{isApiConfigured ? `${survey.owner_type === 'TEAM' ? `팀 · ${survey.owner_name}` : '개인'} · ${survey.question_count}문항` : `${survey.category || '일반'} · 약 ${survey.estimated_minutes || 5}분`}{survey.deadline ? ` · 마감 ${survey.deadline}` : ''}</small></div></div>
+        <div className="managed-row__title"><span className={`service-tone--${['violet', 'amber', 'rose', 'mint', 'blue'][index % 5]}`}>{['◇', '○', '▤', '◎', '✦'][index % 5]}</span><div><div className="managed-title-line"><h2>{survey.title}</h2><em className={`survey-state survey-state--${stateKey}`}>{stateLabel}</em>{isTargetReached(survey) && <em className="survey-state survey-state--success">목표 달성</em>}</div><p>{survey.description}</p><small>{isApiConfigured ? `${survey.owner_type === 'TEAM' ? `팀 · ${survey.owner_name}${teamRole ? ` (${teamRole === 'leader' ? '팀장' : '팀원'})` : ''}` : '개인'} · ${survey.question_count}문항` : `${survey.category || '일반'} · 약 ${survey.estimated_minutes || 5}분`}{survey.deadline ? ` · 마감 ${survey.deadline}` : ''}</small></div></div>
         <div className="managed-progress"><span>{Number(survey.response_count || 0).toLocaleString()} / {Number(survey.target_count || 0).toLocaleString()}명 <b>{progress}%</b></span><div><i style={{ '--progress': `${progress}%` }} /></div><small>{progress >= 100 ? '목표를 달성했어요! 🎉' : `목표까지 ${Math.max(0, Number(survey.target_count || 0) - Number(survey.response_count || 0))}명 남았어요.`}</small></div>
-        <div className="managed-actions">{isApiConfigured && stateKey === 'draft' ? <Link className="managed-primary" to={`/formmate?draft=${survey.id}`}>이어서 편집</Link> : <Link className="managed-primary" to={`/my-surveys/${survey.id}/manage`}>관리하기</Link>}<div className="row-menu" ref={menuId === survey.id ? menuRef : null}><button type="button" aria-label="설문 메뉴" aria-expanded={menuId === survey.id} onClick={() => setMenuId(menuId === survey.id ? '' : survey.id)}>•••</button>{menuId === survey.id && <div className="row-menu__popover"><button type="button" onClick={() => share(survey)}>링크 복사</button><button type="button" onClick={() => duplicate(survey)}>복제하기</button>{stateKey === 'active' && <button type="button" onClick={() => setCloseConfirmSurvey(survey)}>직접 마감</button>}{canDeleteSurvey(survey) && <button className="is-danger" type="button" onClick={() => { setConfirmSurvey(survey); setMenuId('') }}>삭제하기</button>}</div>}</div></div>
+        <div className="managed-actions">{isApiConfigured && stateKey === 'draft' ? <Link className="managed-primary" to={`/formmate?draft=${survey.id}`}>이어서 편집</Link> : canManage ? <Link className="managed-primary" to={`/my-surveys/${survey.id}/manage`}>관리하기</Link> : <Link className="managed-primary" to={`/surveys/${survey.id}/results`}>결과 보기</Link>}<div className="row-menu" ref={menuId === survey.id ? menuRef : null}><button type="button" aria-label="설문 메뉴" aria-expanded={menuId === survey.id} onClick={() => setMenuId(menuId === survey.id ? '' : survey.id)}>•••</button>{menuId === survey.id && <div className="row-menu__popover"><button type="button" onClick={() => share(survey)}>링크 복사</button><button type="button" onClick={() => duplicate(survey)}>복제하기</button>{stateKey === 'active' && canManage && <button type="button" onClick={() => setCloseConfirmSurvey(survey)}>직접 마감</button>}{canDeleteSurvey(survey) && <button className="is-danger" type="button" onClick={() => { setConfirmSurvey(survey); setMenuId('') }}>삭제하기</button>}</div>}</div></div>
       </article>
     })}{!display.length && <section className="result-empty"><span>▤</span><h2>조건에 맞는 설문이 없어요.</h2><p>검색 조건을 초기화하거나 FormMate로 새 설문을 만들어보세요.</p><button className="ui-button ui-button--secondary" type="button" onClick={() => { setQuery(''); setStatus('all'); setSort('latest') }}>필터 초기화</button></section>}</section>}
     <Modal open={Boolean(confirmSurvey)} title="설문을 삭제할까요?" onClose={closeModals}><p>‘{confirmSurvey?.title}’ 설문은 삭제 후 복구할 수 없습니다.</p>{modalError && <p className="form-message form-message--error" role="alert">{modalError}</p>}<div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={closeModals}>취소</button><button className="ui-button ui-button--danger" disabled={busy} onClick={remove}>{busy ? '삭제 중…' : '삭제'}</button></div></Modal>

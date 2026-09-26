@@ -4,6 +4,7 @@ import ServiceShell from '../components/ServiceShell'
 import Modal from '../components/Modal'
 import { useAuth } from '../hooks/useAuth'
 import { closeSurvey as closeSurveyRequest, getSurvey, isDemoSurveyFixture } from '../services/surveyService'
+import { getTeamSurveyRole } from '../services/teamService'
 import { getSurveyLifecycleStatus, isTargetReached } from '../utils/surveyPolicy'
 
 function statusLabel(status) {
@@ -22,12 +23,21 @@ export default function SurveyManage() {
   const [toast, setToast] = useState('')
   const [closeOpen, setCloseOpen] = useState(false)
   const [closeError, setCloseError] = useState('')
+  const [teamMemberOnly, setTeamMemberOnly] = useState(false)
 
   useEffect(() => {
-    getSurvey(surveyId).then((item) => {
+    getSurvey(surveyId).then(async (item) => {
       if (!item) throw new Error('설문을 찾을 수 없습니다.')
-      const canManage = (item.is_owner ?? item.creator_id === user.id) || (demoMode && isDemoSurveyFixture(item.id))
-      if (!canManage) throw new Error('이 설문을 관리할 권한이 없습니다.')
+      // 팀 설문은 isOwner가 항상 false라서, 내 팀 설문인지·내가 그 팀의 팀장인지를 따로 확인한다(마감·보관은 팀장만 가능).
+      if (item.owner_type === 'TEAM') {
+        const role = await getTeamSurveyRole(item.id, item.owner_nickname)
+        if (role === 'member') setTeamMemberOnly(true)
+        if (role === 'member') throw new Error('팀 설문은 팀장만 관리할 수 있어요. 결과는 결과 화면에서 확인할 수 있어요.')
+        if (role !== 'leader') throw new Error('이 설문을 관리할 권한이 없습니다.')
+      } else {
+        const canManage = (item.is_owner ?? item.creator_id === user.id) || (demoMode && isDemoSurveyFixture(item.id))
+        if (!canManage) throw new Error('이 설문을 관리할 권한이 없습니다.')
+      }
       setSurvey(item)
     }).catch((loadError) => setError(loadError.message)).finally(() => setLoading(false))
   }, [demoMode, surveyId, user.id])
@@ -41,8 +51,8 @@ export default function SurveyManage() {
   async function closeSurvey() {
     try {
       setCloseError('')
-      const updated = await closeSurveyRequest(survey.id)
-      setSurvey((current) => ({ ...current, ...updated, status: 'closed' }))
+      await closeSurveyRequest(survey.id)
+      setSurvey((current) => ({ ...current, status: 'closed' }))
       setCloseOpen(false)
       setToast('설문 모집을 종료했습니다.')
     } catch (closeFailure) {
@@ -51,7 +61,7 @@ export default function SurveyManage() {
   }
 
   if (loading) return <ServiceShell activePath="/my-surveys"><div className="survey-manage-loading">설문 관리 정보를 불러오고 있어요.</div></ServiceShell>
-  if (error) return <ServiceShell activePath="/my-surveys"><section className="result-state"><span>!</span><h1>{error}</h1><p>내 설문에서 다시 확인해주세요.</p><div><Link className="ui-button" to="/my-surveys">내 설문으로 돌아가기</Link></div></section></ServiceShell>
+  if (error) return <ServiceShell activePath="/my-surveys"><section className="result-state"><span>!</span><h1>{error}</h1><p>내 설문에서 다시 확인해주세요.</p><div>{teamMemberOnly && <Link className="ui-button" to={`/surveys/${surveyId}/results`}>결과 보기</Link>}<Link className={teamMemberOnly ? 'ui-button ui-button--secondary' : 'ui-button'} to="/my-surveys">내 설문으로 돌아가기</Link></div></section></ServiceShell>
 
   const responses = Number(survey.response_count || 0)
   const target = Math.max(1, Number(survey.target_count || 1))
