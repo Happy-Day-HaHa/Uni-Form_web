@@ -94,8 +94,9 @@ export default function SurveyResponse() {
       setSubmitting(true)
       setMessage('')
       const result = await submitSurveyResponse(survey.id, answers, { survey, sessionId, sameScaleWarningAcknowledged })
-      if (isApiConfigured) setWeeklyActivity({ rank: result.weeklyRank, earned: result.pointsEarned })
-      else setWeeklyActivity((await getLeaderboard(user.id)).me)
+      // 순위는 리더보드 화면과 같은 GET /leaderboard의 내 순위를 쓴다. 실패하면 제출 응답의 weeklyRank로 대신한다.
+      const leaderboardMe = await getLeaderboard(user.id).then((data) => data.me).catch(() => null)
+      setWeeklyActivity(leaderboardMe || (isApiConfigured ? { rank: result.weeklyRank, earned: result.pointsEarned } : null))
       setSubmitted(true)
     } catch (error) {
       if (!applyBlockingError(error)) setMessage(error.message)

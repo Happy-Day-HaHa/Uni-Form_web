@@ -115,11 +115,6 @@ function requireSignedIn(message) {
   if (!getAccessToken() && !getRefreshToken()) throw new ApiError({ status: 401, message, code: 'NOT_SIGNED_IN' })
 }
 
-// TODO(4단계 마이페이지): /mypage/* 연동 전까지 API 모드에서는 막아둔다(가짜 성공 방지).
-function notConnectedYet() {
-  return new ApiError({ status: 0, message: '아직 백엔드와 연결되지 않은 기능입니다.', code: 'NOT_CONNECTED' })
-}
-
 // ── 설문 목록 / 상세 ──────────────────────────────────────────────────────
 export async function getSurveyPage({ cursor, limit = 20 } = {}) {
   const params = new URLSearchParams({ limit: String(limit) })
@@ -212,7 +207,80 @@ export async function applyFormMateChanges(surveyId, { changeIds, version, rever
   }
 }
 
-// ── 데모 모드 전용 (API 모드 연동은 이후 단계) ─────────────────────────────
+// ── 내 설문 (마이페이지) ─────────────────────────────────────────────────
+// GET /mypage/surveys 항목(MySurveyResponseDto) → 화면 설문. 본인 설문 + 소속 팀 설문이 함께 온다.
+// 백엔드는 isOwner를 주지 않는다. 팀 설문의 마감·보관은 팀장만 가능해서, 권한은 서버 응답(403)으로 판단한다.
+function fromApiMySurvey(survey, index) {
+  return {
+    id: survey.id,
+    title: survey.title || '',
+    description: '',
+    status: STATUS_FROM_API[survey.status] || String(survey.status || '').toLowerCase(),
+    owner_type: survey.ownerType,
+    owner_name: survey.ownerName,
+    question_count: survey.questionCount,
+    response_count: survey.responseCount,
+    target_count: survey.targetCount,
+    deadline: toKstDate(survey.deadlineAt),
+    purge_at: survey.purgeAt,
+    // 서버 정렬(만든 시각 최신순)을 유지하기 위한 순번. 목록 DTO에 날짜가 없다.
+    list_order: index,
+  }
+}
+
+// 마이페이지 작업 에러: 서버 문구를 그대로 쓰되, code가 있는 경우만 화면 문구로 바꾼다.
+function toMySurveyError(error) {
+  if (error instanceof ApiError && error.code === 'SURVEY_NOT_RECRUITING') return new ApiError({ status: error.status, message: '이미 마감되었거나 모집 중이 아닌 설문이에요.', code: error.code, data: error.data })
+  return error
+}
+
+async function withMySurveyErrors(request) {
+  try {
+    return await request()
+  } catch (error) {
+    throw toMySurveyError(error)
+  }
+}
+
+export async function getMySurveys(userId) {
+  if (!isApiConfigured) return getAllDemoSurveys().filter((survey) => survey.creator_id === userId)
+  const items = await apiClient.get('/mypage/surveys')
+  return items.map(fromApiMySurvey)
+}
+
+// 모집 중인 설문만 마감할 수 있다. 응답: 갱신된 내 설문 항목.
+export async function closeSurvey(surveyId) {
+  if (!isApiConfigured) return updateSurvey(surveyId, { status: 'closed' })
+  const updated = await withMySurveyErrors(() => apiClient.post(`/mypage/surveys/${encodeURIComponent(surveyId)}/close`))
+  return fromApiMySurvey(updated, 0)
+}
+
+// 백엔드는 임시저장(DRAFT) 설문만 삭제한다(영구 삭제). 게시된 설문은 응답 수와 관계없이 삭제할 수 없다.
+export async function deleteSurvey(surveyId) {
+  if (isApiConfigured) {
+    await withMySurveyErrors(() => apiClient.delete(`/surveys/drafts/${encodeURIComponent(surveyId)}`))
+    return
+  }
+  const survey = getDemoCreatedSurveys().find((item) => item.id === surveyId)
+  if (!canDeleteSurvey(survey)) throw new Error('임시저장 상태이며 응답이 없는 설문만 삭제할 수 있어요.')
+  localStorage.setItem(demoStorageKey, JSON.stringify(getDemoCreatedSurveys().filter((item) => item.id !== surveyId)))
+}
+
+// API 모드: 내 개인 초안으로 복사한다(제목·설명·문항만, 목표 인원·마감일은 새로 정해야 함). 응답: { newSurveyId }
+export async function duplicateSurvey(survey) {
+  if (isApiConfigured) {
+    const { newSurveyId } = await withMySurveyErrors(() => apiClient.post(`/surveys/${encodeURIComponent(survey.id)}/copy`, { targetOwnerType: 'user' }))
+    return { id: newSurveyId }
+  }
+  const futureDeadline = survey.deadline > getKstDateString() ? survey.deadline : getKstDateString(new Date(Date.now() + 30 * 86400000))
+  return createSurvey({
+    title: `${survey.title} 사본`, description: survey.description, category: survey.category,
+    target_count: Math.min(100, survey.target_count), estimated_minutes: survey.estimated_minutes,
+    deadline: futureDeadline, questions: survey.questions || [], status: 'draft',
+  })
+}
+
+// ── 데모 모드 전용 ────────────────────────────────────────────────────────
 export async function createSurvey(payload) {
   const survey = { id: crypto.randomUUID(), creator_id: 'demo-user', response_count: 0, status: 'active', ...payload }
   localStorage.setItem(demoStorageKey, JSON.stringify([survey, ...getDemoCreatedSurveys()]))
@@ -220,36 +288,9 @@ export async function createSurvey(payload) {
   return survey
 }
 
-// TODO(4단계 마이페이지): GET /mypage/surveys로 교체
-export async function getMySurveys(userId) {
-  return getAllDemoSurveys().filter((survey) => survey.creator_id === userId)
-}
-
 export async function updateSurvey(surveyId, patch) {
   const created = getDemoCreatedSurveys()
   const next = created.map((survey) => survey.id === surveyId ? { ...survey, ...patch, updated_at: new Date().toISOString() } : survey)
   localStorage.setItem(demoStorageKey, JSON.stringify(next))
   return next.find((survey) => survey.id === surveyId) || { id: surveyId, ...patch }
-}
-
-export async function deleteSurvey(surveyId) {
-  if (isApiConfigured) throw notConnectedYet()
-  const survey = getDemoCreatedSurveys().find((item) => item.id === surveyId)
-  if (!canDeleteSurvey(survey)) throw new Error('임시저장 상태이며 응답이 없는 설문만 삭제할 수 있어요.')
-  localStorage.setItem(demoStorageKey, JSON.stringify(getDemoCreatedSurveys().filter((item) => item.id !== surveyId)))
-}
-
-export async function closeSurvey(surveyId) {
-  if (isApiConfigured) throw notConnectedYet()
-  return updateSurvey(surveyId, { status: 'closed' })
-}
-
-export async function duplicateSurvey(survey) {
-  if (isApiConfigured) throw notConnectedYet()
-  const futureDeadline = survey.deadline > getKstDateString() ? survey.deadline : getKstDateString(new Date(Date.now() + 30 * 86400000))
-  return createSurvey({
-    title: `${survey.title} 사본`, description: survey.description, category: survey.category,
-    target_count: Math.min(100, survey.target_count), estimated_minutes: survey.estimated_minutes,
-    deadline: futureDeadline, questions: survey.questions || [], status: 'draft',
-  })
 }
