@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import Modal from '../components/Modal'
 import ServiceShell, { ServiceHeading } from '../components/ServiceShell'
@@ -41,22 +41,29 @@ export default function Team() {
   const [transferTarget, setTransferTarget] = useState(null)
   const rootRef = useReveal([loading, team?.id])
 
+  // 탭을 빠르게 바꾸면 이전 불러오기가 늦게 끝날 수 있다. 가장 최근에 시작한 불러오기만 화면에 반영한다.
+  const loadIdRef = useRef(0)
   const selectTeam = useCallback((id) => setSearchParams(id ? { team: id } : {}, { replace: true }), [setSearchParams])
 
   const load = useCallback(async () => {
+    const loadId = ++loadIdRef.current
+    const isStale = () => loadId !== loadIdRef.current
     setLoadError('')
     try {
       const myTeams = await getMyTeams(user.id)
+      if (isStale()) return
       setTeams(myTeams)
       const requested = selectedId && selectedId !== 'new' ? myTeams.find((item) => item.id === selectedId) : null
       // 주소의 팀에 속해 있지 않으면(내보내졌거나 해체됨) 이유를 알리고 첫 번째 내 팀을 보여준다.
       if (selectedId && selectedId !== 'new' && !requested) setActionError('주소의 팀에 속해 있지 않아요. 팀에서 내보내졌거나 해체된 팀일 수 있어요.')
       const target = selectedId === 'new' ? null : requested || myTeams[0]
-      setTeam(target ? await getTeam(target.id) : null)
+      const detail = target ? await getTeam(target.id) : null
+      if (isStale()) return
+      setTeam(detail)
     } catch (error) {
-      setLoadError(`팀 정보를 불러오지 못했어요. ${error.message}`)
+      if (!isStale()) setLoadError(`팀 정보를 불러오지 못했어요. ${error.message}`)
     } finally {
-      setLoading(false)
+      if (!isStale()) setLoading(false)
     }
   }, [selectedId, user.id])
 
