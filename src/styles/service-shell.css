@@ -275,3 +275,11 @@
 .copy-targets label:has(input:checked){border-color:var(--saas-blue,#1763f3);background:#f3f7ff}
 .copy-targets span{font-size:.74rem;font-weight:700;color:#243552}
 .copy-targets small{grid-column:2;color:#74839c;font-size:.62rem}
+/* 복수선택 최소/최대 선택 개수 */
+.formmate-select-range{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:10px}
+.formmate-select-range label{display:inline-flex;align-items:center;gap:6px;color:#52627f;font-size:.68rem;font-weight:700}
+.formmate-select-range input{width:64px;min-height:34px;padding:0 8px;border:1px solid #dce5f1;border-radius:8px;font:inherit}
+.formmate-select-range small{color:#8491a7;font-size:.62rem}
+.formmate-select-range p{flex-basis:100%;margin:0}
+.formmate-select-range__hint{color:#8491a7;font-size:.62rem}
+.question__hint{margin:4px 0 8px;color:#74839c;font-size:.72rem}

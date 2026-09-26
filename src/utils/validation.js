@@ -26,6 +26,25 @@ export function validateNickname(nickname) {
 
 import { getKstDateString } from './surveyPolicy'
 
+// 복수선택 문항의 선택 개수 범위. 입력하지 않은 값은 기본값(최소 1개, 최대 보기 수)을 쓴다.
+export function getSelectRange(question) {
+  const optionCount = (question.options || []).length
+  const toCount = (value) => (value === null || value === undefined || value === '' ? null : Number(value))
+  const min = toCount(question.minSelect)
+  const max = toCount(question.maxSelect)
+  return { min: min ?? 1, max: max ?? optionCount, optionCount }
+}
+
+// 선택 개수 범위가 올바르지 않으면 이유를, 올바르면 ''를 돌려준다.
+export function validateSelectRange(question) {
+  const { min, max, optionCount } = getSelectRange(question)
+  if (!Number.isInteger(min) || !Number.isInteger(max)) return '선택 개수는 정수로 입력해주세요.'
+  if (min < 1) return '최소 선택 개수는 1개 이상이어야 해요.'
+  if (min > max) return '최소 선택 개수는 최대 선택 개수보다 클 수 없어요.'
+  if (max > optionCount) return `최대 선택 개수는 보기 수(${optionCount}개) 이하여야 해요.`
+  return ''
+}
+
 export function validateSurvey({ title, questions, targetCount, deadline }) {
   if (title.trim().length < 3) return '설문 제목을 3자 이상 입력해주세요.'
 
@@ -40,6 +59,10 @@ export function validateSurvey({ title, questions, targetCount, deadline }) {
       const options = (question.options || []).filter(Boolean)
       if (options.length < 2 || options.length > 10) return '선택형 문항의 보기는 2~10개여야 해요.'
       if (options.some((option) => option.length > 50)) return '보기는 최대 50자까지 입력할 수 있어요.'
+    }
+    if (question.type === 'multiple') {
+      const rangeMessage = validateSelectRange(question)
+      if (rangeMessage) return `${questions.indexOf(question) + 1}번 문항: ${rangeMessage}`
     }
   }
 
