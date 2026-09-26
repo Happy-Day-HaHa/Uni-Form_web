@@ -9,6 +9,11 @@ export function validateAuth({ email, password }) {
   return ''
 }
 
+// 새 비밀번호(회원가입·비밀번호 재설정 공통 규칙)
+export function validatePassword(password) {
+  return isStrongPassword(password) ? '' : '비밀번호는 영문과 숫자를 포함해 8자 이상이어야 합니다.'
+}
+
 // Signup: field-specific messages are fine here, there is no account to leak information about yet.
 export function validateSignup({ email, password, nickname }) {
   if (!isEmail(email)) return '올바른 이메일 주소를 입력해주세요.'
