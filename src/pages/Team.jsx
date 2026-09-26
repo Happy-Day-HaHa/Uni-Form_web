@@ -228,7 +228,7 @@ export default function Team() {
         return <article className="managed-row" key={survey.id}>
           <div className="managed-row__title"><div><h2>{survey.title}</h2><small>마감 {survey.deadline || '-'}{survey.updatedBy ? ` · 마지막 수정 ${survey.updatedBy} · ${relativeTime(survey.updatedAt)}` : ''}</small></div></div>
           <div className="managed-progress"><span>{responses.toLocaleString()} / {Number(survey.target_count || 0).toLocaleString()}명 <b>{progress}%</b></span><div><i style={{ '--progress': `${progress}%` }} /></div></div>
-          <div className="managed-actions">{isLeader && isApiConfigured && <Link className="ui-button ui-button--secondary" to={`/my-surveys/${survey.id}/manage`}>관리하기</Link>}<Link className="managed-primary" to={`/surveys/${survey.id}/results`}>결과 보기</Link></div>
+          <div className="managed-actions">{isApiConfigured && survey.can_manage && <Link className="ui-button ui-button--secondary" to={`/my-surveys/${survey.id}/manage`}>관리하기</Link>}<Link className="managed-primary" to={`/surveys/${survey.id}/results`}>결과 보기</Link></div>
         </article>
       })}{!team.surveys.length && <p className="team-empty-row">아직 게시한 팀 설문이 없어요.</p>}</div>
     </section>

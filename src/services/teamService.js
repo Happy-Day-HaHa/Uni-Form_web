@@ -81,8 +81,9 @@ export async function getTeam(teamId) {
   if (!isApiConfigured) return readTeam()
   const [detail, mySurveys] = await Promise.all([withTeamErrors(() => apiClient.get(`/teams/${encodeURIComponent(teamId)}`)), getMySurveys()])
   const team = fromApiTeam(detail)
-  // 설문 응답에는 팀 id가 없어 팀 이름으로 맞춘다(같은 이름의 내 팀이 여럿이면 함께 보일 수 있다).
-  const teamSurveys = mySurveys.filter((survey) => survey.owner_type === 'TEAM' && survey.owner_name === team.name)
+  // 화면 표시용 묶기: 내 설문 목록에는 팀 id가 없어 팀 이름으로 묶는다(권한 판단에는 쓰지 않는다 — 권한은 canManage).
+  // 해산된 팀의 설문은 같은 이름의 새 팀 화면에 섞이지 않게 뺀다.
+  const teamSurveys = mySurveys.filter((survey) => survey.owner_type === 'TEAM' && !survey.team_disbanded_at && survey.owner_name === team.name)
   team.drafts = teamSurveys.filter((survey) => survey.status === 'draft')
   team.surveys = teamSurveys.filter((survey) => survey.status !== 'draft')
   return team
@@ -161,24 +162,4 @@ export async function getMyTeam() {
   if (!isApiConfigured) return readTeam()
   const mySurveys = await getMySurveys()
   return { surveys: mySurveys.filter((survey) => survey.owner_type === 'TEAM') }
-}
-
-// ── 팀 설문 권한 ─────────────────────────────────────────────────────────
-// 설문 응답에는 팀 id가 없어서 두 가지를 맞춰 판단한다.
-//  1) 이 설문이 내 설문 목록(GET /mypage/surveys: 본인 + 내 팀 설문)에 있는가 → 다른 팀 설문을 걸러낸다
-//  2) 설문의 팀 이름과 같은 이름의 내 팀에서 내가 팀장인가 → 같은 이름의 내 팀이 여럿이면 모두 팀장일 때만 팀장
-// 반환: 'leader' | 'member' | null(내 팀 설문 아님). 백엔드 권한: 마감·보관은 팀장만, 초안 삭제는 팀장 또는 만든 사람,
-// 결과 조회·초안 편집·복제는 팀원 누구나.
-export async function getTeamSurveyRole(surveyId, teamName, { mySurveys, myTeams } = {}) {
-  if (!isApiConfigured) return null
-  const [surveys, teams] = await Promise.all([mySurveys || getMySurveys(), myTeams || getMyTeams()])
-  if (!surveys.some((survey) => survey.id === surveyId)) return null
-  return teamRoleByName(teams, teamName)
-}
-
-// 팀 이름 → 내 역할. 같은 이름의 내 팀이 여럿이면 모두 팀장일 때만 'leader'.
-export function teamRoleByName(myTeams, teamName) {
-  const matching = myTeams.filter((team) => team.name === teamName)
-  if (!matching.length) return null
-  return matching.every((team) => team.isLeader) ? 'leader' : 'member'
 }

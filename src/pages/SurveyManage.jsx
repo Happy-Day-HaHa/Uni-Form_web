@@ -4,7 +4,6 @@ import ServiceShell from '../components/ServiceShell'
 import Modal from '../components/Modal'
 import { useAuth } from '../hooks/useAuth'
 import { closeSurvey as closeSurveyRequest, getSurvey, isDemoSurveyFixture } from '../services/surveyService'
-import { getTeamSurveyRole } from '../services/teamService'
 import { getSurveyLifecycleStatus, isTargetReached } from '../utils/surveyPolicy'
 
 function statusLabel(status) {
@@ -23,17 +22,19 @@ export default function SurveyManage() {
   const [toast, setToast] = useState('')
   const [closeOpen, setCloseOpen] = useState(false)
   const [closeError, setCloseError] = useState('')
-  const [teamMemberOnly, setTeamMemberOnly] = useState(false)
+  // 관리 권한이 없는 팀 설문. 팀원인지는 알 수 없으므로(canManage만 온다) 결과 화면으로 안내만 하고,
+  // 실제 결과 조회 권한은 결과 API(비팀원 403)와 결과 화면이 판단한다.
+  const [teamSurveyDenied, setTeamSurveyDenied] = useState(false)
 
   useEffect(() => {
-    getSurvey(surveyId).then(async (item) => {
+    getSurvey(surveyId).then((item) => {
       if (!item) throw new Error('설문을 찾을 수 없습니다.')
-      // 팀 설문은 isOwner가 항상 false라서, 내 팀 설문인지·내가 그 팀의 팀장인지를 따로 확인한다(마감·보관은 팀장만 가능).
+      // 팀 설문은 isOwner가 항상 false라서 백엔드의 canManage(팀장, 해산됐으면 해산 당시 팀장)로 판단한다.
       if (item.owner_type === 'TEAM') {
-        const role = await getTeamSurveyRole(item.id, item.owner_nickname)
-        if (role === 'member') setTeamMemberOnly(true)
-        if (role === 'member') throw new Error('팀 설문은 팀장만 관리할 수 있어요. 결과는 결과 화면에서 확인할 수 있어요.')
-        if (role !== 'leader') throw new Error('이 설문을 관리할 권한이 없습니다.')
+        if (!item.can_manage) {
+          setTeamSurveyDenied(true)
+          throw new Error('이 설문을 관리할 권한이 없습니다.')
+        }
       } else {
         const canManage = (item.is_owner ?? item.creator_id === user.id) || (demoMode && isDemoSurveyFixture(item.id))
         if (!canManage) throw new Error('이 설문을 관리할 권한이 없습니다.')
@@ -61,7 +62,7 @@ export default function SurveyManage() {
   }
 
   if (loading) return <ServiceShell activePath="/my-surveys"><div className="survey-manage-loading">설문 관리 정보를 불러오고 있어요.</div></ServiceShell>
-  if (error) return <ServiceShell activePath="/my-surveys"><section className="result-state"><span>!</span><h1>{error}</h1><p>내 설문에서 다시 확인해주세요.</p><div>{teamMemberOnly && <Link className="ui-button" to={`/surveys/${surveyId}/results`}>결과 보기</Link>}<Link className={teamMemberOnly ? 'ui-button ui-button--secondary' : 'ui-button'} to="/my-surveys">내 설문으로 돌아가기</Link></div></section></ServiceShell>
+  if (error) return <ServiceShell activePath="/my-surveys"><section className="result-state"><span>!</span><h1>{error}</h1><p>{teamSurveyDenied ? '팀 설문은 팀장만 관리할 수 있어요. 결과는 설문을 만든 팀의 팀원이면 결과 화면에서 확인할 수 있어요.' : '내 설문에서 다시 확인해주세요.'}</p><div><Link className="ui-button" to="/my-surveys">내 설문으로 돌아가기</Link>{teamSurveyDenied && <Link className="ui-button ui-button--secondary" to={`/surveys/${surveyId}/results`}>결과 화면으로 이동</Link>}</div></section></ServiceShell>
 
   const responses = Number(survey.response_count || 0)
   const target = Math.max(1, Number(survey.target_count || 1))

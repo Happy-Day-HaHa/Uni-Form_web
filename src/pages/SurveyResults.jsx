@@ -49,7 +49,7 @@ function ResultSkeleton() {
 
 function ResultState({ code, onRetry, surveyId }) {
   const states = {
-    FORBIDDEN: ['이 결과를 확인할 권한이 없습니다.', '설문 제작자만 원본 응답과 문항별 결과를 확인할 수 있어요.'],
+    FORBIDDEN: ['이 결과를 확인할 권한이 없습니다.', '설문을 만든 사람(팀 설문은 그 팀의 팀원)만 문항별 결과를 확인할 수 있어요.'],
     NOT_FOUND: ['설문을 찾을 수 없습니다.', '삭제되었거나 주소가 올바르지 않은 설문입니다.'],
     NETWORK: ['결과를 불러오지 못했습니다.', '잠시 후 다시 시도해주세요.'],
   }
