@@ -65,7 +65,11 @@ export function getWeekMeta() {
 }
 
 export async function getLeaderboard(userId, { myWeeklyScore = 7 } = {}) {
-  if (supabase) return { entries: [], me: null, week: getWeekMeta(), rewards: REWARD_TIERS, policyNotes: POLICY_NOTES, lastWeekRank: null, available: false }
+  if (supabase) {
+    const { data: notice } = await supabase.from('reward_notice').select('tiers').eq('id', true).maybeSingle()
+    const rewards = Array.isArray(notice?.tiers) && notice.tiers.length ? notice.tiers.map((label, index) => ({ rank: index + 1, label })) : REWARD_TIERS
+    return { entries: [], me: null, week: getWeekMeta(), rewards, policyNotes: POLICY_NOTES, lastWeekRank: null, available: false }
+  }
   const entries = buildWeeklyEntries()
 
   let me = null

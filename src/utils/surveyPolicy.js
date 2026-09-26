@@ -27,6 +27,7 @@ export function isDeadlineExpired(deadline, now = new Date()) {
 }
 
 export function getSurveyLifecycleStatus(survey) {
+  if (survey?.status === 'removed') return 'removed'
   if (survey?.status === 'draft' || survey?.status === 'archived') return survey.status
   if (survey?.status === 'closed') return 'closed'
   if (survey?.status === 'active' && !isDeadlineExpired(survey.deadline)) return 'active'

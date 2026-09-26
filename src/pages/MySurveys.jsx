@@ -9,7 +9,7 @@ import { canDeleteSurvey, getSurveyLifecycleStatus, isTargetReached } from '../u
 
 function surveyState(survey) {
   const status = getSurveyLifecycleStatus(survey)
-  return [status, { draft: '임시저장', active: '모집 중', closed: '마감', archived: '보관' }[status]]
+  return [status, { draft: '임시저장', active: '모집 중', closed: '마감', archived: '보관', removed: '운영 삭제' }[status]]
 }
 
 export default function MySurveys() {
@@ -65,14 +65,14 @@ export default function MySurveys() {
     </section>
     <div className="service-table-tools" data-motion-reveal>
       <input className="service-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="설문 제목, 설명, 카테고리로 검색하세요." aria-label="내 설문 검색" />
-      <select className="service-select" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="상태"><option value="all">전체 상태</option><option value="draft">임시저장</option><option value="active">모집 중</option><option value="closed">마감</option><option value="archived">보관</option></select>
+      <select className="service-select" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="상태"><option value="all">전체 상태</option><option value="draft">임시저장</option><option value="active">모집 중</option><option value="closed">마감</option><option value="archived">보관</option><option value="removed">운영 삭제</option></select>
       <select className="service-select" value={sort} onChange={(event) => setSort(event.target.value)} aria-label="정렬"><option value="latest">최근 수정순</option><option value="responses">응답 많은순</option></select>
     </div>
     {loading ? <div className="catalog-skeleton" aria-label="설문을 불러오는 중">{Array.from({ length: 4 }, (_, index) => <div key={index}><span /><p /><i /></div>)}</div> : <section className="managed-list">{display.map((survey, index) => {
       const progress = Math.min(100, Math.round(Number(survey.response_count || 0) / Math.max(1, Number(survey.target_count || 1)) * 100))
       const [stateKey, stateLabel] = surveyState(survey)
       return <article className="managed-row ui-card" key={survey.id} data-motion-reveal style={{ '--delay': `${Math.min(index, 4) * 50}ms` }}>
-        <div className="managed-row__title"><span className={`service-tone--${['violet', 'amber', 'rose', 'mint', 'blue'][index % 5]}`}>{['◇', '○', '▤', '◎', '✦'][index % 5]}</span><div><div className="managed-title-line"><h2>{survey.title}</h2><em className={`survey-state survey-state--${stateKey}`}>{stateLabel}</em>{isTargetReached(survey) && <em className="survey-state survey-state--success">목표 달성</em>}</div><p>{survey.description}</p><small>{survey.category || '일반'} · 약 {survey.estimated_minutes || 5}분{survey.deadline ? ` · 마감 ${survey.deadline}` : ''}</small></div></div>
+        <div className="managed-row__title"><span className={`service-tone--${['violet', 'amber', 'rose', 'mint', 'blue'][index % 5]}`}>{['◇', '○', '▤', '◎', '✦'][index % 5]}</span><div><div className="managed-title-line"><h2>{survey.title}</h2><em className={`survey-state survey-state--${stateKey}`}>{stateLabel}</em>{isTargetReached(survey) && <em className="survey-state survey-state--success">목표 달성</em>}</div><p>{survey.description}</p>{stateKey === 'removed' && <small className="managed-row__removal">운영 삭제 사유: {survey.removal_reason || '운영 정책 위반'} · 처리일 {survey.removed_at ? new Date(survey.removed_at).toLocaleDateString('ko-KR') : '-'} · <Link to="/support">고객센터</Link></small>}<small>{survey.category || '일반'} · 약 {survey.estimated_minutes || 5}분{survey.deadline ? ` · 마감 ${survey.deadline}` : ''}</small></div></div>
         <div className="managed-progress"><span>{Number(survey.response_count || 0).toLocaleString()} / {Number(survey.target_count || 0).toLocaleString()}명 <b>{progress}%</b></span><div><i style={{ '--progress': `${progress}%` }} /></div><small>{progress >= 100 ? '목표를 달성했어요! 🎉' : `목표까지 ${Math.max(0, Number(survey.target_count || 0) - Number(survey.response_count || 0))}명 남았어요.`}</small></div>
         <div className="managed-actions"><Link className="managed-primary" to={`/my-surveys/${survey.id}/manage`}>관리하기</Link><div className="row-menu" ref={menuId === survey.id ? menuRef : null}><button type="button" aria-label="설문 메뉴" aria-expanded={menuId === survey.id} onClick={() => setMenuId(menuId === survey.id ? '' : survey.id)}>•••</button>{menuId === survey.id && <div className="row-menu__popover"><button type="button" onClick={() => share(survey)}>링크 복사</button><button type="button" onClick={() => duplicate(survey)}>복제하기</button>{stateKey === 'active' && <button type="button" onClick={() => setCloseConfirmSurvey(survey)}>직접 마감</button>}{canDeleteSurvey(survey) && <button className="is-danger" type="button" onClick={() => { setConfirmSurvey(survey); setMenuId('') }}>삭제하기</button>}</div>}</div></div>
       </article>

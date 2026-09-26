@@ -10,6 +10,7 @@ function statusLabel(status) {
   if (status === 'draft') return '임시저장'
   if (status === 'closed') return '마감'
   if (status === 'archived') return '보관'
+  if (status === 'removed') return '운영 삭제'
   return '모집 중'
 }
 
@@ -64,6 +65,8 @@ export default function SurveyManage() {
       <article><small>마감일</small><strong>{survey.deadline}</strong></article>
       <article><small>문항</small><strong>{survey.questions?.length || 0}개</strong></article>
     </section>
+
+    {survey.status === 'removed' && <div className="admin-alert">운영 삭제 사유: {survey.removal_reason || '운영 정책 위반'} · 처리일 {survey.removed_at ? new Date(survey.removed_at).toLocaleDateString('ko-KR') : '-'} · 삭제 전에 수집한 결과는 계속 조회할 수 있습니다. <Link to="/support">고객센터 문의</Link></div>}
 
     <section className="survey-manage__actions"><header><h2>설문 관리</h2><p>이 설문에 필요한 작업만 모아두었습니다.</p></header><div>
       {!isDraft && <Link className="survey-manage-action survey-manage-action--primary" to={`/surveys/${survey.id}/results`}><span>결과 확인</span><small>모인 응답과 문항별 결과를 확인합니다.</small><b>→</b></Link>}
