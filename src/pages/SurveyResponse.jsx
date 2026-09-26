@@ -55,7 +55,7 @@ export default function SurveyResponse() {
 
   // 응답 자체가 불가능한 에러면 안내 화면으로 전환하고 true를 돌려준다.
   function applyBlockingError(error) {
-    const reasonMap = { ALREADY_RESPONDED: 'already', SURVEY_CLOSED: 'closed', OWN_SURVEY: 'own' }
+    const reasonMap = { ALREADY_RESPONDED: 'already', SURVEY_NOT_RECRUITING: 'closed', OWNER_CANNOT_RESPOND: 'own' }
     const reason = reasonMap[error?.reason]
     if (!reason) return false
     setBlocked({ reason, message: error.message })

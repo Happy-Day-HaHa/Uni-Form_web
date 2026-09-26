@@ -35,11 +35,12 @@ export class ResultAccessError extends Error {
 }
 
 // ── 응답 에러 분류 ───────────────────────────────────────────────────────
-// 백엔드는 에러 code를 주지 않고, 중복 응답과 마감이 둘 다 409라 메시지로 구분한다.
+// reason은 백엔드 에러 code와 같은 이름을 쓴다. 중복 응답과 마감은 둘 다 409라 code로 구분한다.
+const RESPONSE_ERROR_CODES = ['ALREADY_RESPONDED', 'SURVEY_NOT_RECRUITING', 'OWNER_CANNOT_RESPOND']
 const RESPONSE_ERROR_MESSAGES = {
   ALREADY_RESPONDED: '이미 응답을 완료한 설문입니다.',
-  SURVEY_CLOSED: '마감되었거나 모집 중이 아닌 설문이라 응답할 수 없어요.',
-  OWN_SURVEY: '본인(또는 우리 팀)이 만든 설문에는 응답할 수 없어요.',
+  SURVEY_NOT_RECRUITING: '마감되었거나 모집 중이 아닌 설문이라 응답할 수 없어요.',
+  OWNER_CANNOT_RESPOND: '본인(또는 우리 팀)이 만든 설문에는 응답할 수 없어요.',
   ACCOUNT_NOT_ACTIVE: '이메일 인증을 마친 활성 회원만 응답할 수 있어요.',
   NOT_SIGNED_IN: '로그인이 필요해요. 다시 로그인한 뒤 시도해주세요.',
   NOT_FOUND: '설문을 찾을 수 없습니다. 삭제되었거나 주소가 올바르지 않아요.',
@@ -55,17 +56,25 @@ export class ResponseError extends Error {
   }
 }
 
+// code가 없는 예전 백엔드 응답용: 메시지 문구로 추정한다.
+function reasonFromMessage(error) {
+  const text = error.messages.join(' ')
+  if (error.status === 409 && text.includes('이미 응답')) return 'ALREADY_RESPONDED'
+  if (error.status === 409 && text.includes('모집 중')) return 'SURVEY_NOT_RECRUITING'
+  if (error.status === 403 && text.includes('응답할 수 없습니다')) return 'OWNER_CANNOT_RESPOND'
+  return null
+}
+
 function toResponseError(error) {
   if (!(error instanceof ApiError)) return error
-  const text = error.messages.join(' ')
   let reason = null
-  if (error.status === 0) reason = 'NETWORK'
+  if (RESPONSE_ERROR_CODES.includes(error.code)) reason = error.code
+  else if (error.status === 0) reason = 'NETWORK'
   else if (error.status === 401) reason = 'NOT_SIGNED_IN'
   else if (error.status === 404) reason = 'NOT_FOUND'
-  else if (error.status === 409 && text.includes('이미 응답')) reason = 'ALREADY_RESPONDED'
-  else if (error.status === 409 && text.includes('모집 중')) reason = 'SURVEY_CLOSED'
-  else if (error.status === 403 && text.includes('응답할 수 없습니다')) reason = 'OWN_SURVEY'
-  else if (error.status === 403 && text.includes('활성 회원')) reason = 'ACCOUNT_NOT_ACTIVE'
+  // 비활성 계정 403은 백엔드가 code를 주지 않아 문구로만 구분한다.
+  else if (error.status === 403 && error.messages.join(' ').includes('활성 회원')) reason = 'ACCOUNT_NOT_ACTIVE'
+  else reason = reasonFromMessage(error)
   // 400(답변 검증 실패)은 서버가 준 문항별 사유를 그대로 보여준다.
   if (!reason) return new ResponseError(error.status === 400 ? 'INVALID_ANSWERS' : 'UNKNOWN', error.messages.join(' · '), error)
   return new ResponseError(reason, RESPONSE_ERROR_MESSAGES[reason], error)

@@ -39,7 +39,8 @@ export function emitAuthStateChange(event, user = null) {
   authListeners.forEach((listener) => listener(event, user))
 }
 
-// 백엔드 HttpExceptionFilter 응답: { statusCode, message: string | string[], error?, path, timestamp, ...extra }
+// 백엔드 HttpExceptionFilter 응답: { statusCode, message: string | string[], code?, error?, path, timestamp, ...extra }
+// code는 일부 에러에만 있는 고정 식별값(예: ALREADY_RESPONDED). 없으면 error(예: 'Bad Request')를 쓴다.
 export class ApiError extends Error {
   constructor({ status, message, messages = [message], code = null, data = null }) {
     super(message)
@@ -65,7 +66,7 @@ function toApiError(status, body) {
   const raw = body && typeof body === 'object' ? body.message : body
   const messages = (Array.isArray(raw) ? raw : [raw]).filter(Boolean).map(String)
   if (!messages.length) messages.push(`요청을 처리하지 못했습니다. (${status})`)
-  return new ApiError({ status, message: messages[0], messages, code: body?.error ?? null, data: body })
+  return new ApiError({ status, message: messages[0], messages, code: body?.code ?? body?.error ?? null, data: body })
 }
 
 async function send(path, { method, body, headers, signal, auth }) {
