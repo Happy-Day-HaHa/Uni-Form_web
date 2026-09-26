@@ -28,10 +28,13 @@ export default function SurveyList() {
   const listRef = useRef(null)
 
   useEffect(() => {
+    // 로그인 확인 전(user 없음)과 후에 두 번 불리므로, 늦게 끝난 이전 요청이 결과를 덮어쓰지 않게 한다.
+    let active = true
     Promise.all([getSurveys(), getRespondedSurveyIds(user?.id), getMyTeam()])
-      .then(([items, ids, team]) => { setSurveys(items); setRespondedIds(ids); setTeamSurveyIds((team?.surveys || []).map((survey) => survey.id)) })
-      .catch((reason) => setError(reason.message))
-      .finally(() => setLoading(false))
+      .then(([items, ids, team]) => { if (!active) return; setSurveys(items); setRespondedIds(ids); setTeamSurveyIds((team?.surveys || []).map((survey) => survey.id)); setError('') })
+      .catch((reason) => { if (active) setError(reason.message) })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
   }, [user])
 
   useEffect(() => { const timer = window.setTimeout(() => setDebouncedQuery(query), 260); return () => window.clearTimeout(timer) }, [query])

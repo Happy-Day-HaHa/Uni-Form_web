@@ -66,6 +66,7 @@ function QuestionAnalysis({ question, analysis, index }) {
       : question.type === 'single' ? <div className="result-pie-wrap">
           <div className="result-pie" style={{ background: buildConicGradient(analysis.counts, total) }}><span>{total}<small>응답</small></span></div>
           <ul className="result-pie-legend">{analysis.counts.map((item, colorIndex) => <li key={item.option} style={{ '--tone': PIE_COLORS[colorIndex % PIE_COLORS.length] }}><i /><span>{item.option}</span><b>{item.count} ({total ? ((item.count / total) * 100).toFixed(1) : '0.0'}%)</b></li>)}</ul>
+          {analysis.etcAnswers?.length > 0 && <div className="result-text-list">{analysis.etcAnswers.map((answer, answerIndex) => <p key={`${question.id}-etc-${answerIndex}`}>기타: {maskSensitiveText(answer)}</p>)}</div>}
         </div>
       : question.type === 'scale' ? <div className="result-vbars">{analysis.counts.map((item) => { const percent = total ? (item.count / total) * 100 : 0; return <div key={item.option}><i style={{ '--bar': `${percent}%` }} /><b>{item.option}</b><small>{item.count}명 · {percent.toFixed(1)}%</small></div> })}</div>
       : <div className="result-bars">{analysis.counts.map(({ option, count }) => { const percent = total ? (count / total) * 100 : 0; return <div key={option}><span>{option}</span><i><b style={{ '--bar': `${percent}%` }} /></i><strong>{percent.toFixed(1)}%</strong><small>{count}명</small></div> })}</div>}
@@ -87,23 +88,26 @@ export default function SurveyResults() {
 
   useEffect(load, [load])
 
-  const analyses = useMemo(() => state.result?.survey.questions?.map((question) => analyzeQuestion(question, state.result.responses)) || [], [state.result])
+  // API 모드는 서버가 집계한 analyses를 주고, 데모 모드는 원본 응답에서 직접 집계한다.
+  const analyses = useMemo(() => state.result?.analyses || state.result?.survey.questions?.map((question) => analyzeQuestion(question, state.result.responses)) || [], [state.result])
 
   if (state.status === 'loading') return <ServiceShell activePath="/my-surveys"><ResultSkeleton /></ServiceShell>
   if (state.status === 'error') return <ServiceShell activePath="/my-surveys"><ResultState code={state.error?.code} onRetry={load} surveyId={surveyId} /></ServiceShell>
 
-  const { survey, responses } = state.result
+  const { survey } = state.result
+  const responseCount = state.result.responseCount ?? state.result.responses.length
+  const excludedCount = state.result.excludedCount || 0
   const questions = survey.questions || []
   const target = Math.max(1, Number(survey.target_count || 1))
 
   return <ServiceShell activePath="/my-surveys"><div className="result-dashboard">
     <nav className="result-dashboard__breadcrumb" aria-label="현재 위치"><Link to="/my-surveys">내 설문</Link><span>/</span><Link to={`/my-surveys/${survey.id}/manage`}>{survey.title}</Link><span>/</span><strong>결과</strong></nav>
-    <header className="result-dashboard__header"><div><div className="result-dashboard__title"><div><h1>{survey.title}</h1><p>{survey.description}</p></div></div><ul><li>응답 {responses.length.toLocaleString()}개</li><li>목표 {target.toLocaleString()}명</li><li>{survey.status === 'active' ? '모집 중' : '모집 종료'}</li></ul></div><div><button className="result-action" type="button" onClick={() => downloadAllCharts(survey.title, questions, analyses)}>전체 그래프 내려받기</button><Link className="result-action" to={`/my-surveys/${survey.id}/manage`}>관리로 돌아가기</Link></div></header>
+    <header className="result-dashboard__header"><div><div className="result-dashboard__title"><div><h1>{survey.title}</h1><p>{survey.description}</p></div></div><ul><li>응답 {responseCount.toLocaleString()}개</li>{excludedCount > 0 && <li>운영 제외 {excludedCount.toLocaleString()}개</li>}<li>목표 {target.toLocaleString()}명</li><li>{survey.status === 'active' ? '모집 중' : '모집 종료'}</li></ul></div><div><button className="result-action" type="button" onClick={() => downloadAllCharts(survey.title, questions, analyses)}>전체 그래프 내려받기</button><Link className="result-action" to={`/my-surveys/${survey.id}/manage`}>관리로 돌아가기</Link></div></header>
 
-    {responses.length === 0 ? <section className="result-empty"><span>◎</span><h2>아직 응답이 없어요.</h2><p>응답이 제출되면 이곳에서 문항별 결과를 확인할 수 있습니다.</p><Link className="ui-button ui-button--secondary" to={`/my-surveys/${survey.id}/manage`}>관리로 돌아가기</Link></section> : <>
+    {responseCount === 0 ? <section className="result-empty"><span>◎</span><h2>아직 응답이 없어요.</h2><p>응답이 제출되면 이곳에서 문항별 결과를 확인할 수 있습니다.</p><Link className="ui-button ui-button--secondary" to={`/my-surveys/${survey.id}/manage`}>관리로 돌아가기</Link></section> : <>
       <nav className="result-tabs" aria-label="결과 보기 방식">{[['questions', '문항별 결과'], ['summary', '요약']].map(([value, label]) => <button className={tab === value ? 'active' : ''} type="button" onClick={() => setTab(value)} key={value}>{label}</button>)}</nav>
 
-      {tab === 'summary' && <section className="result-summary-view"><ResultOverview survey={survey} sampleCount={responses.length} /></section>}
+      {tab === 'summary' && <section className="result-summary-view"><ResultOverview survey={survey} sampleCount={responseCount} /></section>}
       {tab === 'questions' && <section className="result-analysis-list">{questions.map((question, index) => <QuestionAnalysis key={question.id} question={question} analysis={analyses[index]} index={index} />)}</section>}
     </>}
   </div></ServiceShell>

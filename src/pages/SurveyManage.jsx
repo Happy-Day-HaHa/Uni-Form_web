@@ -21,6 +21,7 @@ export default function SurveyManage() {
   const [error, setError] = useState('')
   const [toast, setToast] = useState('')
   const [closeOpen, setCloseOpen] = useState(false)
+  const [closeError, setCloseError] = useState('')
 
   useEffect(() => {
     getSurvey(surveyId).then((item) => {
@@ -38,10 +39,15 @@ export default function SurveyManage() {
   }
 
   async function closeSurvey() {
-    const updated = await closeSurveyRequest(survey.id)
-    setSurvey((current) => ({ ...current, ...updated, status: 'closed' }))
-    setCloseOpen(false)
-    setToast('설문 모집을 종료했습니다.')
+    try {
+      setCloseError('')
+      const updated = await closeSurveyRequest(survey.id)
+      setSurvey((current) => ({ ...current, ...updated, status: 'closed' }))
+      setCloseOpen(false)
+      setToast('설문 모집을 종료했습니다.')
+    } catch (closeFailure) {
+      setCloseError(closeFailure.message || '설문을 마감하지 못했습니다.')
+    }
   }
 
   if (loading) return <ServiceShell activePath="/my-surveys"><div className="survey-manage-loading">설문 관리 정보를 불러오고 있어요.</div></ServiceShell>
@@ -70,7 +76,7 @@ export default function SurveyManage() {
       <button className="survey-manage-action" type="button" onClick={share}><span>설문 링크 복사</span><small>참여자에게 공유할 주소를 복사합니다.</small><b>→</b></button>
       {!isDraft && !isClosed && <button className="survey-manage-action" type="button" onClick={() => setCloseOpen(true)}><span>직접 마감</span><small>새 응답 모집을 종료합니다.</small><b>→</b></button>}
     </div></section>
-    <Modal open={closeOpen} title="설문을 직접 마감할까요?" onClose={() => setCloseOpen(false)}><p>마감한 설문은 다시 열 수 없습니다. 같은 주제로 다시 모집하려면 재업로드해야 하며, 마감 30일 후 설문 원문은 파기됩니다.</p><div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={() => setCloseOpen(false)}>취소</button><button className="ui-button ui-button--danger" onClick={closeSurvey}>마감하기</button></div></Modal>
+    <Modal open={closeOpen} title="설문을 직접 마감할까요?" onClose={() => { setCloseOpen(false); setCloseError('') }}><p>마감한 설문은 다시 열 수 없습니다. 같은 주제로 다시 모집하려면 재업로드해야 하며, 마감 30일 후 설문 원문은 파기됩니다.</p>{closeError && <p className="form-message form-message--error" role="alert">{closeError}</p>}<div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={() => setCloseOpen(false)}>취소</button><button className="ui-button ui-button--danger" onClick={closeSurvey}>마감하기</button></div></Modal>
     {toast && <div className="service-toast" role="status">✓ {toast}</div>}
   </div></ServiceShell>
 }

@@ -37,6 +37,8 @@ export function fromApiQuestion(question) {
     title: question.questionText || '',
     required: question.required !== false,
     options: options.map((option) => option.label),
+    // 응답 제출은 보기 라벨이 아니라 보기 id로 한다(options와 같은 순서).
+    optionIds: options.map((option) => option.id ?? null),
     etcLabel: options.find((option) => option.isEtc)?.label ?? null,
     ...(type === 'multiple' ? { minSelect: question.minSelect ?? null, maxSelect: question.maxSelect ?? null } : {}),
     ...(type === 'scale' ? { min: 1, max: 5, minLabel: question.minScaleLabel ?? '', maxLabel: question.maxScaleLabel ?? '' } : {}),
