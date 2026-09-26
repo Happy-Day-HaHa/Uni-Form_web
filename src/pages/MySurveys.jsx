@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useReveal } from '../hooks/useReveal'
 import { isApiConfigured } from '../services/apiClient'
 import { closeSurvey, deleteSurvey, duplicateSurvey, getMySurveys } from '../services/surveyService'
+import { getMyTeams } from '../services/teamService'
 import { canDeleteSurvey, getSurveyLifecycleStatus, isTargetReached } from '../utils/surveyPolicy'
 
 function surveyState(survey) {
@@ -31,6 +32,8 @@ export default function MySurveys() {
   const [actionError, setActionError] = useState('')
   const [modalError, setModalError] = useState('')
   const [busy, setBusy] = useState(false)
+  // 복제 대상 선택(속한 팀이 있을 때만): { survey, teams, target: '' (개인) | teamId }
+  const [copyDialog, setCopyDialog] = useState(null)
   const menuRef = useRef(null)
   const rootRef = useReveal([surveys.length, debouncedQuery, status, sort])
 
@@ -61,17 +64,37 @@ export default function MySurveys() {
     try { await navigator.clipboard.writeText(`${window.location.origin}/surveys/${survey.id}`); notify('설문 링크를 복사했습니다.') } catch { notify('주소창의 링크를 복사해주세요.') }
     setMenuId('')
   }
+  // 속한 팀이 있으면 개인/팀 중 복제할 곳을 고르게 하고, 없으면 바로 개인 초안으로 복제한다.
   async function duplicate(survey) {
     setMenuId('')
     setActionError('')
+    if (!isApiConfigured) return runDuplicate(survey)
+    let teams
     try {
-      const copy = await duplicateSurvey(survey)
+      teams = await getMyTeams(user.id)
+    } catch (error) {
+      return setActionError(`복제할 곳을 확인하지 못했어요. ${error.message}`)
+    }
+    if (!teams.length) return runDuplicate(survey)
+    setModalError('')
+    setCopyDialog({ survey, teams, target: '' })
+  }
+
+  async function runDuplicate(survey, team = null) {
+    try {
+      setBusy(true)
+      const copy = await duplicateSurvey(survey, { teamId: team?.id })
       // API 모드는 새 초안 id만 오므로 목록을 다시 불러온다.
       if (isApiConfigured) await loadSurveys()
       else setSurveys((current) => [copy, ...current])
-      notify(isApiConfigured ? '설문을 복제했어요. 임시저장에서 이어서 편집할 수 있어요.' : '설문을 복제했습니다.')
+      setCopyDialog(null)
+      notify(!isApiConfigured ? '설문을 복제했습니다.' : team ? `‘${team.name}’ 팀 초안으로 복제했어요. 임시저장에서 이어서 편집할 수 있어요.` : '개인 초안으로 복제했어요. 임시저장에서 이어서 편집할 수 있어요.')
     } catch (error) {
-      setActionError(`‘${survey.title}’ 설문을 복제하지 못했어요. ${error.message}`)
+      const message = `‘${survey.title}’ 설문을 복제하지 못했어요. ${error.message}`
+      if (copyDialog) setModalError(message)
+      else setActionError(message)
+    } finally {
+      setBusy(false)
     }
   }
   async function confirmClose() {
@@ -105,7 +128,7 @@ export default function MySurveys() {
       setBusy(false)
     }
   }
-  const closeModals = () => { setConfirmSurvey(null); setCloseConfirmSurvey(null); setModalError('') }
+  const closeModals = () => { setConfirmSurvey(null); setCloseConfirmSurvey(null); setCopyDialog(null); setModalError('') }
 
   return <ServiceShell activePath="/my-surveys"><div ref={rootRef}>
     <ServiceHeading icon="▤" title="내 설문" description="만든 설문을 관리하고 응답 현황과 다음 액션을 확인하세요." action={<Link className="ui-button" to="/formmate">FormMate로 설문 만들기</Link>} />
@@ -136,6 +159,15 @@ export default function MySurveys() {
     })}{!display.length && <section className="result-empty"><span>▤</span><h2>조건에 맞는 설문이 없어요.</h2><p>검색 조건을 초기화하거나 FormMate로 새 설문을 만들어보세요.</p><button className="ui-button ui-button--secondary" type="button" onClick={() => { setQuery(''); setStatus('all'); setSort('latest') }}>필터 초기화</button></section>}</section>}
     <Modal open={Boolean(confirmSurvey)} title="설문을 삭제할까요?" onClose={closeModals}><p>‘{confirmSurvey?.title}’ 설문은 삭제 후 복구할 수 없습니다.</p>{modalError && <p className="form-message form-message--error" role="alert">{modalError}</p>}<div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={closeModals}>취소</button><button className="ui-button ui-button--danger" disabled={busy} onClick={remove}>{busy ? '삭제 중…' : '삭제'}</button></div></Modal>
     <Modal open={Boolean(closeConfirmSurvey)} title="설문을 직접 마감할까요?" onClose={closeModals}><p>마감한 설문은 다시 열 수 없습니다. 같은 주제로 다시 모집하려면 설문을 복제해 새로 게시해야 하며, 마감 30일 후 설문 원문은 파기됩니다.</p>{modalError && <p className="form-message form-message--error" role="alert">{modalError}</p>}<div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={closeModals}>취소</button><button className="ui-button ui-button--danger" disabled={busy} onClick={confirmClose}>{busy ? '마감 중…' : '마감하기'}</button></div></Modal>
+    <Modal open={Boolean(copyDialog)} title="어디로 복제할까요?" onClose={closeModals}>
+      <p>‘{copyDialog?.survey.title}’ 설문의 제목·설명·문항을 새 초안으로 복사해요. 목표 인원과 마감일은 새로 정해야 해요.</p>
+      <fieldset className="copy-targets" aria-label="복제할 곳">
+        <label><input type="radio" name="copy-target" checked={copyDialog?.target === ''} onChange={() => setCopyDialog((current) => ({ ...current, target: '' }))} /><span>개인으로 복제</span><small>내 개인 초안</small></label>
+        {copyDialog?.teams.map((team) => <label key={team.id}><input type="radio" name="copy-target" checked={copyDialog.target === team.id} onChange={() => setCopyDialog((current) => ({ ...current, target: team.id }))} /><span>팀으로 복제 · {team.name}</span><small>팀원 {team.memberCount}명{team.isLeader ? ' · 내가 팀장' : ''}</small></label>)}
+      </fieldset>
+      {modalError && <p className="form-message form-message--error" role="alert">{modalError}</p>}
+      <div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={closeModals}>취소</button><button className="ui-button" disabled={busy} onClick={() => runDuplicate(copyDialog.survey, copyDialog.teams.find((team) => team.id === copyDialog.target) || null)}>{busy ? '복제 중…' : '복제하기'}</button></div>
+    </Modal>
     {toast && <div className="service-toast" role="status">✓ {toast}</div>}
   </div></ServiceShell>
 }

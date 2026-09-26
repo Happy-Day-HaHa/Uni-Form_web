@@ -270,10 +270,12 @@ export async function deleteSurvey(surveyId) {
   localStorage.setItem(demoStorageKey, JSON.stringify(getDemoCreatedSurveys().filter((item) => item.id !== surveyId)))
 }
 
-// API 모드: 내 개인 초안으로 복사한다(제목·설명·문항만, 목표 인원·마감일은 새로 정해야 함). 응답: { newSurveyId }
-export async function duplicateSurvey(survey) {
+// API 모드: 새 초안으로 복사한다(제목·설명·문항만, 목표 인원·마감일은 새로 정해야 함). 응답: { newSurveyId }
+// teamId를 주면 그 팀의 팀 초안으로, 없으면 내 개인 초안으로 복사한다(팀으로 복사하려면 그 팀의 현재 팀원이어야 한다).
+export async function duplicateSurvey(survey, { teamId } = {}) {
   if (isApiConfigured) {
-    const { newSurveyId } = await withMySurveyErrors(() => apiClient.post(`/surveys/${encodeURIComponent(survey.id)}/copy`, { targetOwnerType: 'user' }))
+    const body = teamId ? { targetOwnerType: 'team', teamId } : { targetOwnerType: 'user' }
+    const { newSurveyId } = await withMySurveyErrors(() => apiClient.post(`/surveys/${encodeURIComponent(survey.id)}/copy`, body))
     return { id: newSurveyId }
   }
   const futureDeadline = survey.deadline > getKstDateString() ? survey.deadline : getKstDateString(new Date(Date.now() + 30 * 86400000))
