@@ -69,7 +69,7 @@ function toApiError(status, body) {
   return new ApiError({ status, message: messages[0], messages, code: body?.code ?? body?.error ?? null, data: body })
 }
 
-async function send(path, { method, body, headers, signal, auth }) {
+async function send(path, { method, body, headers, signal, auth, keepalive }) {
   const finalHeaders = { Accept: 'application/json', ...headers }
   if (body !== undefined) finalHeaders['Content-Type'] = 'application/json'
   const token = auth ? getAccessToken() : null
@@ -80,6 +80,8 @@ async function send(path, { method, body, headers, signal, auth }) {
       headers: finalHeaders,
       body: body === undefined ? undefined : JSON.stringify(body),
       signal,
+      // 페이지를 닫는 중에도 요청이 끝까지 전송되게 한다(beforeunload 저장용).
+      keepalive,
     })
   } catch (error) {
     if (error?.name === 'AbortError') throw error
@@ -111,9 +113,10 @@ function expireSession() {
 }
 
 // auth: false면 토큰을 붙이지 않고 401이어도 재발급/로그아웃을 하지 않는다(로그인·회원가입 등).
-export async function request(path, { method = 'GET', body, headers, signal, auth = true } = {}) {
+// keepalive: true면 페이지를 떠나는 중에도 전송을 이어간다.
+export async function request(path, { method = 'GET', body, headers, signal, auth = true, keepalive = false } = {}) {
   if (!isApiConfigured) throw new ApiError({ status: 0, message: 'VITE_API_BASE_URL 환경변수를 먼저 설정해주세요.', code: 'API_NOT_CONFIGURED' })
-  const options = { method, body, headers, signal, auth }
+  const options = { method, body, headers, signal, auth, keepalive }
   const sentWithToken = auth && Boolean(getAccessToken())
   let response = await send(path, options)
 

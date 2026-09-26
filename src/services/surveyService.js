@@ -175,9 +175,10 @@ function rethrowConflict(error) {
   throw error
 }
 
-export async function updateDraft(surveyId, form, version) {
+// keepalive: 페이지를 떠나는 중(beforeunload)에 보내는 마지막 저장.
+export async function updateDraft(surveyId, form, version, { keepalive = false } = {}) {
   try {
-    return await apiClient.patch(`/surveys/drafts/${encodeURIComponent(surveyId)}`, formToDraftPatch(form, version))
+    return await apiClient.patch(`/surveys/drafts/${encodeURIComponent(surveyId)}`, formToDraftPatch(form, version), { keepalive })
   } catch (error) {
     return rethrowConflict(error)
   }

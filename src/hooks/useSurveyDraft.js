@@ -27,6 +27,8 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
   const savedSignatureRef = useRef(signatureOf(form))
   const savingRef = useRef(null)
   const callbacksRef = useRef({ onDraftCreated, onConflict })
+  // 화면이 사라진 뒤 끝난 저장이 화면 콜백(주소 변경 등)을 부르지 않게 한다 — 이미 다른 화면으로 이동했을 수 있다.
+  const mountedRef = useRef(true)
   formRef.current = form
   callbacksRef.current = { onDraftCreated, onConflict }
 
@@ -70,7 +72,7 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
       draftIdRef.current = created.id
       versionRef.current = created.version
       setDraftId(created.id)
-      callbacksRef.current.onDraftCreated?.(created.id)
+      if (mountedRef.current) callbacksRef.current.onDraftCreated?.(created.id)
     }
     try {
       const saved = await updateDraft(draftIdRef.current, snapshot, versionRef.current)
@@ -87,7 +89,7 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
       const mine = formRef.current
       loadFromServer(reason.latestSurvey)
       setSaveStatus('최신 내용으로 바뀜')
-      callbacksRef.current.onConflict?.(mine, reason)
+      if (mountedRef.current) callbacksRef.current.onConflict?.(mine, reason)
     }
   }, [loadFromServer, setForm])
 
@@ -118,6 +120,50 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
     return () => window.clearTimeout(timer)
   }, [enabled, loading, form, flush])
 
+  // ── 화면을 떠날 때 대기 중인 자동 저장을 버리지 않기 ─────────────────────
+  const hasUnsaved = useCallback(() => {
+    const snapshot = formRef.current
+    if (signatureOf(snapshot) === savedSignatureRef.current) return false
+    return Boolean(draftIdRef.current || hasContent(snapshot))
+  }, [])
+
+  // 앱 안에서 다른 화면으로 이동(링크·뒤로 가기)하면 이 화면이 사라진다. 그때 바로 저장을 보낸다 — 요청은 화면이 사라진 뒤에도 끝까지 진행된다.
+  useEffect(() => {
+    mountedRef.current = true
+    if (!enabled) return undefined
+    return () => {
+      mountedRef.current = false
+      if (hasUnsaved()) flush().catch(() => {})
+    }
+  }, [enabled, flush, hasUnsaved])
+
+  useEffect(() => {
+    if (!enabled) return undefined
+    // 탭을 전환하거나 앱이 백그라운드로 가면 페이지가 살아 있으니 평소처럼 바로 저장한다.
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'hidden' && hasUnsaved()) flush().catch(() => {})
+    }
+    // 새로고침·탭 닫기·외부 이동: keepalive로 마지막 저장을 보낸다.
+    // 초안이 아직 없거나 다른 저장이 전송 중이면 순서를 보장할 수 없어, 대신 브라우저의 "나가시겠습니까?" 확인을 띄운다.
+    function handleBeforeUnload(event) {
+      if (!hasUnsaved()) return
+      if (!draftIdRef.current || savingRef.current) {
+        event.preventDefault()
+        event.returnValue = ''
+        return
+      }
+      const snapshot = formRef.current
+      updateDraft(draftIdRef.current, snapshot, versionRef.current, { keepalive: true }).catch(() => {})
+      savedSignatureRef.current = signatureOf(snapshot)
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [enabled, flush, hasUnsaved])
+
   const sendMessage = useCallback(async (message) => {
     await flush()
     if (!draftIdRef.current) {
@@ -126,7 +172,7 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
       draftIdRef.current = created.id
       versionRef.current = created.version
       setDraftId(created.id)
-      callbacksRef.current.onDraftCreated?.(created.id)
+      if (mountedRef.current) callbacksRef.current.onDraftCreated?.(created.id)
       await flush()
     }
     return sendFormMateMessage(draftIdRef.current, message)
