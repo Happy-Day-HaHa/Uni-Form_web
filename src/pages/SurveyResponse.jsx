@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Modal from '../components/Modal'
 import ProgressBar from '../components/ProgressBar'
@@ -41,15 +41,34 @@ export default function SurveyResponse() {
   // 응답 여부 조회가 실패해도 설문은 보여준다. 중복 응답은 세션 시작 때 서버가 다시 막는다.
   useEffect(() => { Promise.all([getSurvey(surveyId), getRespondedSurveyIds(user?.id).catch(() => [])]).then(([item, ids]) => { if (!item) throw new Error('설문을 찾을 수 없습니다.'); setSurvey(item); setAlreadyResponded(ids.includes(surveyId)) }).catch((error) => setMessage(error.message)) }, [surveyId, user?.id])
 
+  // 임시저장은 한 번에 하나씩 보낸다. 전송 중에 답이 또 바뀌면 끝난 뒤 가장 최신 답으로 한 번 더 저장해서,
+  // 늦게 도착한 옛 저장이 새 답을 덮어쓰지 않게 한다. 제출을 시작하면 남은 저장은 버린다.
+  const saveQueueRef = useRef({ running: false, pending: null, stopped: false })
+  function queueSave(snapshot) {
+    const queue = saveQueueRef.current
+    queue.pending = snapshot
+    if (queue.running) return
+    queue.running = true
+    ;(async () => {
+      while (queue.pending && !queue.stopped) {
+        const next = queue.pending
+        queue.pending = null
+        setSaveNote('임시저장 중…')
+        try {
+          await saveResponseAnswers(survey, sessionId, next)
+          if (!queue.stopped) setSaveNote(queue.pending ? '임시저장 중…' : '임시저장됨')
+        } catch (error) {
+          if (!queue.stopped && !applyBlockingError(error)) setSaveNote(`임시저장 실패: ${error.message}`)
+        }
+      }
+      queue.running = false
+    })()
+  }
+
   // 답을 바꾸면 1초 뒤 서버에 임시저장한다(API 모드). 실패해도 제출은 막지 않는다.
   useEffect(() => {
     if (!started || !sessionId || submitted) return undefined
-    const timer = window.setTimeout(() => {
-      setSaveNote('임시저장 중…')
-      saveResponseAnswers(survey, sessionId, answers)
-        .then(() => setSaveNote('임시저장됨'))
-        .catch((error) => { if (!applyBlockingError(error)) setSaveNote(`임시저장 실패: ${error.message}`) })
-    }, 1000)
+    const timer = window.setTimeout(() => queueSave(answers), 1000)
     return () => window.clearTimeout(timer)
   }, [answers, sessionId, started, submitted])
 
@@ -93,12 +112,17 @@ export default function SurveyResponse() {
     try {
       setSubmitting(true)
       setMessage('')
+      // 제출 중·후에 끝난 임시저장이 "이미 응답" 에러로 화면을 바꾸지 않도록 저장 대기열을 멈춘다.
+      saveQueueRef.current.stopped = true
+      saveQueueRef.current.pending = null
       const result = await submitSurveyResponse(survey.id, answers, { survey, sessionId, sameScaleWarningAcknowledged })
       // 순위는 리더보드 화면과 같은 GET /leaderboard의 내 순위를 쓴다. 실패하면 제출 응답의 weeklyRank로 대신한다.
       const leaderboardMe = await getLeaderboard(user.id).then((data) => data.me).catch(() => null)
       setWeeklyActivity(leaderboardMe || (isApiConfigured ? { rank: result.weeklyRank, earned: result.pointsEarned } : null))
       setSubmitted(true)
     } catch (error) {
+      // 제출이 실패하면 임시저장을 다시 허용한다.
+      saveQueueRef.current.stopped = false
       if (!applyBlockingError(error)) setMessage(error.message)
     } finally {
       setSubmitting(false)
