@@ -147,9 +147,9 @@ export async function startResponseSession(survey) {
 }
 
 // 제출 전 임시저장. 응답 수·점수에는 반영되지 않는다.
-export async function saveResponseAnswers(survey, sessionId, answers) {
+export async function saveResponseAnswers(survey, sessionId, answers, { keepalive = false } = {}) {
   if (!isApiConfigured || !sessionId) return
-  await withResponseErrors(() => apiClient.patch(`/surveys/${encodeURIComponent(survey.id)}/sessions/${encodeURIComponent(sessionId)}/answers`, { answers: toApiAnswers(survey, answers) }))
+  await withResponseErrors(() => apiClient.patch(`/surveys/${encodeURIComponent(survey.id)}/sessions/${encodeURIComponent(sessionId)}/answers`, { answers: toApiAnswers(survey, answers) }, { keepalive }))
 }
 
 // API 모드 응답: { success, pointsEarned, weeklyRank }. 같은 세션을 다시 제출해도 점수는 한 번만 준다.

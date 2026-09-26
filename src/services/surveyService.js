@@ -1,5 +1,6 @@
 import { ApiError, apiClient, getAccessToken, getRefreshToken, isApiConfigured } from './apiClient'
 import { canDeleteSurvey, getKstDateString, isSurveyOpen } from '../utils/surveyPolicy'
+import { getSelectRange } from '../utils/validation'
 
 export const demoSurveys = [
   { id: 'ai-campus-use', creator_id: 'sample-user-3', title: '대학생의 AI 서비스 사용 경험 조사', description: '대학생의 생성형 AI 서비스 이용 경험과 인식을 알아보는 설문입니다.', target_count: 50, response_count: 63, estimated_minutes: 5, deadline: '2026-12-20', category: '테크', status: 'active', questions: [{ id: 'q1', type: 'single', title: '가장 자주 사용하는 AI 서비스는 무엇인가요?', options: ['대화형 AI', '이미지 생성', '번역·요약', '사용하지 않음'] }, { id: 'q2', type: 'scale', title: 'AI 서비스가 학업에 얼마나 도움이 되나요?', min: 1, max: 5 }] },
@@ -40,7 +41,8 @@ export function fromApiQuestion(question) {
     // 응답 제출은 보기 라벨이 아니라 보기 id로 한다(options와 같은 순서).
     optionIds: options.map((option) => option.id ?? null),
     etcLabel: options.find((option) => option.isEtc)?.label ?? null,
-    ...(type === 'multiple' ? { minSelect: question.minSelect ?? null, maxSelect: question.maxSelect ?? null } : {}),
+    // 서버 값이 기본값(최소 1, 최대 보기 수)과 같으면 비워 둔다 — 보기를 늘렸을 때 최대값이 예전 보기 수에 묶이지 않게.
+    ...(type === 'multiple' ? { minSelect: question.minSelect === 1 ? null : question.minSelect ?? null, maxSelect: question.maxSelect === options.length ? null : question.maxSelect ?? null } : {}),
     ...(type === 'scale' ? { min: 1, max: 5, minLabel: question.minScaleLabel ?? '', maxLabel: question.maxScaleLabel ?? '' } : {}),
   }
 }
@@ -53,10 +55,10 @@ function toApiQuestion(question) {
     const options = question.options || []
     payload.options = options.map((label) => ({ label, ...(type === 'SINGLE_CHOICE' && question.etcLabel && label === question.etcLabel ? { isEtc: true } : {}) }))
     if (type === 'MULTI_CHOICE') {
-      // 화면에 선택 개수 입력칸이 없으므로 기본값은 "1개 이상, 보기 수 이하".
-      const maxSelect = Math.min(question.maxSelect || options.length, options.length)
-      payload.minSelect = Math.min(question.minSelect || 1, Math.max(maxSelect, 1))
-      payload.maxSelect = maxSelect
+      // 입력하지 않은 값은 기본값("1개 이상, 보기 수 이하"). 입력한 값은 그대로 보낸다 — 잘못된 범위는 편집기와 게시 검증이 막는다.
+      const { min, max } = getSelectRange(question)
+      payload.minSelect = min
+      payload.maxSelect = max
     }
   }
   if (type === 'SCALE') {
@@ -173,9 +175,10 @@ function rethrowConflict(error) {
   throw error
 }
 
-export async function updateDraft(surveyId, form, version) {
+// keepalive: 페이지를 떠나는 중(beforeunload)에 보내는 마지막 저장.
+export async function updateDraft(surveyId, form, version, { keepalive = false } = {}) {
   try {
-    return await apiClient.patch(`/surveys/drafts/${encodeURIComponent(surveyId)}`, formToDraftPatch(form, version))
+    return await apiClient.patch(`/surveys/drafts/${encodeURIComponent(surveyId)}`, formToDraftPatch(form, version), { keepalive })
   } catch (error) {
     return rethrowConflict(error)
   }
@@ -270,10 +273,12 @@ export async function deleteSurvey(surveyId) {
   localStorage.setItem(demoStorageKey, JSON.stringify(getDemoCreatedSurveys().filter((item) => item.id !== surveyId)))
 }
 
-// API 모드: 내 개인 초안으로 복사한다(제목·설명·문항만, 목표 인원·마감일은 새로 정해야 함). 응답: { newSurveyId }
-export async function duplicateSurvey(survey) {
+// API 모드: 새 초안으로 복사한다(제목·설명·문항만, 목표 인원·마감일은 새로 정해야 함). 응답: { newSurveyId }
+// teamId를 주면 그 팀의 팀 초안으로, 없으면 내 개인 초안으로 복사한다(팀으로 복사하려면 그 팀의 현재 팀원이어야 한다).
+export async function duplicateSurvey(survey, { teamId } = {}) {
   if (isApiConfigured) {
-    const { newSurveyId } = await withMySurveyErrors(() => apiClient.post(`/surveys/${encodeURIComponent(survey.id)}/copy`, { targetOwnerType: 'user' }))
+    const body = teamId ? { targetOwnerType: 'team', teamId } : { targetOwnerType: 'user' }
+    const { newSurveyId } = await withMySurveyErrors(() => apiClient.post(`/surveys/${encodeURIComponent(survey.id)}/copy`, body))
     return { id: newSurveyId }
   }
   const futureDeadline = survey.deadline > getKstDateString() ? survey.deadline : getKstDateString(new Date(Date.now() + 30 * 86400000))

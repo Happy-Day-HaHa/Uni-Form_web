@@ -44,8 +44,13 @@ export default function SurveyResponse() {
   // 임시저장은 한 번에 하나씩 보낸다. 전송 중에 답이 또 바뀌면 끝난 뒤 가장 최신 답으로 한 번 더 저장해서,
   // 늦게 도착한 옛 저장이 새 답을 덮어쓰지 않게 한다. 제출을 시작하면 남은 저장은 버린다.
   const saveQueueRef = useRef({ running: false, pending: null, stopped: false })
+  // 아직 저장 요청을 보내지 않은 변경이 있는지(디바운스 대기 중). 화면을 떠날 때 이 변경을 바로 저장한다.
+  const unsavedRef = useRef(false)
+  const latestRef = useRef({})
+  latestRef.current = { answers, sessionId, survey, queueSave }
   function queueSave(snapshot) {
     const queue = saveQueueRef.current
+    unsavedRef.current = false
     queue.pending = snapshot
     if (queue.running) return
     queue.running = true
@@ -68,9 +73,45 @@ export default function SurveyResponse() {
   // 답을 바꾸면 1초 뒤 서버에 임시저장한다(API 모드). 실패해도 제출은 막지 않는다.
   useEffect(() => {
     if (!started || !sessionId || submitted) return undefined
+    unsavedRef.current = true
     const timer = window.setTimeout(() => queueSave(answers), 1000)
     return () => window.clearTimeout(timer)
   }, [answers, sessionId, started, submitted])
+
+  // 화면을 떠날 때 대기 중인 임시저장을 버리지 않는다.
+  useEffect(() => {
+    const pendingSnapshot = () => {
+      const { answers: current, sessionId: currentSession } = latestRef.current
+      return unsavedRef.current && currentSession && !saveQueueRef.current.stopped ? current : null
+    }
+    // 탭 전환·백그라운드: 페이지가 살아 있으니 평소처럼 바로 저장한다.
+    function handleVisibilityChange() {
+      const snapshot = pendingSnapshot()
+      if (document.visibilityState === 'hidden' && snapshot) latestRef.current.queueSave(snapshot)
+    }
+    // 새로고침·탭 닫기·외부 이동: keepalive로 마지막 저장을 보낸다. 다른 저장이 전송 중이면 순서를 보장할 수 없어 확인창을 띄운다.
+    function handleBeforeUnload(event) {
+      const snapshot = pendingSnapshot()
+      if (!snapshot) return
+      if (saveQueueRef.current.running) {
+        event.preventDefault()
+        event.returnValue = ''
+        return
+      }
+      unsavedRef.current = false
+      const { survey: currentSurvey, sessionId: currentSession } = latestRef.current
+      saveResponseAnswers(currentSurvey, currentSession, snapshot, { keepalive: true }).catch(() => {})
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      // 앱 안에서 다른 화면으로 이동(링크·뒤로 가기): 화면이 사라져도 요청은 끝까지 진행된다.
+      const snapshot = pendingSnapshot()
+      if (snapshot) latestRef.current.queueSave(snapshot)
+    }
+  }, [])
 
   // 응답 자체가 불가능한 에러면 안내 화면으로 전환하고 true를 돌려준다.
   function applyBlockingError(error) {
