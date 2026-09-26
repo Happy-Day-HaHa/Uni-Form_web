@@ -1,0 +1,112 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import ServiceShell, { MetricCard, ServiceHeading } from '../components/ServiceShell'
+import { useAuth } from '../hooks/useAuth'
+import { useReveal } from '../hooks/useReveal'
+import { demoSurveys, getMySurveys } from '../services/surveyService'
+import { isApiConfigured } from '../services/apiClient'
+import { getDashboardSummary, getDashboardTrend, getRecentActivity } from '../services/dashboardService'
+
+const chartSets = {
+  responses: { '7': [72, 98, 112, 136, 162, 148, 121], '30': [84, 126, 105, 168, 142, 190, 176], '90': [96, 132, 158, 144, 201, 218, 196] },
+  surveys: { '7': [2, 3, 3, 4, 5, 4, 3], '30': [3, 5, 4, 6, 5, 7, 6], '90': [4, 5, 7, 6, 8, 9, 8] },
+}
+const labels = ['10/7 (월)', '10/8 (화)', '10/9 (수)', '10/10 (목)', '10/11 (금)', '10/12 (토)', '10/13 (일)']
+const activities = [
+  ['AI 서비스 사용 경험 조사에 참여했어요.', '설문 목록으로 이동합니다.', '2시간 전', '/surveys/ai-campus-use'],
+  ['설문 문항이 정상적으로 제출됐어요.', '캠퍼스 생활 만족도 조사', '3시간 전', '/my-surveys'],
+  ['새로운 설문이 등록됐어요.', '최근 설문을 확인해보세요.', '1일 전', '/my-surveys'],
+  ['설문 결과를 확인했어요.', '내 설문 관리에서 다시 확인할 수 있어요.', '2일 전', '/my-surveys'],
+]
+
+export default function Dashboard() {
+  const { user, demoMode } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [surveys, setSurveys] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [metric, setMetric] = useState('responses')
+  const [chartLoading, setChartLoading] = useState(false)
+  // API 모드 전용 실데이터
+  const [summary, setSummary] = useState(null)
+  const [trend, setTrend] = useState([])
+  const [recent, setRecent] = useState([])
+  const [trendError, setTrendError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
+  const range = searchParams.get('range') || '7'
+  const rootRef = useReveal([surveys.length, loading])
+
+  useEffect(() => {
+    if (!isApiConfigured) return undefined
+    let active = true
+    setLoading(true); setError('')
+    Promise.all([getDashboardSummary(), getRecentActivity()])
+      .then(([nextSummary, nextRecent]) => { if (active) { setSummary(nextSummary); setRecent(nextRecent) } })
+      .catch((reason) => active && setError(`대시보드 데이터를 불러오지 못했어요. ${reason.message}`))
+      .finally(() => active && setLoading(false))
+    return () => { active = false }
+  }, [user.id, reloadKey])
+
+  useEffect(() => {
+    if (!isApiConfigured) return undefined
+    let active = true
+    setChartLoading(true); setTrendError('')
+    getDashboardTrend({ range, metric })
+      .then((buckets) => active && setTrend(buckets))
+      .catch((reason) => active && setTrendError(`참여 추이를 불러오지 못했어요. ${reason.message}`))
+      .finally(() => active && setChartLoading(false))
+    return () => { active = false }
+  }, [metric, range, reloadKey])
+
+  useEffect(() => {
+    if (isApiConfigured) return undefined
+    let active = true
+    setLoading(true); setError('')
+    getMySurveys(user.id).then((items) => {
+      if (!active) return
+      const source = demoMode ? [...items, ...demoSurveys] : items
+      setSurveys(Array.from(new Map(source.map((survey) => [survey.id, survey])).values()))
+    }).catch(() => active && setError('대시보드 데이터를 불러오지 못했어요.')).finally(() => active && setLoading(false))
+    return () => { active = false }
+  }, [demoMode, user.id])
+
+  function changeRange(value) {
+    setSearchParams((current) => { const next = new URLSearchParams(current); next.set('range', value); return next }, { replace: true })
+    if (isApiConfigured) return
+    setChartLoading(true)
+    window.setTimeout(() => setChartLoading(false), 260)
+  }
+
+  const data = isApiConfigured ? trend.map((bucket) => bucket.value) : chartSets[metric][range] || chartSets[metric]['7']
+  const barLabels = isApiConfigured ? trend.map((bucket) => bucket.label) : labels
+  const currentIndex = isApiConfigured ? data.length - 1 : 4
+  const max = Math.max(1, ...data) * 1.12
+  const responses = isApiConfigured ? summary?.totalResponses ?? 0 : surveys.reduce((sum, survey) => sum + Number(survey.response_count || 0), 0)
+  const active = isApiConfigured ? summary?.activeSurveyCount ?? 0 : surveys.filter((survey) => survey.status === 'active').length
+  const analyzable = isApiConfigured ? summary?.analyzableSurveyCount ?? 0 : surveys.filter((survey) => Number(survey.response_count || 0) > 0).length
+  const weekly = isApiConfigured ? summary?.weeklyParticipationCount ?? 0 : 12
+  const weeklyDelta = isApiConfigured ? summary?.weeklyParticipationDelta ?? 0 : 4
+  const weeklyNote = weeklyDelta > 0 ? `지난주보다 ${weeklyDelta}회 늘었어요.` : weeklyDelta < 0 ? `지난주보다 ${-weeklyDelta}회 줄었어요.` : '지난주와 같아요.'
+  const activityRows = isApiConfigured ? recent : activities.map(([title, copy, time, to]) => ({ title, copy, time, to }))
+  const categories = useMemo(() => {
+    const totals = surveys.reduce((acc, survey) => { acc[survey.category || '기타'] = (acc[survey.category || '기타'] || 0) + Number(survey.response_count || 0); return acc }, {})
+    const denominator = Object.values(totals).reduce((sum, value) => sum + value, 0) || 1
+    return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, value]) => [name, Math.round(value / denominator * 100), value])
+  }, [surveys])
+
+  return <ServiceShell activePath="/dashboard"><div ref={rootRef} className="dashboard-final">
+    <ServiceHeading icon="▦" title="대시보드" description="지금, 필요한 설문과 주요 활동을 한눈에 확인해보세요." action={<select className="service-select dashboard-range" value={range} onChange={(event) => changeRange(event.target.value)} aria-label="대시보드 기간"><option value="7">최근 7일</option><option value="30">최근 30일</option><option value="90">최근 3개월</option></select>} />
+    {error && <div className="component-error" role="alert">{error}<button type="button" onClick={() => isApiConfigured ? setReloadKey((key) => key + 1) : window.location.reload()}>다시 시도</button></div>}
+    <nav className="dashboard-core-actions" aria-label="빠른 실행"><Link to="/formmate">FormMate로 설문 만들기</Link><Link to="/my-surveys">내 설문 보기</Link></nav>
+    <section className="service-metrics">
+      <MetricCard to="/my-surveys?status=active" icon="▤" label="진행 중인 설문" value={active} unit="개" note="현재 응답을 모으고 있어요." />
+      <MetricCard to="/my-surveys?sort=responses" tone="violet" icon="◎" label="누적 응답 수" value={responses} unit="건" note="내 설문에 모인 전체 응답이에요." />
+      <MetricCard to="/my-surveys?sort=responses" tone="mint" icon="▥" label="분석 가능한 설문" value={analyzable} unit="개" note="내 설문 관리에서 결과를 확인하세요." />
+      <MetricCard to="/surveys" tone="amber" icon="↗" label="이번 주 참여 횟수" value={weekly} unit="회" note={weeklyNote} />
+    </section>
+
+    <section className="service-grid dashboard-primary"><article className="service-panel ui-card"><div className="service-panel__head"><div><h2>주간 설문 참여 추이</h2><p>{isApiConfigured ? '내가 설문에 응답한 흐름을 확인할 수 있어요.' : '최근 서비스 활동 흐름을 확인할 수 있어요.'}</p></div><div className="chart-controls" role="group" aria-label="차트 기준"><button className={metric === 'responses' ? 'active' : ''} type="button" onClick={() => setMetric('responses')}>응답 수</button><button className={metric === 'surveys' ? 'active' : ''} type="button" onClick={() => setMetric('surveys')}>설문 수</button></div></div>{trendError ? <p className="form-message form-message--error" role="alert">{trendError}</p> : chartLoading || loading ? <div className="mini-chart skeleton-block" aria-label="차트 불러오는 중" /> : <div className="mini-chart" aria-label="주간 설문 참여 막대 그래프">{data.map((value, index) => <span key={`${metric}-${range}-${index}`} className={index === currentIndex ? 'is-current' : ''} title={`${barLabels[index]} · ${metric === 'responses' ? '응답 수' : '설문 수'} ${value}${metric === 'responses' ? '건' : '개'}`} style={{ '--bar': `${value / max * 100}%`, '--delay': `${index * 25}ms` }}><b>{value}</b><i>{barLabels[index]}</i></span>)}</div>}</article>
+      <article className="service-panel ui-card dashboard-activity"><div className="service-panel__head"><div><h2>최근 활동</h2><p>최근에 수행한 활동을 확인해보세요.</p></div><Link className="dashboard-activity__all" to="/my-surveys">전체보기 <span>→</span></Link></div><div className="service-list">{!loading && !activityRows.length && <p className="service-list-empty">아직 활동이 없어요. 설문에 응답하거나 설문을 게시하면 여기에 표시돼요.</p>}{activityRows.map(({ title, copy, time, to }, index) => to ? <Link className="service-list-row" key={`${title}-${index}`} to={to}><div><h3>{title}</h3><p>{copy}</p></div><time>{time}</time></Link> : <div className="service-list-row" key={`${title}-${index}`}><div><h3>{title}</h3><p>{copy}</p></div><time>{time}</time></div>)}</div></article></section>
+
+  </div></ServiceShell>
+}

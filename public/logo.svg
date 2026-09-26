@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="UNI-FORM logo">
+  <rect width="512" height="512" rx="120" fill="#182019"/>
+  <path d="M132 134v138c0 78 42 116 124 116s124-38 124-116V134h-72v134c0 38-15 56-52 56s-52-18-52-56V134z" fill="#ff6b3d"/>
+  <circle cx="380" cy="132" r="36" fill="#c8f0dd"/>
+</svg>
