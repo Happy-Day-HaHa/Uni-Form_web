@@ -5,9 +5,14 @@ import SurveyFilters from '../components/survey/SurveyFilters'
 import SurveyRow from '../components/survey/SurveyRow'
 import { useAuth } from '../hooks/useAuth'
 import { getSurveys } from '../services/surveyService'
+import { isApiConfigured } from '../services/apiClient'
+import { surveyCategories } from '../components/survey/SurveyFilters'
 import { getRespondedSurveyIds } from '../services/responseService'
 import { getMyTeam } from '../services/teamService'
 import '../styles/survey-catalog.css'
+
+// 화면의 예상 소요시간 선택지 → GET /surveys의 estimatedDuration 값. '전체 시간'은 보내지 않는다.
+const DURATION_FILTERS = { '3분 이내': 'UNDER_3', '5분 이내': 'UNDER_5', '6분 이상': 'OVER_6' }
 
 export default function SurveyList() {
   const { user } = useAuth()
@@ -26,16 +31,26 @@ export default function SurveyList() {
   })
   const [visibleCount, setVisibleCount] = useState(20)
   const listRef = useRef(null)
+  // API 모드: 카테고리는 자유 입력이라 고정 목록 대신 지금까지 불러온 설문들의 카테고리로 선택지를 만든다.
+  const [knownCategories, setKnownCategories] = useState([])
+  // API 모드는 카테고리·예상 소요시간을 서버 필터로 보낸다(GET /surveys?category=&estimatedDuration=). 검색어는 화면에서 거른다.
+  const serverCategory = isApiConfigured && category !== '전체' ? category : undefined
+  const serverDuration = isApiConfigured ? DURATION_FILTERS[duration] : undefined
 
   useEffect(() => {
-    // 로그인 확인 전(user 없음)과 후에 두 번 불리므로, 늦게 끝난 이전 요청이 결과를 덮어쓰지 않게 한다.
+    // 로그인 확인 전(user 없음)과 후, 필터를 바꿀 때마다 불리므로 늦게 끝난 이전 요청이 결과를 덮어쓰지 않게 한다.
     let active = true
-    Promise.all([getSurveys(), getRespondedSurveyIds(user?.id), getMyTeam()])
-      .then(([items, ids, team]) => { if (!active) return; setSurveys(items); setRespondedIds(ids); setTeamSurveyIds((team?.surveys || []).map((survey) => survey.id)); setError('') })
+    setLoading(true)
+    Promise.all([getSurveys({ category: serverCategory, estimatedDuration: serverDuration }), getRespondedSurveyIds(user?.id), getMyTeam()])
+      .then(([items, ids, team]) => {
+        if (!active) return
+        setSurveys(items); setRespondedIds(ids); setTeamSurveyIds((team?.surveys || []).map((survey) => survey.id)); setError('')
+        setKnownCategories((current) => [...new Set([...current, ...items.map((survey) => survey.category).filter(Boolean)])].sort((a, b) => a.localeCompare(b, 'ko')))
+      })
       .catch((reason) => { if (active) setError(reason.message) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [user])
+  }, [user, serverCategory, serverDuration])
 
   useEffect(() => { const timer = window.setTimeout(() => setDebouncedQuery(query), 260); return () => window.clearTimeout(timer) }, [query])
   useEffect(() => {
@@ -50,6 +65,7 @@ export default function SurveyList() {
     const keyword = debouncedQuery.trim().toLocaleLowerCase('ko')
     const filtered = surveys.filter((survey) => {
       const matchesKeyword = !keyword || `${survey.title} ${survey.description}`.toLocaleLowerCase('ko').includes(keyword)
+      if (isApiConfigured) return matchesKeyword
       const matchesCategory = category === '전체' || survey.category === category
       const minutes = Number(survey.estimated_minutes || 5)
       const matchesDuration = duration === '전체 시간'
@@ -82,9 +98,12 @@ export default function SurveyList() {
   }, [pagedSurveys])
 
   const available = surveys.length
-  const averageMinutes = surveys.length
-    ? Math.round(surveys.reduce((sum, survey) => sum + Number(survey.estimated_minutes || 5), 0) / surveys.length)
-    : 0
+  // 예상 소요시간을 입력한 설문만으로 평균을 낸다(없으면 표시하지 않음).
+  const timedSurveys = surveys.filter((survey) => Number(survey.estimated_minutes) > 0)
+  const averageMinutes = timedSurveys.length
+    ? Math.round(timedSurveys.reduce((sum, survey) => sum + Number(survey.estimated_minutes), 0) / timedSurveys.length)
+    : null
+  const categoryOptions = isApiConfigured ? ['전체', ...new Set([...knownCategories, ...(category !== '전체' ? [category] : [])])] : surveyCategories
 
   return (
     <ServiceShell activePath="/surveys">
@@ -94,9 +113,9 @@ export default function SurveyList() {
             <Link className="ui-button catalog-heading__action" to="/formmate">FormMate로 설문 만들기</Link>
           </section>
 
-          <p className="catalog-overview" data-catalog-reveal>참여 가능한 설문 <b>{available}개</b><span>평균 소요시간 {averageMinutes}분</span></p>
+          <p className="catalog-overview" data-catalog-reveal>참여 가능한 설문 <b>{available}개</b>{averageMinutes !== null && <span>평균 소요시간 {averageMinutes}분</span>}</p>
 
-          <div data-catalog-reveal><SurveyFilters query={query} onQueryChange={setQuery} category={category} onCategoryChange={setCategory} duration={duration} onDurationChange={setDuration} /></div>
+          <div data-catalog-reveal><SurveyFilters query={query} onQueryChange={setQuery} categories={categoryOptions} category={category} onCategoryChange={setCategory} duration={duration} onDurationChange={setDuration} /></div>
 
           {!loading && !error && <p className="catalog-count" data-catalog-reveal>총 <strong>{visibleSurveys.length}개</strong>의 설문이 있습니다.</p>}
           {loading && <div className="catalog-skeleton" aria-label="설문을 불러오고 있어요">{Array.from({ length: 4 }, (_, index) => <div key={index}><span /><p /><i /></div>)}</div>}
