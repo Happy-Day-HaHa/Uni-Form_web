@@ -65,7 +65,7 @@ export default function Leaderboard() {
 
       <aside className="leaderboard-aside">
         <article className="board-card board-card--reward" data-motion-reveal>
-          <h2>보상 안내</h2>
+          <h2>{data.rewardTitle || '보상 안내'}</h2>
           <p>{data.rewardText || '매주 가장 많은 설문에 참여한 상위 3명에게 소정의 상품을 드립니다.'}</p>
           <ul className="reward-tiers">{data.rewards.map((item) => <li key={item.rank}><span className={`reward-tiers__rank reward-tiers__rank--${item.rank}`}>{item.rank}</span><b>{item.label}</b></li>)}</ul>
         </article>

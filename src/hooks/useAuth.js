@@ -3,6 +3,23 @@ import { getAccessToken, getRefreshToken, isApiConfigured, onAuthStateChange } f
 import { getCurrentUser } from '../services/authService'
 
 const demoUser = { id: 'demo-user', email: 'demo@uniform.test', user_metadata: { name: '김유니' } }
+// 데모 모드(백엔드 미설정)에서는 관리자 콘솔도 둘러볼 수 있게 관리자로 둔다.
+const demoProfile = { id: 'demo-user', email: 'demo@uniform.test', nickname: '김유니', role: 'ADMIN', status: 'active', restriction: null }
+const STATUS_FROM_API = { ACTIVE: 'active', PENDING_VERIFICATION: 'pending', RESTRICTED: 'restricted', WITHDRAWN: 'withdrawn' }
+
+// GET /users/me → 관리자 라우트·이용 제한 화면이 쓰는 profile(role, status, restriction).
+function toProfile(user) {
+  if (!user) return null
+  return {
+    id: user.id,
+    email: user.email,
+    nickname: user.nickname,
+    role: user.isAdmin ? 'ADMIN' : user.isStaff ? 'STAFF' : 'USER',
+    status: STATUS_FROM_API[user.status] || 'active',
+    restriction: user.restriction ? { category: user.restriction.reason, until: user.restriction.endsAt } : null,
+  }
+}
+
 const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(isApiConfigured ? null : demoUser)
@@ -19,7 +36,13 @@ export function AuthProvider({ children }) {
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false; unsubscribe() }
   }, [])
-  const value = useMemo(() => ({ user, loading, demoMode: !isApiConfigured }), [user, loading])
+  const value = useMemo(() => ({
+    user,
+    profile: isApiConfigured ? toProfile(user) : demoProfile,
+    loading,
+    demoMode: !isApiConfigured,
+    refreshProfile: async () => { if (isApiConfigured && user) setUser(await getCurrentUser()) },
+  }), [user, loading])
   return createElement(AuthContext.Provider, { value }, children)
 }
 export function useAuth() { return useContext(AuthContext) }

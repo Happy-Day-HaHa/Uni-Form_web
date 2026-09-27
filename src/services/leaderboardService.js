@@ -97,8 +97,10 @@ async function getApiLeaderboard() {
     // pointsToNext: null이면 전체 1위, 0이면 공동 순위 — 화면의 gapToAbove 규칙과 같다.
     me: myRank.rank ? { rank: myRank.rank, score: myRank.points, gapToAbove: myRank.pointsToNext } : null,
     week: apiWeekMeta(first.weekStart, first.weekEnd),
-    rewards: REWARD_TIERS,
-    rewardText: config?.rewardText || '',
+    // 관리자 콘솔 "보상 안내"에서 입력한 1~3위 보상. 비어 있는 칸은 기본 문구.
+    rewards: REWARD_TIERS.map((tier, index) => ({ ...tier, label: config?.tiers?.[index] || tier.label })),
+    rewardTitle: config?.title || '',
+    rewardText: config?.body || '',
     policyNotes: config?.tieRuleText ? [...POLICY_NOTES.filter((note) => !note.startsWith('동점자')), config.tieRuleText] : POLICY_NOTES,
     lastWeekRank: myRank.previousWeekRank,
     available: true,
