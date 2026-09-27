@@ -4,20 +4,10 @@ import Modal from '../components/Modal'
 import ServiceShell, { ServiceHeading } from '../components/ServiceShell'
 import { useAuth } from '../hooks/useAuth'
 import { useReveal } from '../hooks/useReveal'
-import { isApiConfigured } from '../services/apiClient'
 import { MAX_TEAMS_PER_USER, MAX_TEAM_SIZE, createTeam, disbandTeam, getMyTeams, getTeam, joinTeam, leaveTeam, regenerateInviteLink, removeMember, transferLeader } from '../services/teamService'
 import '../styles/team.css'
 
-function relativeTime(value) {
-  if (!value) return '방금 전'
-  const minutes = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60000))
-  if (minutes < 2) return '방금 전'
-  if (minutes < 60) return `${minutes}분 전`
-  if (minutes < 1440) return `${Math.floor(minutes / 60)}시간 전`
-  return `${Math.floor(minutes / 1440)}일 전`
-}
-
-// ?team=<id>로 볼 팀을 고른다. ?team=new는 "새 팀 · 가입" 탭(API 모드).
+// ?team=<id>로 볼 팀을 고른다. ?team=new는 "새 팀 · 가입" 탭.
 export default function Team() {
   const { user } = useAuth()
   const location = useLocation()
@@ -50,7 +40,7 @@ export default function Team() {
     const isStale = () => loadId !== loadIdRef.current
     setLoadError('')
     try {
-      const myTeams = await getMyTeams(user.id)
+      const myTeams = await getMyTeams()
       if (isStale()) return
       setTeams(myTeams)
       const requested = selectedId && selectedId !== 'new' ? myTeams.find((item) => item.id === selectedId) : null
@@ -98,7 +88,7 @@ export default function Team() {
     if (name.length < 2 || name.length > 20) return setActionError('팀 이름은 2~20자로 입력해주세요.')
     try {
       setCreating(true)
-      const created = await createTeam(name, user.id, user.user_metadata?.name || '나')
+      const created = await createTeam(name)
       setNameInput('')
       setToast(`‘${created.name}’ 팀을 만들었어요.`)
       await reloadAndSelect(created.id)
@@ -142,9 +132,8 @@ export default function Team() {
   }
 
   const confirmRemove = () => runModalAction(async () => {
-    const next = await removeMember(team.id, removeTarget.id)
-    if (next) setTeam(next)
-    else await load()
+    await removeMember(team.id, removeTarget.id)
+    await load()
     setToast(`${removeTarget.nickname}님을 팀에서 내보냈습니다.`)
   })
 
@@ -170,7 +159,7 @@ export default function Team() {
 
   const banner = (loadError || actionError) && <div className="component-error" role="alert">{loadError || actionError}{loadError ? <button type="button" onClick={() => { setLoading(true); load() }}>다시 시도</button> : <button type="button" onClick={() => setActionError('')}>닫기</button>}</div>
   const canAddTeam = teams.length < MAX_TEAMS_PER_USER
-  const tabs = isApiConfigured && (teams.length > 0) && <nav className="team-tabs" aria-label="내 팀">{teams.map((item) => <button type="button" key={item.id} className={team?.id === item.id ? 'active' : ''} aria-current={team?.id === item.id ? 'page' : undefined} onClick={() => selectTeam(item.id)}>{item.name}{item.isLeader && <em>팀장</em>}</button>)}<button type="button" className={!team ? 'active' : ''} onClick={() => selectTeam('new')}>＋ 새 팀 · 가입</button></nav>
+  const tabs = teams.length > 0 && <nav className="team-tabs" aria-label="내 팀">{teams.map((item) => <button type="button" key={item.id} className={team?.id === item.id ? 'active' : ''} aria-current={team?.id === item.id ? 'page' : undefined} onClick={() => selectTeam(item.id)}>{item.name}{item.isLeader && <em>팀장</em>}</button>)}<button type="button" className={!team ? 'active' : ''} onClick={() => selectTeam('new')}>＋ 새 팀 · 가입</button></nav>
 
   if (!team) {
     return <ServiceShell activePath="/team"><div ref={rootRef}>
@@ -186,14 +175,14 @@ export default function Team() {
             <button className="ui-button" type="submit" disabled={creating}>{creating ? '만드는 중…' : '팀 만들기'}</button>
           </form>
         </section>
-        {isApiConfigured && <section className="team-empty ui-card" data-motion-reveal>
+        <section className="team-empty ui-card" data-motion-reveal>
           <h2>초대받은 팀에 가입하기</h2>
           <p>팀장에게 받은 초대 링크나 초대 코드를 붙여넣어 주세요.</p>
           <form onSubmit={handleJoin}>
             <input className="service-input" value={inviteInput} onChange={(event) => setInviteInput(event.target.value)} placeholder="초대 링크 또는 초대 코드" aria-label="초대 링크 또는 초대 코드" />
             <button className="ui-button" type="submit" disabled={joining}>{joining ? '가입 중…' : '가입하기'}</button>
           </form>
-        </section>}
+        </section>
       </> : <section className="team-empty ui-card" data-motion-reveal><h2>팀은 최대 {MAX_TEAMS_PER_USER}개까지 속할 수 있어요.</h2><p>새 팀을 만들거나 가입하려면 기존 팀에서 먼저 나와주세요.</p></section>}
       {toast && <div className="service-toast" role="status">{toast}</div>}
     </div></ServiceShell>
@@ -204,16 +193,16 @@ export default function Team() {
   return <ServiceShell activePath="/team"><div ref={rootRef}>
     <ServiceHeading icon="⌘" title={team.name} description={`팀원 ${team.members.length}/${MAX_TEAM_SIZE}명 · ${isLeader ? '내가 팀장이에요' : '팀원으로 참여 중이에요'}`}
       action={isLeader
-        ? <div className="team-heading-actions"><button className="ui-button ui-button--secondary" type="button" onClick={copyInvite} disabled={!team.inviteLink}>초대 링크 복사</button>{isApiConfigured && <button className="ui-button ui-button--secondary" type="button" onClick={regenerateInvite}>링크 새로 만들기</button>}</div>
+        ? <div className="team-heading-actions"><button className="ui-button ui-button--secondary" type="button" onClick={copyInvite} disabled={!team.inviteLink}>초대 링크 복사</button><button className="ui-button ui-button--secondary" type="button" onClick={regenerateInvite}>링크 새로 만들기</button></div>
         : <button className="ui-button ui-button--secondary" type="button" onClick={() => setLeaveOpen(true)}>팀 나가기</button>} />
     {tabs}
     {banner}
-    {isLeader && isApiConfigured && team.inviteToken && <p className="team-invite-code">초대 코드 <code>{team.inviteToken}</code></p>}
+    {isLeader && team.inviteToken && <p className="team-invite-code">초대 코드 <code>{team.inviteToken}</code></p>}
 
     <section className="team-members ui-card" data-motion-reveal>
       <header><h2>팀원</h2><span>{team.members.length}/{MAX_TEAM_SIZE}명</span></header>
       <div className="team-member-rows">{team.members.map((member) => <div className="team-member-row" key={member.id}>
-        <div><b>{member.nickname}</b>{member.isLeader && <em className="team-badge team-badge--leader">팀장</em>}{member.id === user.id && <em className="team-badge">나</em>}{member.isEditing && <em className="team-badge team-badge--editing">● {member.nickname}님이 편집 중</em>}</div>
+        <div><b>{member.nickname}</b>{member.isLeader && <em className="team-badge team-badge--leader">팀장</em>}{member.id === user.id && <em className="team-badge">나</em>}</div>
         {isLeader && !member.isLeader && <div className="team-member-actions"><button className="mini-button" type="button" onClick={() => setTransferTarget(member)}>팀장 넘기기</button><button className="mini-button mini-button--danger" type="button" onClick={() => setRemoveTarget(member)}>내보내기</button></div>}
       </div>)}</div>
     </section>
@@ -221,8 +210,8 @@ export default function Team() {
     <section className="team-drafts ui-card" data-motion-reveal>
       <header><h2>팀 초안</h2></header>
       <div className="managed-list">{team.drafts.map((draft) => <article className="managed-row" key={draft.id}>
-        <div className="managed-row__title"><div><h2>{draft.title}</h2><small><em className="team-draft-status">작성 중</em>{draft.updatedBy ? ` 마지막 수정 ${draft.updatedBy} · ${relativeTime(draft.updatedAt)}` : ` ${draft.question_count ?? 0}문항`}</small></div></div>
-        <div className="managed-actions"><Link className="ui-button ui-button--secondary" to={isApiConfigured ? `/formmate?draft=${draft.id}` : '/formmate'}>이어서 작성하기 <span aria-hidden="true">→</span></Link></div>
+        <div className="managed-row__title"><div><h2>{draft.title}</h2><small><em className="team-draft-status">작성 중</em> {draft.question_count ?? 0}문항</small></div></div>
+        <div className="managed-actions"><Link className="ui-button ui-button--secondary" to={`/formmate?draft=${draft.id}`}>이어서 작성하기 <span aria-hidden="true">→</span></Link></div>
       </article>)}{!team.drafts.length && <p className="team-empty-row">진행 중인 초안이 없어요.</p>}</div>
     </section>
 
@@ -233,9 +222,9 @@ export default function Team() {
         const responses = Number(survey.response_count || 0)
         const progress = Math.min(100, Math.round((responses / target) * 100))
         return <article className="managed-row" key={survey.id}>
-          <div className="managed-row__title"><div><h2>{survey.title}</h2><small>마감 {survey.deadline || '-'}{survey.updatedBy ? ` · 마지막 수정 ${survey.updatedBy} · ${relativeTime(survey.updatedAt)}` : ''}</small></div></div>
+          <div className="managed-row__title"><div><h2>{survey.title}</h2><small>마감 {survey.deadline || '-'}</small></div></div>
           <div className="managed-progress"><span>{responses.toLocaleString()} / {Number(survey.target_count || 0).toLocaleString()}명 <b>{progress}%</b></span><div><i style={{ '--progress': `${progress}%` }} /></div></div>
-          <div className="managed-actions">{isApiConfigured && survey.can_manage && <Link className="ui-button ui-button--secondary" to={`/my-surveys/${survey.id}/manage`}>관리하기</Link>}<Link className="managed-primary" to={`/surveys/${survey.id}/results`}>결과 보기</Link></div>
+          <div className="managed-actions">{survey.can_manage && <Link className="ui-button ui-button--secondary" to={`/my-surveys/${survey.id}/manage`}>관리하기</Link>}<Link className="managed-primary" to={`/surveys/${survey.id}/results`}>결과 보기</Link></div>
         </article>
       })}{!team.surveys.length && <p className="team-empty-row">아직 게시한 팀 설문이 없어요.</p>}</div>
     </section>

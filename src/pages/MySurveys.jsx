@@ -4,7 +4,6 @@ import Modal from '../components/Modal'
 import ServiceShell, { MetricCard, ServiceHeading } from '../components/ServiceShell'
 import { useAuth } from '../hooks/useAuth'
 import { useReveal } from '../hooks/useReveal'
-import { isApiConfigured } from '../services/apiClient'
 import { closeSurvey, deleteSurvey, duplicateSurvey, getMySurveys } from '../services/surveyService'
 import { getMyTeams } from '../services/teamService'
 import { canDeleteSurvey, getSurveyLifecycleStatus, isTargetReached } from '../utils/surveyPolicy'
@@ -15,7 +14,7 @@ function surveyState(survey) {
 }
 
 export default function MySurveys() {
-  const { user, demoMode } = useAuth()
+  const { user } = useAuth()
   const [params, setParams] = useSearchParams()
   const [surveys, setSurveys] = useState([])
   const [query, setQuery] = useState(params.get('q') || '')
@@ -41,7 +40,7 @@ export default function MySurveys() {
     setLoadError('')
     return getMySurveys(user.id).then(setSurveys).catch((error) => setLoadError(`내 설문을 불러오지 못했어요. ${error.message}`)).finally(() => setLoading(false))
   }, [user.id])
-  useEffect(() => { loadSurveys() }, [demoMode, loadSurveys])
+  useEffect(() => { loadSurveys() }, [loadSurveys])
   useEffect(() => { const timer = window.setTimeout(() => setDebouncedQuery(query), 260); return () => window.clearTimeout(timer) }, [query])
   useEffect(() => { const next = {}; if (debouncedQuery) next.q = debouncedQuery; if (status !== 'all') next.status = status; if (sort !== 'latest') next.sort = sort; setParams(next, { replace: true }) }, [debouncedQuery, setParams, sort, status])
   useEffect(() => { if (!toast) return undefined; const timer = window.setTimeout(() => setToast(''), 1800); return () => window.clearTimeout(timer) }, [toast])
@@ -68,7 +67,6 @@ export default function MySurveys() {
   async function duplicate(survey) {
     setMenuId('')
     setActionError('')
-    if (!isApiConfigured) return runDuplicate(survey)
     let teams
     try {
       teams = await getMyTeams(user.id)
@@ -83,12 +81,11 @@ export default function MySurveys() {
   async function runDuplicate(survey, team = null) {
     try {
       setBusy(true)
-      const copy = await duplicateSurvey(survey, { teamId: team?.id })
-      // API 모드는 새 초안 id만 오므로 목록을 다시 불러온다.
-      if (isApiConfigured) await loadSurveys()
-      else setSurveys((current) => [copy, ...current])
+      await duplicateSurvey(survey, { teamId: team?.id })
+      // 복제 응답에는 새 초안 id만 오므로 목록을 다시 불러온다.
+      await loadSurveys()
       setCopyDialog(null)
-      notify(!isApiConfigured ? '설문을 복제했습니다.' : team ? `‘${team.name}’ 팀 초안으로 복제했어요. 임시저장에서 이어서 편집할 수 있어요.` : '개인 초안으로 복제했어요. 임시저장에서 이어서 편집할 수 있어요.')
+      notify(team ? `‘${team.name}’ 팀 초안으로 복제했어요. 임시저장에서 이어서 편집할 수 있어요.` : '개인 초안으로 복제했어요. 임시저장에서 이어서 편집할 수 있어요.')
     } catch (error) {
       const message = `‘${survey.title}’ 설문을 복제하지 못했어요. ${error.message}`
       if (copyDialog) setModalError(message)
@@ -103,7 +100,7 @@ export default function MySurveys() {
       setBusy(true)
       setModalError('')
       const updated = await closeSurvey(survey.id)
-      setSurveys((current) => current.map((item) => item.id === survey.id ? { ...item, ...(isApiConfigured ? { ...updated, list_order: item.list_order } : {}), status: 'closed' } : item))
+      setSurveys((current) => current.map((item) => item.id === survey.id ? { ...item, ...updated, list_order: item.list_order, status: 'closed' } : item))
       setCloseConfirmSurvey(null)
       notify('설문 모집을 종료했습니다.')
       setMenuId('')
@@ -152,9 +149,9 @@ export default function MySurveys() {
       const canManage = !isTeamSurvey || survey.can_manage === true
       const teamLabel = survey.team_disbanded_at ? '해산된 팀' : canManage ? '팀장' : '팀원'
       return <article className="managed-row ui-card" key={survey.id} data-motion-reveal style={{ '--delay': `${Math.min(index, 4) * 50}ms` }}>
-        <div className="managed-row__title"><span className={`service-tone--${['violet', 'amber', 'rose', 'mint', 'blue'][index % 5]}`}>{['◇', '○', '▤', '◎', '✦'][index % 5]}</span><div><div className="managed-title-line"><h2>{survey.title}</h2><em className={`survey-state survey-state--${stateKey}`}>{stateLabel}</em>{isTargetReached(survey) && <em className="survey-state survey-state--success">목표 달성</em>}</div><p>{survey.description}</p><small>{isApiConfigured ? `${isTeamSurvey ? `팀 · ${survey.owner_name} (${teamLabel})` : '개인'} · ${survey.question_count}문항` : `${survey.category || '일반'} · 약 ${survey.estimated_minutes || 5}분`}{survey.deadline ? ` · 마감 ${survey.deadline}` : ''}</small></div></div>
+        <div className="managed-row__title"><span className={`service-tone--${['violet', 'amber', 'rose', 'mint', 'blue'][index % 5]}`}>{['◇', '○', '▤', '◎', '✦'][index % 5]}</span><div><div className="managed-title-line"><h2>{survey.title}</h2><em className={`survey-state survey-state--${stateKey}`}>{stateLabel}</em>{isTargetReached(survey) && <em className="survey-state survey-state--success">목표 달성</em>}</div><p>{survey.description}</p><small>{`${isTeamSurvey ? `팀 · ${survey.owner_name} (${teamLabel})` : '개인'} · ${survey.question_count}문항`}{survey.deadline ? ` · 마감 ${survey.deadline}` : ''}</small></div></div>
         <div className="managed-progress"><span>{Number(survey.response_count || 0).toLocaleString()} / {Number(survey.target_count || 0).toLocaleString()}명 <b>{progress}%</b></span><div><i style={{ '--progress': `${progress}%` }} /></div><small>{progress >= 100 ? '목표를 달성했어요! 🎉' : `목표까지 ${Math.max(0, Number(survey.target_count || 0) - Number(survey.response_count || 0))}명 남았어요.`}</small></div>
-        <div className="managed-actions">{isApiConfigured && stateKey === 'draft' ? <Link className="managed-primary" to={`/formmate?draft=${survey.id}`}>이어서 편집</Link> : canManage ? <Link className="managed-primary" to={`/my-surveys/${survey.id}/manage`}>관리하기</Link> : <Link className="managed-primary" to={`/surveys/${survey.id}/results`}>결과 보기</Link>}<div className="row-menu" ref={menuId === survey.id ? menuRef : null}><button type="button" aria-label="설문 메뉴" aria-expanded={menuId === survey.id} onClick={() => setMenuId(menuId === survey.id ? '' : survey.id)}>•••</button>{menuId === survey.id && <div className="row-menu__popover"><button type="button" onClick={() => share(survey)}>링크 복사</button><button type="button" onClick={() => duplicate(survey)}>복제하기</button>{stateKey === 'active' && canManage && <button type="button" onClick={() => setCloseConfirmSurvey(survey)}>직접 마감</button>}{canDeleteSurvey(survey) && <button className="is-danger" type="button" onClick={() => { setConfirmSurvey(survey); setMenuId('') }}>삭제하기</button>}</div>}</div></div>
+        <div className="managed-actions">{stateKey === 'draft' ? <Link className="managed-primary" to={`/formmate?draft=${survey.id}`}>이어서 편집</Link> : canManage ? <Link className="managed-primary" to={`/my-surveys/${survey.id}/manage`}>관리하기</Link> : <Link className="managed-primary" to={`/surveys/${survey.id}/results`}>결과 보기</Link>}<div className="row-menu" ref={menuId === survey.id ? menuRef : null}><button type="button" aria-label="설문 메뉴" aria-expanded={menuId === survey.id} onClick={() => setMenuId(menuId === survey.id ? '' : survey.id)}>•••</button>{menuId === survey.id && <div className="row-menu__popover"><button type="button" onClick={() => share(survey)}>링크 복사</button><button type="button" onClick={() => duplicate(survey)}>복제하기</button>{stateKey === 'active' && canManage && <button type="button" onClick={() => setCloseConfirmSurvey(survey)}>직접 마감</button>}{canDeleteSurvey(survey) && <button className="is-danger" type="button" onClick={() => { setConfirmSurvey(survey); setMenuId('') }}>삭제하기</button>}</div>}</div></div>
       </article>
     })}{!display.length && <section className="result-empty"><span>▤</span><h2>조건에 맞는 설문이 없어요.</h2><p>검색 조건을 초기화하거나 FormMate로 새 설문을 만들어보세요.</p><button className="ui-button ui-button--secondary" type="button" onClick={() => { setQuery(''); setStatus('all'); setSort('latest') }}>필터 초기화</button></section>}</section>}
     <Modal open={Boolean(confirmSurvey)} title="설문을 삭제할까요?" onClose={closeModals}><p>‘{confirmSurvey?.title}’ 설문은 삭제 후 복구할 수 없습니다.</p>{modalError && <p className="form-message form-message--error" role="alert">{modalError}</p>}<div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={closeModals}>취소</button><button className="ui-button ui-button--danger" disabled={busy} onClick={remove}>{busy ? '삭제 중…' : '삭제'}</button></div></Modal>

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
-import { isApiConfigured } from '../services/apiClient'
 import { confirmPasswordReset, requestPasswordReset } from '../services/authService'
 import { isEmail, validatePassword } from '../utils/validation'
 import '../styles/auth-dandy.css'
@@ -22,7 +21,6 @@ function RequestResetForm() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    if (!isApiConfigured) return setMessage('데모 모드에서는 비밀번호 재설정을 사용할 수 없어요.')
     if (!isEmail(email.trim())) return setMessage('올바른 이메일 주소를 입력해주세요.')
     try {
       setSubmitting(true)
@@ -37,7 +35,7 @@ function RequestResetForm() {
   }
 
   // 가입 여부와 관계없이 같은 안내를 보여준다(서버도 계정 존재를 드러내지 않는다).
-  if (sentTo) return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>메일을 확인해주세요</h1><p><b>{sentTo}</b>이(가) 가입된 이메일이면 비밀번호 재설정 링크를 보냈어요.</p></div></div><div className="demo-note">메일의 링크를 눌러 새 비밀번호를 정해주세요. 메일이 보이지 않으면 스팸함도 확인해주세요.</div><button className="button button--block button--outline" type="button" onClick={() => setSentTo('')}>다른 이메일로 다시 보내기</button><Link className="button button--block" to="/login">로그인으로 이동</Link></AuthLayout>
+  if (sentTo) return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>메일을 확인해주세요</h1><p><b>{sentTo}</b>이(가) 가입된 이메일이면 비밀번호 재설정 링크를 보냈어요.</p></div></div><div className="info-note">메일의 링크를 눌러 새 비밀번호를 정해주세요. 메일이 보이지 않으면 스팸함도 확인해주세요.</div><button className="button button--block button--outline" type="button" onClick={() => setSentTo('')}>다른 이메일로 다시 보내기</button><Link className="button button--block" to="/login">로그인으로 이동</Link></AuthLayout>
 
   return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>비밀번호 찾기</h1><p>가입한 이메일로 비밀번호 재설정 링크를 보내드려요.</p></div></div><form className="form-stack" onSubmit={handleSubmit}><label>이메일<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="hello@example.com" required /></label>{message && <p className="form-message form-message--error" role="alert">{message}</p>}<button className="button button--block" disabled={submitting}>{submitting ? '보내는 중...' : '재설정 메일 보내기'}</button></form><p className="auth-card__footer">비밀번호가 기억나셨나요? <Link to="/login">로그인</Link></p></AuthLayout>
 }

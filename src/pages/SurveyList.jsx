@@ -5,8 +5,6 @@ import SurveyFilters from '../components/survey/SurveyFilters'
 import SurveyRow from '../components/survey/SurveyRow'
 import { useAuth } from '../hooks/useAuth'
 import { getSurveys } from '../services/surveyService'
-import { isApiConfigured } from '../services/apiClient'
-import { surveyCategories } from '../components/survey/SurveyFilters'
 import { getRespondedSurveyIds } from '../services/responseService'
 import { getMyTeam } from '../services/teamService'
 import '../styles/survey-catalog.css'
@@ -31,11 +29,11 @@ export default function SurveyList() {
   })
   const [visibleCount, setVisibleCount] = useState(20)
   const listRef = useRef(null)
-  // API 모드: 카테고리는 자유 입력이라 고정 목록 대신 지금까지 불러온 설문들의 카테고리로 선택지를 만든다.
+  // 카테고리는 자유 입력이라 고정 목록 대신 지금까지 불러온 설문들의 카테고리로 선택지를 만든다.
   const [knownCategories, setKnownCategories] = useState([])
-  // API 모드는 카테고리·예상 소요시간을 서버 필터로 보낸다(GET /surveys?category=&estimatedDuration=). 검색어는 화면에서 거른다.
-  const serverCategory = isApiConfigured && category !== '전체' ? category : undefined
-  const serverDuration = isApiConfigured ? DURATION_FILTERS[duration] : undefined
+  // 카테고리·예상 소요시간은 서버 필터로 보낸다(GET /surveys?category=&estimatedDuration=). 검색어는 화면에서 거른다.
+  const serverCategory = category !== '전체' ? category : undefined
+  const serverDuration = DURATION_FILTERS[duration]
 
   useEffect(() => {
     // 로그인 확인 전(user 없음)과 후, 필터를 바꿀 때마다 불리므로 늦게 끝난 이전 요청이 결과를 덮어쓰지 않게 한다.
@@ -63,17 +61,7 @@ export default function SurveyList() {
 
   const visibleSurveys = useMemo(() => {
     const keyword = debouncedQuery.trim().toLocaleLowerCase('ko')
-    const filtered = surveys.filter((survey) => {
-      const matchesKeyword = !keyword || `${survey.title} ${survey.description}`.toLocaleLowerCase('ko').includes(keyword)
-      if (isApiConfigured) return matchesKeyword
-      const matchesCategory = category === '전체' || survey.category === category
-      const minutes = Number(survey.estimated_minutes || 5)
-      const matchesDuration = duration === '전체 시간'
-        || (duration === '3분 이내' && minutes <= 3)
-        || (duration === '5분 이내' && minutes <= 5)
-        || (duration === '6분 이상' && minutes >= 6)
-      return matchesKeyword && matchesCategory && matchesDuration
-    })
+    const filtered = surveys.filter((survey) => !keyword || `${survey.title} ${survey.description}`.toLocaleLowerCase('ko').includes(keyword))
 
     return [...filtered].sort((a, b) => String(b.created_at || b.id).localeCompare(String(a.created_at || a.id)))
   }, [category, debouncedQuery, duration, surveys])
@@ -103,7 +91,7 @@ export default function SurveyList() {
   const averageMinutes = timedSurveys.length
     ? Math.round(timedSurveys.reduce((sum, survey) => sum + Number(survey.estimated_minutes), 0) / timedSurveys.length)
     : null
-  const categoryOptions = isApiConfigured ? ['전체', ...new Set([...knownCategories, ...(category !== '전체' ? [category] : [])])] : surveyCategories
+  const categoryOptions = ['전체', ...new Set([...knownCategories, ...(category !== '전체' ? [category] : [])])]
 
   return (
     <ServiceShell activePath="/surveys">

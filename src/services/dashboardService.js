@@ -1,6 +1,6 @@
 import { apiClient } from './apiClient'
 
-// 대시보드는 API 모드 전용이다(데모 모드는 Dashboard 화면의 기존 샘플 값을 쓴다).
+// 대시보드 데이터.
 // 모든 값은 요청 시점에 서버가 실시간 집계한다(캐시 없음). 기준은 "내 설문(본인 + 소속 팀)"과 "내 응답 활동"이다.
 
 // 응답: { activeSurveyCount, totalResponses, analyzableSurveyCount, weeklyParticipationCount, weeklyParticipationDelta }
