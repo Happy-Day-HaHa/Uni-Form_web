@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { signup } from '../services/authService'
-import { isApiConfigured } from '../services/apiClient'
 import { validateSignup } from '../utils/validation'
 import AuthLayout from '../components/AuthLayout'
 import Checkbox from '../components/Checkbox'
@@ -21,7 +20,6 @@ export default function Signup() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    if (!isApiConfigured) return navigate('/surveys')
     const validationMessage = validateSignup(form)
     if (validationMessage) return setMessage(validationMessage)
     if (!agreements.age14 || !agreements.terms || !agreements.privacy) return setMessage('필수 항목에 모두 동의해주세요.')
@@ -38,11 +36,10 @@ export default function Signup() {
 
   return <AuthLayout mode="signup">
     <div className="auth-saas__title"><div><h1>회원가입</h1><p>대학(원)생을 위한 설문 플랫폼, UniForm을 시작하세요.</p></div></div>
-    {!isApiConfigured && <div className="demo-note">데모 모드에서는 입력 없이도 전체 화면을 체험할 수 있습니다.</div>}
     <form className="form-stack" onSubmit={handleSubmit}>
-      <label>닉네임<input value={form.nickname} onChange={(event) => setForm({ ...form, nickname: event.target.value })} placeholder="2~12자, 한글/영문/숫자" maxLength={12} required={isApiConfigured} /></label>
-      <label>이메일<input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="hello@example.com" required={isApiConfigured} /></label>
-      <label>비밀번호<input type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder="영문, 숫자를 포함해 8자 이상" required={isApiConfigured} /></label>
+      <label>닉네임<input value={form.nickname} onChange={(event) => setForm({ ...form, nickname: event.target.value })} placeholder="2~12자, 한글/영문/숫자" maxLength={12} required /></label>
+      <label>이메일<input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="hello@example.com" required /></label>
+      <label>비밀번호<input type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder="영문, 숫자를 포함해 8자 이상" required /></label>
       <div className="auth-form-grid">
         <label>성별<select value={form.gender} onChange={(event) => setForm({ ...form, gender: event.target.value })}>{genderOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
         <label>학년<select value={form.grade} onChange={(event) => setForm({ ...form, grade: event.target.value })}>{gradeOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -60,7 +57,7 @@ export default function Signup() {
         <Checkbox checked={agreements.marketing} onChange={(event) => setAgreements({ ...agreements, marketing: event.target.checked })}><span>[선택] 서비스 소식과 혜택을 받습니다.</span></Checkbox>
       </fieldset>
       {message && <p className="form-message form-message--error">{message}</p>}
-      <button className="button button--block" disabled={submitting}>{submitting ? '가입 중...' : isApiConfigured ? '회원가입' : '데모 시작하기'}</button>
+      <button className="button button--block" disabled={submitting}>{submitting ? '가입 중...' : '회원가입'}</button>
     </form>
     <p className="auth-card__footer">이미 계정이 있나요? <Link to="/login">로그인</Link></p>
   </AuthLayout>

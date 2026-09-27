@@ -1,15 +1,15 @@
 import { apiClient, clearTokens, emitAuthStateChange, setTokens } from './apiClient'
 import { TERMS_VERSION } from '../constants'
 
-// 회원가입 화면의 한글 선택지 → 백엔드 enum
+// 회원가입·설정 화면의 한글 선택지 → 백엔드 enum
 export const GENDER = { 남성: 'MALE', 여성: 'FEMALE', '응답하지 않음': 'PREFER_NOT_TO_SAY' }
 export const GRADE = { '1학년': 'FRESHMAN', '2학년': 'SOPHOMORE', '3학년': 'JUNIOR', '4학년 이상': 'SENIOR_OR_ABOVE', 대학원: 'GRADUATE', '해당 없음': 'NOT_APPLICABLE' }
 export const MAJOR_FIELD = { 인문사회: 'HUMANITIES_SOCIAL', 상경: 'BUSINESS', 공학: 'ENGINEERING', 자연과학: 'NATURAL_SCIENCE', 의약: 'MEDICINE', 예체능: 'ARTS_SPORTS', 교육: 'EDUCATION', '해당 없음': 'NOT_APPLICABLE' }
 export const ENROLLMENT_STATUS = { 재학: 'ENROLLED', 휴학: 'LEAVE_OF_ABSENCE', 졸업: 'GRADUATED', '해당 없음': 'NOT_APPLICABLE' }
 
-// GET /users/me 응답. user_metadata.name은 기존 화면(Team 등) 호환용.
+// GET /users/me 응답
 function toAuthUser(me) {
-  return { ...me, user_metadata: { name: me.nickname } }
+  return me
 }
 
 export async function getCurrentUser() {

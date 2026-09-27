@@ -18,7 +18,7 @@ export default function Leaderboard() {
   useEffect(() => {
     let active = true
     setLoading(true); setError('')
-    getLeaderboard(user.id).then((result) => active && setData(result)).catch((reason) => active && setError(reason.message)).finally(() => active && setLoading(false))
+    getLeaderboard().then((result) => active && setData(result)).catch((reason) => active && setError(reason.message)).finally(() => active && setLoading(false))
     return () => { active = false }
   }, [user.id, reloadKey])
 

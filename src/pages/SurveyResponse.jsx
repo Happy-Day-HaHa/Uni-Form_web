@@ -6,7 +6,6 @@ import QuestionItem from '../components/QuestionItem'
 import ServiceShell from '../components/ServiceShell'
 import { useAuth } from '../hooks/useAuth'
 import { etcAnswerKey, getRespondedSurveyIds, mapAnswerErrorsToQuestions, saveResponseAnswers, startResponseSession, submitSurveyResponse } from '../services/responseService'
-import { isApiConfigured } from '../services/apiClient'
 import { getSurvey } from '../services/surveyService'
 import { SUPPORT_EMAIL } from '../constants'
 import { isSurveyOpen } from '../utils/surveyPolicy'
@@ -77,7 +76,7 @@ export default function SurveyResponse() {
     })()
   }
 
-  // 답을 바꾸면 1초 뒤 서버에 임시저장한다(API 모드). 실패해도 제출은 막지 않는다.
+  // 답을 바꾸면 1초 뒤 서버에 임시저장한다. 실패해도 제출은 막지 않는다.
   useEffect(() => {
     if (!started || !sessionId || submitted) return undefined
     unsavedRef.current = true
@@ -138,19 +137,17 @@ export default function SurveyResponse() {
 
   async function startSurvey() {
     setMessage('')
-    if (isApiConfigured) {
-      try {
-        setStarting(true)
-        const session = await startResponseSession(survey)
-        setSessionId(session.sessionId)
-        // 이전에 임시저장한 답이 있으면 이어서 보여준다.
-        setAnswers((current) => Object.keys(current).length ? current : session.answers)
-      } catch (error) {
-        if (!applyBlockingError(error)) setMessage(error.message)
-        return
-      } finally {
-        setStarting(false)
-      }
+    try {
+      setStarting(true)
+      const session = await startResponseSession(survey)
+      setSessionId(session.sessionId)
+      // 이전에 임시저장한 답이 있으면 이어서 보여준다.
+      setAnswers((current) => Object.keys(current).length ? current : session.answers)
+    } catch (error) {
+      if (!applyBlockingError(error)) setMessage(error.message)
+      return
+    } finally {
+      setStarting(false)
     }
     setStarted(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -166,8 +163,8 @@ export default function SurveyResponse() {
       saveQueueRef.current.pending = null
       const result = await submitSurveyResponse(survey.id, answers, { survey, sessionId, sameScaleWarningAcknowledged })
       // 순위는 리더보드 화면과 같은 GET /leaderboard의 내 순위를 쓴다. 실패하면 제출 응답의 weeklyRank로 대신한다.
-      const leaderboardMe = await getLeaderboard(user.id).then((data) => data.me).catch(() => null)
-      setWeeklyActivity(leaderboardMe || (isApiConfigured ? { rank: result.weeklyRank, earned: result.pointsEarned } : null))
+      const leaderboardMe = await getLeaderboard().then((data) => data.me).catch(() => null)
+      setWeeklyActivity(leaderboardMe || { rank: result.weeklyRank, earned: result.pointsEarned })
       setSubmitted(true)
     } catch (error) {
       // 제출이 실패하면 임시저장을 다시 허용한다.

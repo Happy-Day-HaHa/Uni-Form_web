@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ResultOverview from '../components/result/ResultOverview'
 import ServiceShell from '../components/ServiceShell'
-import { useAuth } from '../hooks/useAuth'
 import { getOwnedSurveyResults } from '../services/responseService'
 import { downloadAllCharts, downloadQuestionChart, isChartable } from '../utils/chartExport'
 import { maskSensitiveText } from '../utils/maskSensitiveText'
@@ -18,29 +17,6 @@ function buildConicGradient(counts, total) {
     return `${PIE_COLORS[index % PIE_COLORS.length]} ${start}% ${cursor}%`
   })
   return `conic-gradient(${stops.join(',')})`
-}
-
-function valuesFor(question, responses) {
-  return responses.flatMap((response) => {
-    const value = response.answers?.[question.id]
-    if (value === undefined || value === '' || value === null) return []
-    return Array.isArray(value) ? value : [value]
-  })
-}
-
-function analyzeQuestion(question, responses) {
-  const values = valuesFor(question, responses)
-  const responseCount = responses.filter((response) => {
-    const answer = response.answers?.[question.id]
-    return answer !== undefined && answer !== null && answer !== '' && (!Array.isArray(answer) || answer.length > 0)
-  }).length
-  if (question.type === 'text' || question.type === 'long') return { type: 'text', values, responseCount }
-  const options = question.type === 'scale'
-    ? Array.from({ length: Number(question.max || 5) - Number(question.min || 1) + 1 }, (_, index) => Number(question.min || 1) + index)
-    : question.options || []
-  const counts = options.map((option) => ({ option, count: values.filter((value) => String(value) === String(option)).length }))
-  const average = question.type === 'scale' && values.length ? values.reduce((sum, value) => sum + Number(value), 0) / values.length : null
-  return { type: question.type, values, responseCount, counts, average, max: Math.max(1, ...counts.map((item) => item.count)) }
 }
 
 function ResultSkeleton() {
@@ -75,27 +51,26 @@ function QuestionAnalysis({ question, analysis, index }) {
 
 export default function SurveyResults() {
   const { surveyId } = useParams()
-  const { user } = useAuth()
   const [state, setState] = useState({ status: 'loading', result: null, error: null })
   const [tab, setTab] = useState('questions')
 
   const load = useCallback(() => {
     setState({ status: 'loading', result: null, error: null })
-    getOwnedSurveyResults(surveyId, user.id)
+    getOwnedSurveyResults(surveyId)
       .then((result) => setState({ status: 'ready', result, error: null }))
       .catch((error) => setState({ status: 'error', result: null, error }))
-  }, [surveyId, user.id])
+  }, [surveyId])
 
   useEffect(load, [load])
 
-  // API 모드는 서버가 집계한 analyses를 주고, 데모 모드는 원본 응답에서 직접 집계한다.
-  const analyses = useMemo(() => state.result?.analyses || state.result?.survey.questions?.map((question) => analyzeQuestion(question, state.result.responses)) || [], [state.result])
+  // 문항별 집계는 서버가 한다(GET /surveys/:id/result).
+  const analyses = state.result?.analyses || []
 
   if (state.status === 'loading') return <ServiceShell activePath="/my-surveys"><ResultSkeleton /></ServiceShell>
   if (state.status === 'error') return <ServiceShell activePath="/my-surveys"><ResultState code={state.error?.code} onRetry={load} surveyId={surveyId} /></ServiceShell>
 
   const { survey } = state.result
-  const responseCount = state.result.responseCount ?? state.result.responses.length
+  const responseCount = state.result.responseCount ?? 0
   const excludedCount = state.result.excludedCount || 0
   const questions = survey.questions || []
   const target = Math.max(1, Number(survey.target_count || 1))

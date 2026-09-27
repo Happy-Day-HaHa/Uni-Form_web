@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import ServiceShell from '../components/ServiceShell'
 import Modal from '../components/Modal'
 import { useAuth } from '../hooks/useAuth'
-import { closeSurvey as closeSurveyRequest, getSurvey, isDemoSurveyFixture } from '../services/surveyService'
+import { closeSurvey as closeSurveyRequest, getSurvey } from '../services/surveyService'
 import { getSurveyLifecycleStatus, isTargetReached } from '../utils/surveyPolicy'
 
 function statusLabel(status) {
@@ -15,7 +15,7 @@ function statusLabel(status) {
 
 export default function SurveyManage() {
   const { surveyId } = useParams()
-  const { user, demoMode } = useAuth()
+  const { user } = useAuth()
   const [survey, setSurvey] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -36,12 +36,12 @@ export default function SurveyManage() {
           throw new Error('이 설문을 관리할 권한이 없습니다.')
         }
       } else {
-        const canManage = (item.is_owner ?? item.creator_id === user.id) || (demoMode && isDemoSurveyFixture(item.id))
+        const canManage = item.is_owner ?? item.creator_id === user.id
         if (!canManage) throw new Error('이 설문을 관리할 권한이 없습니다.')
       }
       setSurvey(item)
     }).catch((loadError) => setError(loadError.message)).finally(() => setLoading(false))
-  }, [demoMode, surveyId, user.id])
+  }, [surveyId, user.id])
 
   useEffect(() => { if (!toast) return undefined; const timer = window.setTimeout(() => setToast(''), 1800); return () => window.clearTimeout(timer) }, [toast])
 
