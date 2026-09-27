@@ -16,8 +16,8 @@ const teams = [
 ]
 
 const seedLogs = [
-  { id: 'log-1', created_at: '2026-09-26T10:42:00+09:00', actor_name: '김유니', action: '응답 집계 제외', target_name: 'AI 서비스 사용 경험 조사 · 응답 #21', reason: '불성실 응답', memo: '동일 문구 반복 입력 확인', before_value: '정상', after_value: '운영 제외' },
-  { id: 'log-2', created_at: '2026-09-25T16:12:00+09:00', actor_name: '김유니', action: '회원 이용 제한', target_name: '이서진', reason: '불성실 응답 반복', memo: '30일 제한 및 이메일 안내', before_value: '활성', after_value: '이용 제한' },
+  { id: 'log-1', created_at: '2026-09-26T10:42:00+09:00', actor_name: '김유니', action: 'response_exclude', target_type: 'survey', target_id: 'demo-survey-1', target_name: 'AI 서비스 사용 경험 조사 · 응답 #21', reason: '동일·무의미 응답', memo: '동일 문구 반복 입력 확인', before_value: '정상', after_value: '운영 제외' },
+  { id: 'log-2', created_at: '2026-09-25T16:12:00+09:00', actor_name: '김유니', action: 'member_restrict', target_type: 'member', target_id: 'mem-3', target_name: '이서진', reason: '부정 응답 반복', memo: '30일 제한 및 이메일 안내', before_value: '활성', after_value: '이용 제한' },
 ]
 
 const rewards = [
@@ -27,10 +27,18 @@ const rewards = [
 ]
 
 const storeKey = 'uniform-admin-demo'
+const rewardSentCache = new Map()
 function state() { try { return JSON.parse(localStorage.getItem(storeKey) || '{}') } catch { return {} } }
 function save(patch) { localStorage.setItem(storeKey, JSON.stringify({ ...state(), ...patch })) }
 const delay = (value) => new Promise((resolve) => window.setTimeout(() => resolve(value), 120))
 const date = (value) => value ? new Date(value).toLocaleDateString('ko-KR') : '-'
+function weekStart(value) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return new Date(`${value}T00:00:00+09:00`)
+  const match = String(value || '').match(/^(\d{4})-W(\d{2})$/)
+  if (!match) return null
+  const year = Number(match[1]); const week = Number(match[2]); const januaryFourth = new Date(`${year}-01-04T00:00:00+09:00`); const monday = new Date(januaryFourth); monday.setDate(januaryFourth.getDate() - ((januaryFourth.getDay() + 6) % 7) + (week - 1) * 7); return monday
+}
+function filterWeek(rows, week) { const start = weekStart(week); if (!start) return rows; const end = new Date(start); end.setDate(end.getDate() + 7); return rows.filter((item) => { const submitted = new Date(item.created_at || item.submitted_at); return submitted >= start && submitted < end }) }
 
 function demoSurveys() {
   const current = state(); const overrides = current.surveys || {}; const currentTeams = current.teams || teams
@@ -75,14 +83,14 @@ export async function getAdminMembers() {
 }
 export async function getAdminMember(id) { return (await getAdminMembers()).find((item) => String(item.id) === String(id)) || null }
 export async function getAdminMemberSurveys(id) { const member = await getAdminMember(id); return (await getAdminSurveys()).filter((item) => String(item.creator_id) === String(id) || item.creator_nickname === member?.nickname) }
-export async function getAdminMemberResponses(id) {
+export async function getAdminMemberResponses(id, week) {
   if (!supabase) {
     const all = await Promise.all(demoSurveys().slice(0, 4).map((survey) => getAdminResponses(survey.id)))
-    return all.flat().filter((item) => String(item.respondent_id) === String(id)).map((item) => ({ ...item, survey_title: demoSurveys().find((survey) => survey.id === item.survey_id)?.title }))
+    return filterWeek(all.flat().filter((item) => String(item.respondent_id) === String(id)).map((item) => ({ ...item, survey_title: demoSurveys().find((survey) => survey.id === item.survey_id)?.title })), week)
   }
   const { data, error } = await supabase.from('responses').select('*, survey:surveys(title)').eq('respondent_id', id).order('created_at', { ascending: false })
   if (error) throw error
-  return data.map((item) => ({ ...item, survey_title: item.survey?.title }))
+  return filterWeek(data.map((item) => ({ ...item, survey_title: item.survey?.title })), week)
 }
 export async function getAdminTeams() {
   if (!supabase) return delay((state().teams || teams))
@@ -92,14 +100,23 @@ export async function getAdminTeams() {
 }
 export async function getAdminTeam(id) { return (await getAdminTeams()).find((item) => String(item.id) === String(id)) || null }
 export async function getAdminTeamSurveys(id) { const team = await getAdminTeam(id); return (await getAdminSurveys()).filter((item) => String(item.team_id) === String(id) || item.owner_name === team?.name) }
-export async function getAdminLeaderboard() {
-  if (!supabase) return delay([...members].sort((a, b) => b.weekly_count - a.weekly_count).map((item, index, all) => ({ ...item, rank: index && item.weekly_count === all[index - 1].weekly_count ? all[index - 1].rank : index + 1, score: item.weekly_count, last_active: `2026-09-${26 - (index % 5)}` })))
+export async function getAdminLeaderboard(_week) {
+  if (!supabase) return delay([...(state().members || members)].sort((a, b) => b.weekly_count - a.weekly_count).map((item, index, all) => ({ ...item, rank: index && item.weekly_count === all[index - 1].weekly_count ? all[index - 1].rank : index + 1, score: item.weekly_count, last_active: `2026-09-${26 - (index % 5)}` })))
   const { data, error } = await supabase.rpc('admin_get_leaderboard')
   if (error) throw error
   return data.map((item, index, all) => ({ ...item, rank: index && Number(item.score) === Number(all[index - 1].score) ? all[index - 1].rank : index + 1 }))
 }
 export async function getAdminRewards() {
-  if (!supabase) return delay(state().rewards || rewards)
+  if (!supabase) {
+    const current = state()
+    const leaders = (await getAdminLeaderboard()).filter((entry) => entry.status === 'active' && entry.role !== 'STAFF').slice(0, 3)
+    const sent = current.rewardSent || {}
+    return delay((current.rewards || rewards).map((item) => ({
+      ...item,
+      first: leaders[0]?.nickname || '-', second: leaders[1]?.nickname || '-', third: leaders[2]?.nickname || '-',
+      sent_count: [1, 2, 3].filter((rank) => sent[`${item.week}:${rank}`]).length,
+    })))
+  }
   const { data, error } = await supabase.from('reward_weeks').select('*').order('week', { ascending: false })
   if (error) throw error
   return data.map((item) => ({ ...item, range: item.range_label, status: ['응답 확인', '순위 확정', '동점 추첨', '대상 확정', '발송 기록'][item.step - 1] }))
@@ -108,9 +125,11 @@ export async function getAdminReward(week) {
   const item = (await getAdminRewards()).find((entry) => entry.week === week)
   if (!item) return null
   if (!supabase) return { ...item, winners: (await getAdminLeaderboard()).filter((entry) => entry.status === 'active' && entry.role !== 'STAFF').slice(0, 3) }
-  const { data: winners, error } = await supabase.from('reward_winners').select('*, user:users(nickname)').eq('week', week).order('rank')
+  const { data: winners, error } = await supabase.from('reward_winners').select('*, user:users(nickname,email)').eq('week', week).order('rank')
   if (error) throw error
-  return { ...item, winners: winners.map((entry) => ({ ...entry, nickname: entry.user?.nickname, score: '-' })) }
+  const mappedWinners = winners.map((entry) => ({ ...entry, nickname: entry.user?.nickname, email: entry.user?.email, reward: entry.reward_text, sentAt: entry.sent_at, score: '-' }))
+  mappedWinners.forEach((entry) => { if (entry.sentAt) rewardSentCache.set(`${week}:${entry.rank}`, { reward: entry.reward, sentAt: entry.sentAt }) })
+  return { ...item, winners: mappedWinners }
 }
 export async function getAdminLogs() {
   if (!supabase) return delay([...(state().logs || []), ...seedLogs])
@@ -123,6 +142,7 @@ export async function runAdminAction({ action, targetType, targetId, targetName,
   if (supabase) {
     const { data, error } = await supabase.rpc('admin_perform_action', { action_name: action, target_type: targetType, target_id: targetId, reason_category: reason, action_memo: memo, action_payload: { ...payload, target_name: targetName }, idempotency_key: crypto.randomUUID() })
     if (error) throw error
+    window.dispatchEvent(new CustomEvent('uniform:admin-change', { detail: { action, targetType, targetId } }))
     return data
   }
   const current = state()
@@ -131,24 +151,41 @@ export async function runAdminAction({ action, targetType, targetId, targetName,
   const surveyOverrides = current.surveys || {}
   let beforeValue = ''
   let afterValue = ''
-  if (action === 'survey_remove' || action === 'survey_restore') { const removed = action === 'survey_remove'; beforeValue = removed ? '게시' : '운영 삭제'; afterValue = removed ? '운영 삭제' : '게시'; surveyOverrides[targetId] = { ...(surveyOverrides[targetId] || {}), status: removed ? 'removed' : 'closed', removal_reason: removed ? reason : null, removed_at: removed ? new Date().toISOString() : null } }
-  if (['member_restrict', 'member_unrestrict', 'member_rename', 'member_staff'].includes(action)) nextMembers = nextMembers.map((item) => { if (item.id !== targetId) return item; beforeValue = item.status; if (action === 'member_restrict') return { ...item, status: 'restricted', restriction_category: reason, restricted_until: payload.until || null }; if (action === 'member_unrestrict') return { ...item, status: 'active', restriction_category: null, restricted_until: null }; if (action === 'member_rename') return { ...item, nickname: `회원${Math.floor(10000 + Math.random() * 90000)}` }; return { ...item, role: item.role === 'STAFF' ? 'USER' : 'STAFF' } })
+  if (action === 'response_exclude' && current.excludedResponses?.[targetId]) return delay({ ok: true, duplicate: true })
+  if (action === 'survey_remove' || action === 'survey_restore') {
+    const removed = action === 'survey_remove'
+    const sourceSurvey = demoSurveys().find((item) => String(item.id) === String(targetId))
+    const restoredStatus = sourceSurvey?.deadline && sourceSurvey.deadline >= new Date().toISOString().slice(0, 10) ? 'active' : 'closed'
+    beforeValue = removed ? sourceSurvey?.status || '게시' : '운영 삭제'
+    afterValue = removed ? '운영 삭제' : restoredStatus === 'active' ? '모집 중' : '마감'
+    surveyOverrides[targetId] = { ...(surveyOverrides[targetId] || {}), status: removed ? 'removed' : restoredStatus, removal_reason: removed ? reason : null, removal_memo: removed ? memo : null, removed_at: removed ? new Date().toISOString() : null, removed_by_name: removed ? '김유니' : null }
+  }
+  let generatedName = ''
+  if (['member_restrict', 'member_unrestrict', 'member_rename', 'member_staff'].includes(action)) nextMembers = nextMembers.map((item) => { if (item.id !== targetId) return item; beforeValue = action === 'member_staff' ? item.role : item.status; if (action === 'member_restrict') { afterValue = '이용 제한'; return { ...item, status: 'restricted', restriction_category: reason, restricted_until: payload.until || null } } if (action === 'member_unrestrict') { afterValue = '활성'; return { ...item, status: 'active', restriction_category: null, restricted_until: null } } if (action === 'member_rename') { generatedName = `회원${Math.floor(10000 + Math.random() * 90000)}`; afterValue = generatedName; return { ...item, nickname: generatedName } } afterValue = item.role === 'STAFF' ? '일반 회원' : '운영팀'; return { ...item, role: item.role === 'STAFF' ? 'USER' : 'STAFF' } })
   if (action === 'team_rename') {
     const renamed = `팀${Math.floor(10000 + Math.random() * 90000)}`
+    beforeValue = targetName; afterValue = renamed
     nextTeams = nextTeams.map((item) => item.id === targetId ? { ...item, name: renamed } : item)
     demoSurveys().filter((survey) => survey.owner_name === targetName).forEach((survey) => { surveyOverrides[survey.id] = { ...(surveyOverrides[survey.id] || {}), owner_name: renamed } })
     try { const userTeam = JSON.parse(localStorage.getItem('uni-form-team') || 'null'); if (userTeam && (userTeam.id === targetId || userTeam.name === targetName)) localStorage.setItem('uni-form-team', JSON.stringify({ ...userTeam, name: renamed })) } catch { /* user team storage is optional */ }
   }
-  if (action === 'response_exclude') {
+  if (action === 'response_exclude' && !current.excludedResponses?.[targetId]) {
     const excluded = { ...(current.excludedResponses || {}), [targetId]: true }
+    const responseOwner = targetId.split('-res-')[1]
+    const responseIndex = Math.max(0, Number(responseOwner || 1) - 1)
+    const respondentId = members[responseIndex % members.length]?.id
+    nextMembers = nextMembers.map((item) => item.id === respondentId ? { ...item, weekly_count: Math.max(0, Number(item.weekly_count || 0) - 1), response_count: Math.max(0, Number(item.response_count || 0) - 1) } : item)
+    beforeValue = '정상'; afterValue = '운영 제외'
     save({ excludedResponses: excluded })
   }
-  const log = { id: crypto.randomUUID(), created_at: new Date().toISOString(), actor_name: '김유니', action: action.replaceAll('_', ' '), target_name: targetName, reason, memo, before_value: beforeValue, after_value: afterValue }
+  const log = { id: crypto.randomUUID(), created_at: new Date().toISOString(), actor_name: '김유니', action, target_type: targetType, target_id: targetId, target_name: targetName, reason, memo, before_value: beforeValue, after_value: afterValue }
   save({ members: nextMembers, teams: nextTeams, surveys: surveyOverrides, logs: [log, ...(current.logs || [])] })
-  return delay({ ok: true })
+  window.dispatchEvent(new CustomEvent('uniform:admin-change', { detail: { action, targetType, targetId } }))
+  return delay({ ok: true, nickname: generatedName || undefined })
 }
 
 export async function recordResponseView(response, contextLabel = '응답') {
+  if (!response?.id) return { ok: true, duplicate: true }
   if (supabase) {
     const { data, error } = await supabase.rpc('admin_record_response_view', { target_response_id: response.id, idempotency_key: crypto.randomUUID() })
     if (error) throw error
@@ -178,11 +215,12 @@ export async function markRewardSent(week, rank, { reward, sentAt }) {
   if (supabase) {
     const { data, error } = await supabase.rpc('admin_mark_reward_sent', { target_week: week, target_rank: rank, reward_text: reward, sent_at_value: sentAt, idempotency_key: crypto.randomUUID() })
     if (error) throw error
+    rewardSentCache.set(`${week}:${rank}`, { reward, sentAt })
     return data
   }
-  const current = state(); const sent = { ...(current.rewardSent || {}), [`${week}:${rank}`]: { reward, sentAt } }; save({ rewardSent: sent, logs: [{ id: crypto.randomUUID(), created_at: new Date().toISOString(), actor_name: '김유니', action: '보상 발송 완료', target_name: `${week} ${rank}위`, reason: '주차 정산', memo: reward, before_value: '미발송', after_value: sentAt }, ...(current.logs || [])] }); return delay(sent)
+  const current = state(); const sent = { ...(current.rewardSent || {}), [`${week}:${rank}`]: { reward, sentAt } }; const allSent = [1, 2, 3].every((winnerRank) => sent[`${week}:${winnerRank}`]); const nextRewards = (current.rewards || rewards).map((item) => item.week === week ? { ...item, step: 5, status: allSent ? '발송 완료' : '발송 기록' } : item); save({ rewardSent: sent, rewards: nextRewards, logs: [{ id: crypto.randomUUID(), created_at: new Date().toISOString(), actor_name: '김유니', action: 'reward_sent', target_type: 'reward_week', target_id: week, target_name: `${week} ${rank}위`, reason: '주차 정산', memo: reward, before_value: '미발송', after_value: sentAt }, ...(current.logs || [])] }); return delay(sent)
 }
-export function getRewardSent(week, rank) { return state().rewardSent?.[`${week}:${rank}`] || null }
+export function getRewardSent(week, rank) { return rewardSentCache.get(`${week}:${rank}`) || state().rewardSent?.[`${week}:${rank}`] || null }
 
 export async function getRewardNotice() {
   if (!supabase) return delay(state().notice || { title: '매주 TOP 3 보상 안내', body: '매주 가장 많은 설문에 참여한 상위 3명에게 보상을 드립니다.', tiers: ['1위 · 모바일 상품권 3만원', '2위 · 모바일 상품권 2만원', '3위 · 모바일 상품권 1만원'], tieRule: '동점자는 무작위 추첨으로 선정합니다.' })

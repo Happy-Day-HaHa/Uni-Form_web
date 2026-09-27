@@ -52,6 +52,7 @@ export default function SurveyManage() {
   const target = Math.max(1, Number(survey.target_count || 1))
   const progress = Math.min(100, Math.round(responses / target * 100))
   const isDraft = survey.status === 'draft'
+  const isRemoved = survey.status === 'removed'
   const lifecycleStatus = getSurveyLifecycleStatus(survey)
   const isClosed = lifecycleStatus === 'closed'
 
@@ -70,8 +71,8 @@ export default function SurveyManage() {
 
     <section className="survey-manage__actions"><header><h2>설문 관리</h2><p>이 설문에 필요한 작업만 모아두었습니다.</p></header><div>
       {!isDraft && <Link className="survey-manage-action survey-manage-action--primary" to={`/surveys/${survey.id}/results`}><span>결과 확인</span><small>모인 응답과 문항별 결과를 확인합니다.</small><b>→</b></Link>}
-      <button className="survey-manage-action" type="button" onClick={share}><span>설문 링크 복사</span><small>참여자에게 공유할 주소를 복사합니다.</small><b>→</b></button>
-      {!isDraft && !isClosed && <button className="survey-manage-action" type="button" onClick={() => setCloseOpen(true)}><span>직접 마감</span><small>새 응답 모집을 종료합니다.</small><b>→</b></button>}
+      {!isRemoved && <button className="survey-manage-action" type="button" onClick={share}><span>설문 링크 복사</span><small>참여자에게 공유할 주소를 복사합니다.</small><b>→</b></button>}
+      {!isDraft && !isClosed && !isRemoved && <button className="survey-manage-action" type="button" onClick={() => setCloseOpen(true)}><span>직접 마감</span><small>새 응답 모집을 종료합니다.</small><b>→</b></button>}
     </div></section>
     <Modal open={closeOpen} title="설문을 직접 마감할까요?" onClose={() => setCloseOpen(false)}><p>마감한 설문은 다시 열 수 없습니다. 같은 주제로 다시 모집하려면 재업로드해야 하며, 마감 30일 후 설문 원문은 파기됩니다.</p><div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={() => setCloseOpen(false)}>취소</button><button className="ui-button ui-button--danger" onClick={closeSurvey}>마감하기</button></div></Modal>
     {toast && <div className="service-toast" role="status">✓ {toast}</div>}
