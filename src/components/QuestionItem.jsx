@@ -1,3 +1,4 @@
+// error: true면 기본 문구("이 문항에 응답해주세요."), 문자열이면 그 문구(서버 검증 메시지 등)를 보여준다.
 export default function QuestionItem({ question, value, onChange, index, error = false, etcValue = '', onEtcChange }) {
   const name = `question-${question.id}`
   const number = String(index + 1).padStart(2, '0')
@@ -17,6 +18,6 @@ export default function QuestionItem({ question, value, onChange, index, error =
     {question.type === 'scale' && <div className="scale-grid">{Array.from({ length: question.max - question.min + 1 }, (_, offset) => question.min + offset).map((option) => <label key={option}><input type="radio" name={name} value={option} checked={Number(value) === option} onChange={() => onChange(option)} /><span>{option}</span></label>)}</div>}
     {question.type === 'text' && <input type="text" maxLength={50} value={value || ''} onChange={(event) => onChange(event.target.value)} placeholder="자유롭게 입력해주세요. (최대 50자)" />}
     {question.type === 'long' && <textarea rows="6" maxLength={500} value={value || ''} onChange={(event) => onChange(event.target.value)} placeholder="자유롭게 서술해주세요. (최대 500자)" />}
-    {error && <p id={errorId} className="question__error" role="alert">이 문항에 응답해주세요.</p>}
+    {error && <p id={errorId} className="question__error" role="alert">{typeof error === 'string' ? error : '이 문항에 응답해주세요.'}</p>}
   </fieldset>
 }

@@ -71,7 +71,8 @@ function toApiQuestion(question) {
 function toKstDate(isoString) { return isoString ? getKstDateString(new Date(isoString)) : '' }
 
 // SurveyResponseDto / SurveyDetailResponseDto / SurveyListItemResponseDto → 화면 설문
-// category·estimated_minutes·response_count는 백엔드에 아직 없다.
+// category·estimatedMinutes는 작성자가 입력하지 않았으면 null. 응답 수(responseCount)는 현재 목록·상세 응답에 없어서
+// 올 때만 채우고, 없으면 undefined로 둔다(화면은 0으로 꾸미지 않고 숨긴다).
 export function fromApiSurvey(survey) {
   return {
     id: survey.id,
@@ -79,6 +80,9 @@ export function fromApiSurvey(survey) {
     description: survey.description || '',
     status: STATUS_FROM_API[survey.status] || String(survey.status || '').toLowerCase(),
     target_count: survey.targetCount ?? null,
+    category: survey.category ?? null,
+    estimated_minutes: survey.estimatedMinutes ?? null,
+    ...(survey.responseCount !== undefined ? { response_count: survey.responseCount } : {}),
     deadline: toKstDate(survey.deadlineAt),
     created_at: survey.publishedAt || survey.createdAt || null,
     owner_type: survey.ownerType ?? null,
@@ -98,9 +102,17 @@ export function draftToForm(survey) {
     title: survey.title || '',
     description: survey.description || '',
     targetCount: survey.targetCount ?? 50,
+    category: survey.category ?? '',
+    estimatedMinutes: survey.estimatedMinutes ?? '',
     deadline: toKstDate(survey.deadlineAt),
     questions: (survey.questions || []).map(fromApiQuestion),
   }
+}
+
+function toPositiveInt(value) {
+  if (value === '' || value === null || value === undefined) return null
+  const number = Number(value)
+  return Number.isInteger(number) && number > 0 ? number : null
 }
 
 function formToDraftPatch(form, version) {
@@ -110,6 +122,9 @@ function formToDraftPatch(form, version) {
     title: form.title,
     description: form.description || null,
     targetCount: Number.isInteger(targetCount) && targetCount > 0 ? targetCount : null,
+    // 둘 다 선택 입력. 비우면 null로 보내 서버 값도 지운다.
+    category: form.category?.trim() || null,
+    estimatedMinutes: toPositiveInt(form.estimatedMinutes),
     deadlineDate: form.deadline || null,
     questions: form.questions.map(toApiQuestion),
   }
@@ -120,21 +135,29 @@ function requireSignedIn(message) {
 }
 
 // ── 설문 목록 / 상세 ──────────────────────────────────────────────────────
-export async function getSurveyPage({ cursor, limit = 20 } = {}) {
+// 목록 필터(서버에서 거른다). estimatedDuration: 'UNDER_3' | 'UNDER_5' | 'OVER_6', 보내지 않으면 전체.
+// category는 정확히 일치하는 값만 찾는다. 예상 소요시간을 입력하지 않은 설문은 소요시간 필터에서 빠진다.
+function listParams({ cursor, limit, category, estimatedDuration }) {
   const params = new URLSearchParams({ limit: String(limit) })
   if (cursor) params.set('cursor', cursor)
-  const data = await apiClient.get(`/surveys?${params}`)
+  if (category) params.set('category', category)
+  if (estimatedDuration) params.set('estimatedDuration', estimatedDuration)
+  return params
+}
+
+export async function getSurveyPage({ cursor, limit = 20, category, estimatedDuration } = {}) {
+  const data = await apiClient.get(`/surveys?${listParams({ cursor, limit, category, estimatedDuration })}`)
   return { items: data.items.map(fromApiSurvey), nextCursor: data.nextCursor }
 }
 
-// 목록 화면이 클라이언트에서 검색·필터를 하므로 모집 중 설문을 모두 받아온다(최대 maxPages쪽).
-export async function getSurveys({ maxPages = 10 } = {}) {
+// 목록 화면이 검색어는 클라이언트에서 거르므로 조건에 맞는 모집 중 설문을 모두 받아온다(최대 maxPages쪽).
+export async function getSurveys({ maxPages = 10, category, estimatedDuration } = {}) {
   if (!isApiConfigured) return getAllDemoSurveys().filter(isSurveyOpen)
   requireSignedIn('로그인하면 모집 중인 설문을 볼 수 있어요.')
   const surveys = []
   let cursor = null
   for (let page = 0; page < maxPages; page += 1) {
-    const result = await getSurveyPage({ cursor, limit: 50 })
+    const result = await getSurveyPage({ cursor, limit: 50, category, estimatedDuration })
     surveys.push(...result.items)
     cursor = result.nextCursor
     if (!cursor) break
@@ -226,6 +249,8 @@ function fromApiMySurvey(survey, index) {
     can_manage: survey.canManage ?? null,
     team_disbanded_at: survey.teamDisbandedAt ?? null,
     question_count: survey.questionCount,
+    category: survey.category ?? null,
+    estimated_minutes: survey.estimatedMinutes ?? null,
     response_count: survey.responseCount,
     target_count: survey.targetCount,
     deadline: toKstDate(survey.deadlineAt),

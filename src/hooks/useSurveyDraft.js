@@ -6,8 +6,8 @@ const AUTOSAVE_DELAY = 800
 // 저장 여부 판단용 서명. 서버에 저장되는 필드만 보고, 문항 id/serverId는 빼서
 // 저장 후 serverId만 채워 넣는 변경으로는 다시 저장하지 않는다.
 function signatureOf(form) {
-  const { title, description, targetCount, deadline, questions } = form
-  return JSON.stringify({ title, description, targetCount: Number(targetCount), deadline, questions: questions.map(({ id: _id, serverId: _serverId, ...rest }) => rest) })
+  const { title, description, targetCount, deadline, category, estimatedMinutes, questions } = form
+  return JSON.stringify({ title, description, targetCount: Number(targetCount), deadline, category: category ?? '', estimatedMinutes: estimatedMinutes ?? '', questions: questions.map(({ id: _id, serverId: _serverId, ...rest }) => rest) })
 }
 
 function hasContent(form) {

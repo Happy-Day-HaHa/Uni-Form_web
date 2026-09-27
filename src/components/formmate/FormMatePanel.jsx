@@ -56,7 +56,7 @@ export default function FormMatePanel({ value, onChange, onCreateDraft, onSend, 
     <header><div><h2>FormMate</h2><p>설문 제작을 함께 도와드릴게요.</p></div></header>
     <div className="formmate-agent__messages" aria-live="polite">{messages.map((item, index) => <div className="formmate-thread-item" key={`${item.role}-${index}`}><div className={`formmate-message formmate-message--${item.role}`}><p>{item.text}</p></div>{item.changes?.length > 0 && <FormMateChangeCards changes={item.changes} busy={applying} onApply={(ids) => onApplyChanges?.(index, ids)} onRevert={(ids) => onRevertChanges?.(index, ids)} />}</div>)}
       {messages.length <= 1 && <div className="formmate-examples"><span>이렇게 물어보세요</span>{['Z세대의 소비 트렌드에 대한 설문을 만들어줘', '대학생의 학습 플랫폼 이용 경험에 대해 10문항 정도 구성해줘', '3분 이내에 끝나는 간단한 만족도 조사를 만들어줘'].map((item) => <button key={item} type="button" onClick={() => onChange(item)}>“{item}”</button>)}</div>}
-      {draftSummary && messages.length > 1 && <button className="formmate-draft-card" type="button" onClick={draftSummary.onOpen}><div><b>{draftSummary.title || '제목 없는 설문'}</b><small>{draftSummary.count}문항 · 약 {draftSummary.minutes}분 소요</small></div><em>초안</em></button>}
+      {draftSummary && messages.length > 1 && <button className="formmate-draft-card" type="button" onClick={draftSummary.onOpen}><div><b>{draftSummary.title || '제목 없는 설문'}</b><small>{draftSummary.count}문항{draftSummary.minutes ? ` · 약 ${draftSummary.minutes}분 소요` : ''}</small></div><em>초안</em></button>}
       {applying && <div className="formmate-applying"><i /><i /><i /> {busyLabel}</div>}
     </div>
     {suggestions.length > 0 && <div className="formmate-agent__suggestions">{suggestions.map((item) => <button type="button" key={item} onClick={() => onChange(item)}>{item}</button>)}</div>}
