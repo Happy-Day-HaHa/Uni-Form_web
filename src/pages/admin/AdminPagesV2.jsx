@@ -117,7 +117,7 @@ function SectionTabs({ current }) { const navigate = useNavigate(); return <Admi
 
 export function AdminRewards() {
   const load = useLoad(getAdminRewards, []); if (load.loading) return <Loading />; if (load.error) return <ErrorState message={load.error} retry={load.reload} />
-  return <><PageHeader eyebrow="REWARDS" title="주차별 보상 정산" description="끝난 주차를 최신순으로 확인하고 순서대로 정산하세요." /><SectionTabs current="rewards" />{load.data.length ? <Table headers={['주차', '상태', '1위', '2위', '3위', '발송 수']} >{load.data.map((item) => <tr key={item.week} onClick={() => window.location.assign(`/admin/rewards/${item.week}`)}><td><b>{item.week}</b><small>{item.range}</small></td><td>{item.step === 5 ? '발송 완료' : item.step === 1 ? '정산 전' : '정산 중'}</td><td>{item.first || '-'}</td><td>{item.second || '-'}</td><td>{item.third || '-'}</td><td>{item.sent_count || 0}/3</td></tr>)}</Table> : <Empty title="정산할 지난 주차가 없어요" />}</>
+  return <><PageHeader eyebrow="REWARDS" title="주차별 보상 정산" description="끝난 주차를 최신순으로 확인하고 순서대로 정산하세요." /><SectionTabs current="rewards" />{load.data.length ? <Table headers={['주차', '상태', '1위', '2위', '3위', '발송 수']} >{load.data.map((item) => <tr key={item.week} onClick={() => window.location.assign(`/admin/rewards/${item.week}`)}><td><b>{item.week}</b><small>{item.range}</small></td><td>{item.step === 5 ? (item.sent_count >= [item.first, item.second, item.third].filter(Boolean).length ? '발송 완료' : '발송 기록 중') : item.step === 1 ? '정산 전' : '정산 중'}</td><td>{item.first || '-'}</td><td>{item.second || '-'}</td><td>{item.third || '-'}</td><td>{item.sent_count || 0}/3</td></tr>)}</Table> : <Empty title="정산할 지난 주차가 없어요" />}</>
 }
 
 export function AdminRewardDetail() {
