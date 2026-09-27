@@ -14,7 +14,8 @@ const demoStorageKey = 'uni-form-created-surveys'
 export function getDemoCreatedSurveys() {
   try { return JSON.parse(localStorage.getItem(demoStorageKey) || '[]') } catch { return [] }
 }
-export function getAllDemoSurveys() { return [...getDemoCreatedSurveys(), ...demoSurveys] }
+function getAdminSurveyOverrides() { try { return JSON.parse(localStorage.getItem('uniform-admin-demo') || '{}').surveys || {} } catch { return {} } }
+export function getAllDemoSurveys() { const overrides = getAdminSurveyOverrides(); return [...getDemoCreatedSurveys(), ...demoSurveys].map((survey) => ({ ...survey, ...(overrides[survey.id] || {}) })) }
 export function isDemoSurveyFixture(surveyId) { return demoSurveys.some((survey) => survey.id === surveyId) }
 
 export async function getSurveys() {

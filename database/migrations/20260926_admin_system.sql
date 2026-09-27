@@ -87,17 +87,21 @@ create table if not exists public.reward_winners (
   week text not null references public.reward_weeks(week) on delete cascade,
   rank integer not null check (rank between 1 and 3),
   user_id uuid not null references public.users(id),
+  reward_text text,
   sent_at timestamptz,
   primary key (week, rank)
 );
+alter table public.reward_winners add column if not exists reward_text text;
 create table if not exists public.reward_notice (
   id boolean primary key default true check (id),
   title text not null,
   body text not null,
   tiers jsonb not null default '[]'::jsonb,
+  tie_rule_text text not null default '',
   updated_at timestamptz not null default now(),
   updated_by uuid references public.users(id)
 );
+alter table public.reward_notice add column if not exists tie_rule_text text not null default '';
 
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public as $$
@@ -181,10 +185,14 @@ begin
     if action_name = 'survey_remove' then
       update public.surveys set status='removed', removal_reason=reason_category, removed_at=now(), removed_by=actor.id, disposal_at=coalesce(disposal_at, now()+interval '30 days'), updated_at=now() where id=target_id::uuid and status in ('active','closed','archived'); after_text := 'removed';
     else
-      update public.surveys set status='closed', removal_reason=null, removed_at=null, removed_by=null, updated_at=now() where id=target_id::uuid and status='removed' and (disposal_at is null or disposal_at > now()); after_text := 'closed';
+      if exists(select 1 from public.surveys where id=target_id::uuid and disposal_at is not null and disposal_at<=now()) then raise exception 'PURGED'; end if;
+      update public.surveys set status=case when deadline >= (now() at time zone 'Asia/Seoul')::date then 'active' else 'closed' end, removal_reason=null, removed_at=null, removed_by=null, updated_at=now() where id=target_id::uuid and status='removed' returning status into after_text;
     end if;
   elsif action_name = 'response_exclude' then
+    if exists(select 1 from public.responses r join public.surveys s on s.id=r.survey_id where r.id=target_id::uuid and s.disposal_at is not null and s.disposal_at<=now()) then raise exception 'PURGED'; end if;
+    if exists(select 1 from public.responses r join public.reward_weeks w on w.week=to_char(r.created_at at time zone 'Asia/Seoul','IYYY-"W"IW') where r.id=target_id::uuid and w.locked_at is not null) then raise exception 'WEEK_LOCKED'; end if;
     select respondent_id, excluded::text into uid, before_text from public.responses where id=target_id::uuid for update;
+    if before_text='true' then return jsonb_build_object('ok',true,'duplicate',true); end if;
     update public.responses set excluded=true, excluded_at=now(), excluded_by=actor.id, exclusion_reason=reason_category where id=target_id::uuid and not excluded;
     after_text := 'true';
   elsif action_name in ('member_restrict','member_unrestrict','member_rename','member_staff') then
@@ -217,6 +225,40 @@ begin
 end;
 $$;
 
+create or replace function public.admin_record_response_view(target_response_id uuid, idempotency_key text)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare actor public.users%rowtype; response_name text;
+begin
+  select * into actor from public.users where id=auth.uid();
+  if actor.role<>'ADMIN' or actor.account_status<>'active' then raise exception 'FORBIDDEN' using errcode='42501'; end if;
+  if exists(select 1 from public.admin_action_logs where request_key=idempotency_key) then return jsonb_build_object('ok',true,'duplicate',true); end if;
+  select s.title||' · '||coalesce(u.nickname,'익명 응답') into response_name from public.responses r join public.surveys s on s.id=r.survey_id left join public.users u on u.id=r.respondent_id where r.id=target_response_id;
+  if response_name is null then raise exception 'NOT_FOUND'; end if;
+  insert into public.admin_action_logs(request_key,actor_id,actor_name,action,target_type,target_id,target_name,reason,memo,after_value,email_requested)
+  values(idempotency_key,actor.id,coalesce(actor.nickname,actor.email),'response_view','response',target_response_id::text,response_name,'운영 확인','응답 원문 열람','열람',false);
+  return jsonb_build_object('ok',true);
+end;
+$$;
+
+create or replace function public.admin_mark_reward_sent(target_week text, target_rank integer, reward_text text, sent_at_value timestamptz, idempotency_key text)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare actor public.users%rowtype; winner public.reward_winners%rowtype; target_email text;
+begin
+  select * into actor from public.users where id=auth.uid();
+  if actor.role<>'ADMIN' or actor.account_status<>'active' then raise exception 'FORBIDDEN' using errcode='42501'; end if;
+  if exists(select 1 from public.admin_action_logs where request_key=idempotency_key) then return jsonb_build_object('ok',true,'duplicate',true); end if;
+  select * into winner from public.reward_winners where week=target_week and rank=target_rank for update;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  if winner.sent_at is not null then return jsonb_build_object('ok',true,'duplicate',true); end if;
+  update public.reward_winners set reward_text=$3,sent_at=sent_at_value where week=target_week and rank=target_rank returning * into winner;
+  select email into target_email from public.users where id=winner.user_id;
+  insert into public.admin_action_logs(request_key,actor_id,actor_name,action,target_type,target_id,target_name,reason,memo,before_value,after_value)
+  values(idempotency_key,actor.id,coalesce(actor.nickname,actor.email),'reward_sent','reward_week',target_week||':'||target_rank,target_week||' '||target_rank||'위','보상 발송 완료',reward_text,'미발송',sent_at_value::text);
+  if target_email is not null then insert into public.email_outbox(request_key,recipient_user_id,recipient_email,template,payload) values(idempotency_key,winner.user_id,target_email,'reward_sent',jsonb_build_object('week',target_week,'rank',target_rank,'reward',reward_text,'sentAt',sent_at_value)); end if;
+  return jsonb_build_object('ok',true,'week',target_week,'rank',target_rank,'sentAt',sent_at_value);
+end;
+$$;
+
 create or replace function public.admin_advance_reward(target_week text, idempotency_key text)
 returns public.reward_weeks language plpgsql security definer set search_path = public as $$
 declare current_week public.reward_weeks%rowtype; week_start timestamptz; week_end timestamptz;
@@ -245,15 +287,16 @@ begin
 end;
 $$;
 
-create or replace function public.admin_save_reward_notice(notice_title text, notice_body text, notice_tiers jsonb, reason_category text, action_memo text, idempotency_key text)
+drop function if exists public.admin_save_reward_notice(text,text,jsonb,text,text,text);
+create or replace function public.admin_save_reward_notice(notice_title text, notice_body text, notice_tiers jsonb, tie_rule_text_value text, reason_category text, action_memo text, idempotency_key text)
 returns public.reward_notice language plpgsql security definer set search_path = public as $$
 declare saved public.reward_notice%rowtype;
 begin
   if not public.is_admin() then raise exception 'FORBIDDEN' using errcode='42501'; end if;
   if trim(coalesce(action_memo,''))='' then raise exception '메모는 필수입니다.'; end if;
   if exists(select 1 from public.admin_action_logs where request_key=idempotency_key) then select * into saved from public.reward_notice where id=true; return saved; end if;
-  insert into public.reward_notice(id,title,body,tiers,updated_at,updated_by) values(true,notice_title,notice_body,notice_tiers,now(),auth.uid())
-  on conflict(id) do update set title=excluded.title,body=excluded.body,tiers=excluded.tiers,updated_at=now(),updated_by=auth.uid() returning * into saved;
+  insert into public.reward_notice(id,title,body,tiers,tie_rule_text,updated_at,updated_by) values(true,notice_title,notice_body,notice_tiers,tie_rule_text_value,now(),auth.uid())
+  on conflict(id) do update set title=excluded.title,body=excluded.body,tiers=excluded.tiers,tie_rule_text=excluded.tie_rule_text,updated_at=now(),updated_by=auth.uid() returning * into saved;
   insert into public.admin_action_logs(request_key,actor_id,actor_name,action,target_type,target_id,target_name,reason,memo,after_value)
   select idempotency_key,u.id,coalesce(u.nickname,u.email),'reward_notice_update','reward_notice','default','보상 안내',reason_category,action_memo,notice_title from public.users u where u.id=auth.uid();
   return saved;
@@ -298,8 +341,12 @@ grant execute on function public.admin_get_summary() to authenticated;
 grant execute on function public.admin_get_leaderboard() to authenticated;
 grant execute on function public.admin_perform_action(text,text,text,text,text,jsonb,text) to authenticated;
 revoke all on function public.admin_advance_reward(text,text) from public;
-revoke all on function public.admin_save_reward_notice(text,text,jsonb,text,text,text) from public;
+revoke all on function public.admin_save_reward_notice(text,text,jsonb,text,text,text,text) from public;
 grant execute on function public.admin_advance_reward(text,text) to authenticated;
-grant execute on function public.admin_save_reward_notice(text,text,jsonb,text,text,text) to authenticated;
+grant execute on function public.admin_save_reward_notice(text,text,jsonb,text,text,text,text) to authenticated;
+revoke all on function public.admin_record_response_view(uuid,text) from public;
+revoke all on function public.admin_mark_reward_sent(text,integer,text,timestamptz,text) from public;
+grant execute on function public.admin_record_response_view(uuid,text) to authenticated;
+grant execute on function public.admin_mark_reward_sent(text,integer,text,timestamptz,text) to authenticated;
 revoke all on function public.refresh_my_restriction() from public;
 grant execute on function public.refresh_my_restriction() to authenticated;

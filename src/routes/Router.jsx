@@ -20,7 +20,7 @@ import AdminRoute from './AdminRoute'
 import AdminLayout from '../components/admin/AdminLayout'
 import AdminForbidden from '../pages/AdminForbidden'
 import Restricted from '../pages/Restricted'
-import { AdminHome, AdminLeaderboard, AdminLogs, AdminMemberDetail, AdminMemberResponses, AdminMembers, AdminRewardDetail, AdminRewardNotice, AdminRewards, AdminSurveyDetail, AdminSurveys, AdminTeamDetail, AdminTeams } from '../pages/admin/AdminPages'
+import { AdminHome, AdminLeaderboard, AdminLogs, AdminMemberDetail, AdminMemberResponses, AdminMembers, AdminRewardDetail, AdminRewardNotice, AdminRewards, AdminSurveyDetail, AdminSurveys, AdminTeamDetail, AdminTeams } from '../pages/admin/AdminPagesV2'
 
 export default function AppRouter() {
   return <Routes>

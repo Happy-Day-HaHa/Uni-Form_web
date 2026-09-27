@@ -33,9 +33,9 @@ const delay = (value) => new Promise((resolve) => window.setTimeout(() => resolv
 const date = (value) => value ? new Date(value).toLocaleDateString('ko-KR') : '-'
 
 function demoSurveys() {
-  const overrides = state().surveys || {}
+  const current = state(); const overrides = current.surveys || {}; const currentTeams = current.teams || teams
   return getAllDemoSurveys().map((survey, index) => ({
-    ...survey, ...overrides[survey.id], owner_name: teams[index % teams.length]?.name || members[index % members.length].nickname,
+    ...survey, ...overrides[survey.id], owner_name: overrides[survey.id]?.owner_name || currentTeams[index % currentTeams.length]?.name || members[index % members.length].nickname,
     creator_nickname: members[index % members.length].nickname, warning_count: index % 3 === 0 ? index + 1 : index % 2,
     excluded_count: index % 3, created_at: survey.created_at || `2026-09-${String(23 - index).padStart(2, '0')}T10:00:00+09:00`,
     disposal_at: survey.status === 'closed' ? '2026-10-30T00:00:00+09:00' : null,
@@ -62,7 +62,7 @@ export async function getAdminSurveys() {
 }
 export async function getAdminSurvey(id) { return (await getAdminSurveys()).find((item) => String(item.id) === String(id)) || null }
 export async function getAdminResponses(surveyId) {
-  if (!supabase) return delay(Array.from({ length: 8 }, (_, index) => ({ id: `${surveyId}-res-${index + 1}`, survey_id: surveyId, respondent_id: members[index % members.length].id, respondent_name: members[index % members.length].nickname, created_at: `2026-09-${String(25 - index).padStart(2, '0')}T${10 + index}:00:00+09:00`, warning_submitted: index % 3 === 0, excluded: index === 2, answers: { q1: index % 2 ? '매우 만족' : '만족', q2: '사용 흐름이 편리했어요.' } })))
+  if (!supabase) { const excluded = state().excludedResponses || {}; return delay(Array.from({ length: 8 }, (_, index) => ({ id: `${surveyId}-res-${index + 1}`, survey_id: surveyId, respondent_id: members[index % members.length].id, respondent_name: members[index % members.length].nickname, created_at: `2026-09-${String(25 - index).padStart(2, '0')}T${10 + index}:00:00+09:00`, warning_submitted: index % 3 === 0, excluded: excluded[`${surveyId}-res-${index + 1}`] || index === 2, answers: { q1: index % 2 ? '매우 만족' : '만족', q2: '사용 흐름이 편리했어요.' } }))) }
   const { data, error } = await supabase.from('responses').select('*').eq('survey_id', surveyId).order('created_at', { ascending: false })
   if (error) throw error
   return data
@@ -71,9 +71,19 @@ export async function getAdminMembers() {
   if (!supabase) return delay((state().members || members))
   const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false })
   if (error) throw error
-  return data
+  return data.map((item) => ({ ...item, status: item.account_status || item.status, warning_week: item.warning_week || 0, warning_total: item.warning_total || 0 }))
 }
 export async function getAdminMember(id) { return (await getAdminMembers()).find((item) => String(item.id) === String(id)) || null }
+export async function getAdminMemberSurveys(id) { const member = await getAdminMember(id); return (await getAdminSurveys()).filter((item) => String(item.creator_id) === String(id) || item.creator_nickname === member?.nickname) }
+export async function getAdminMemberResponses(id) {
+  if (!supabase) {
+    const all = await Promise.all(demoSurveys().slice(0, 4).map((survey) => getAdminResponses(survey.id)))
+    return all.flat().filter((item) => String(item.respondent_id) === String(id)).map((item) => ({ ...item, survey_title: demoSurveys().find((survey) => survey.id === item.survey_id)?.title }))
+  }
+  const { data, error } = await supabase.from('responses').select('*, survey:surveys(title)').eq('respondent_id', id).order('created_at', { ascending: false })
+  if (error) throw error
+  return data.map((item) => ({ ...item, survey_title: item.survey?.title }))
+}
 export async function getAdminTeams() {
   if (!supabase) return delay((state().teams || teams))
   const { data, error } = await supabase.from('teams').select('*, team_members(count)').order('created_at', { ascending: false })
@@ -81,6 +91,7 @@ export async function getAdminTeams() {
   return data
 }
 export async function getAdminTeam(id) { return (await getAdminTeams()).find((item) => String(item.id) === String(id)) || null }
+export async function getAdminTeamSurveys(id) { const team = await getAdminTeam(id); return (await getAdminSurveys()).filter((item) => String(item.team_id) === String(id) || item.owner_name === team?.name) }
 export async function getAdminLeaderboard() {
   if (!supabase) return delay([...members].sort((a, b) => b.weekly_count - a.weekly_count).map((item, index, all) => ({ ...item, rank: index && item.weekly_count === all[index - 1].weekly_count ? all[index - 1].rank : index + 1, score: item.weekly_count, last_active: `2026-09-${26 - (index % 5)}` })))
   const { data, error } = await supabase.rpc('admin_get_leaderboard')
@@ -122,10 +133,29 @@ export async function runAdminAction({ action, targetType, targetId, targetName,
   let afterValue = ''
   if (action === 'survey_remove' || action === 'survey_restore') { const removed = action === 'survey_remove'; beforeValue = removed ? '게시' : '운영 삭제'; afterValue = removed ? '운영 삭제' : '게시'; surveyOverrides[targetId] = { ...(surveyOverrides[targetId] || {}), status: removed ? 'removed' : 'closed', removal_reason: removed ? reason : null, removed_at: removed ? new Date().toISOString() : null } }
   if (['member_restrict', 'member_unrestrict', 'member_rename', 'member_staff'].includes(action)) nextMembers = nextMembers.map((item) => { if (item.id !== targetId) return item; beforeValue = item.status; if (action === 'member_restrict') return { ...item, status: 'restricted', restriction_category: reason, restricted_until: payload.until || null }; if (action === 'member_unrestrict') return { ...item, status: 'active', restriction_category: null, restricted_until: null }; if (action === 'member_rename') return { ...item, nickname: `회원${Math.floor(10000 + Math.random() * 90000)}` }; return { ...item, role: item.role === 'STAFF' ? 'USER' : 'STAFF' } })
-  if (action === 'team_rename') nextTeams = nextTeams.map((item) => item.id === targetId ? { ...item, name: `팀${Math.floor(10000 + Math.random() * 90000)}` } : item)
+  if (action === 'team_rename') {
+    const renamed = `팀${Math.floor(10000 + Math.random() * 90000)}`
+    nextTeams = nextTeams.map((item) => item.id === targetId ? { ...item, name: renamed } : item)
+    demoSurveys().filter((survey) => survey.owner_name === targetName).forEach((survey) => { surveyOverrides[survey.id] = { ...(surveyOverrides[survey.id] || {}), owner_name: renamed } })
+    try { const userTeam = JSON.parse(localStorage.getItem('uni-form-team') || 'null'); if (userTeam && (userTeam.id === targetId || userTeam.name === targetName)) localStorage.setItem('uni-form-team', JSON.stringify({ ...userTeam, name: renamed })) } catch { /* user team storage is optional */ }
+  }
+  if (action === 'response_exclude') {
+    const excluded = { ...(current.excludedResponses || {}), [targetId]: true }
+    save({ excludedResponses: excluded })
+  }
   const log = { id: crypto.randomUUID(), created_at: new Date().toISOString(), actor_name: '김유니', action: action.replaceAll('_', ' '), target_name: targetName, reason, memo, before_value: beforeValue, after_value: afterValue }
   save({ members: nextMembers, teams: nextTeams, surveys: surveyOverrides, logs: [log, ...(current.logs || [])] })
   return delay({ ok: true })
+}
+
+export async function recordResponseView(response, contextLabel = '응답') {
+  if (supabase) {
+    const { data, error } = await supabase.rpc('admin_record_response_view', { target_response_id: response.id, idempotency_key: crypto.randomUUID() })
+    if (error) throw error
+    return data
+  }
+  const current = state(); const log = { id: crypto.randomUUID(), created_at: new Date().toISOString(), actor_name: '김유니', action: '답변 열람', target_name: `${contextLabel} · ${response.respondent_name || '익명 응답'}`, reason: '운영 확인', memo: '응답 원문 열람', before_value: '', after_value: '열람' }
+  save({ logs: [log, ...(current.logs || [])] }); return delay({ ok: true })
 }
 
 export async function advanceReward(week) {
@@ -140,15 +170,29 @@ export async function advanceReward(week) {
   return next.find((item) => item.week === week)
 }
 
+export async function setRewardCandidateReviewed(week, memberId, reviewed) {
+  const current = state(); const reviews = { ...(current.rewardReviews || {}), [`${week}:${memberId}`]: reviewed }; save({ rewardReviews: reviews }); return delay(reviews)
+}
+export function isRewardCandidateReviewed(week, memberId) { return Boolean(state().rewardReviews?.[`${week}:${memberId}`]) }
+export async function markRewardSent(week, rank, { reward, sentAt }) {
+  if (supabase) {
+    const { data, error } = await supabase.rpc('admin_mark_reward_sent', { target_week: week, target_rank: rank, reward_text: reward, sent_at_value: sentAt, idempotency_key: crypto.randomUUID() })
+    if (error) throw error
+    return data
+  }
+  const current = state(); const sent = { ...(current.rewardSent || {}), [`${week}:${rank}`]: { reward, sentAt } }; save({ rewardSent: sent, logs: [{ id: crypto.randomUUID(), created_at: new Date().toISOString(), actor_name: '김유니', action: '보상 발송 완료', target_name: `${week} ${rank}위`, reason: '주차 정산', memo: reward, before_value: '미발송', after_value: sentAt }, ...(current.logs || [])] }); return delay(sent)
+}
+export function getRewardSent(week, rank) { return state().rewardSent?.[`${week}:${rank}`] || null }
+
 export async function getRewardNotice() {
-  if (!supabase) return delay(state().notice || { title: '매주 TOP 3 보상 안내', body: '매주 가장 많은 설문에 참여한 상위 3명에게 보상을 드립니다.', tiers: ['1위 · 모바일 상품권 3만원', '2위 · 모바일 상품권 2만원', '3위 · 모바일 상품권 1만원'] })
+  if (!supabase) return delay(state().notice || { title: '매주 TOP 3 보상 안내', body: '매주 가장 많은 설문에 참여한 상위 3명에게 보상을 드립니다.', tiers: ['1위 · 모바일 상품권 3만원', '2위 · 모바일 상품권 2만원', '3위 · 모바일 상품권 1만원'], tieRule: '동점자는 무작위 추첨으로 선정합니다.' })
   const { data, error } = await supabase.from('reward_notice').select('*').eq('id', true).maybeSingle()
   if (error) throw error
-  return data || { title: '', body: '', tiers: ['', '', ''] }
+  return data ? { ...data, tieRule: data.tie_rule_text || '' } : { title: '', body: '', tiers: ['', '', ''], tieRule: '' }
 }
 export async function saveRewardNotice(notice, { reason = '보상 안내 변경', memo = '리더보드 보상 안내 업데이트' } = {}) {
   if (!supabase) { save({ notice }); return delay(notice) }
-  const { data, error } = await supabase.rpc('admin_save_reward_notice', { notice_title: notice.title, notice_body: notice.body, notice_tiers: notice.tiers, reason_category: reason, action_memo: memo, idempotency_key: crypto.randomUUID() })
+  const { data, error } = await supabase.rpc('admin_save_reward_notice', { notice_title: notice.title, notice_body: notice.body, notice_tiers: notice.tiers, tie_rule_text_value: notice.tieRule || '', reason_category: reason, action_memo: memo, idempotency_key: crypto.randomUUID() })
   if (error) throw error
   return data
 }
