@@ -40,6 +40,12 @@ export function getSelectRange(question) {
   return { min: min ?? 1, max: max ?? optionCount, optionCount }
 }
 
+// 예상 소요 시간(분, 선택 입력): 비어 있으면 통과, 입력했으면 1 이상의 정수여야 한다.
+export function estimatedMinutesError(value) {
+  if (value === '' || value === null || value === undefined) return ''
+  return Number.isInteger(Number(value)) && Number(value) >= 1 ? '' : '예상 소요 시간은 1분 이상의 정수로 입력해주세요.'
+}
+
 // 선택 개수 범위가 올바르지 않으면 이유를, 올바르면 ''를 돌려준다.
 export function validateSelectRange(question) {
   const { min, max, optionCount } = getSelectRange(question)
@@ -50,7 +56,7 @@ export function validateSelectRange(question) {
   return ''
 }
 
-export function validateSurvey({ title, questions, targetCount, deadline }) {
+export function validateSurvey({ title, questions, targetCount, deadline, estimatedMinutes }) {
   if (title.trim().length < 3) return '설문 제목을 3자 이상 입력해주세요.'
 
   const filled = questions.filter((question) => question.title.trim())
@@ -72,6 +78,8 @@ export function validateSurvey({ title, questions, targetCount, deadline }) {
   }
 
   if (targetCount < 1 || targetCount > 100) return '목표 인원은 1명 이상 100명 이하로 입력해주세요.'
+  const minutesMessage = estimatedMinutesError(estimatedMinutes)
+  if (minutesMessage) return minutesMessage
   if (!deadline) return '마감일을 입력해주세요.'
   if (deadline <= getKstDateString()) return '마감일은 오늘 이후 날짜로 선택해주세요.'
   return ''

@@ -16,7 +16,7 @@ function FormMatePreview({ form }) {
   const questions = form.questions.filter((question) => question.title.trim())
   const visibleQuestions = questions.length ? questions : form.questions
   return <div className="formmate-preview-body">
-    <header className="formmate-preview-intro" data-preview-key="title"><h3>{form.title || '설문 제목을 입력해주세요.'}</h3><p data-preview-key="description">{form.description || '설문에 대한 설명을 입력해주세요.'}</p><div data-preview-key="basic"><span>약 {Number(form.estimatedMinutes || 1)}분</span><span>{visibleQuestions.length}개 문항</span>{form.deadline && <span>{form.deadline} 마감</span>}</div></header>
+    <header className="formmate-preview-intro" data-preview-key="title"><h3>{form.title || '설문 제목을 입력해주세요.'}</h3><p data-preview-key="description">{form.description || '설문에 대한 설명을 입력해주세요.'}</p><div data-preview-key="basic">{form.category && <span>{form.category}</span>}{form.estimatedMinutes !== '' && form.estimatedMinutes != null && <span>약 {Number(form.estimatedMinutes)}분</span>}<span>{visibleQuestions.length}개 문항</span>{form.deadline && <span>{form.deadline} 마감</span>}</div></header>
     <div className="formmate-preview-questions">{visibleQuestions.map((question, index) => {
       const options = question.type === 'scale' ? Array.from({ length: Number(question.max || 5) - Number(question.min || 1) + 1 }, (_, offset) => Number(question.min || 1) + offset) : question.options || []
       return <fieldset key={question.id} data-preview-key={`question-${question.id}`}><legend><b>Q{index + 1}.</b> {question.title || '질문을 입력해주세요.'}{question.required !== false && <em>*</em>}<small>{questionTypeLabels[question.type] || question.type}</small></legend>{question.type === 'text' || question.type === 'long' ? <textarea readOnly rows={question.type === 'long' ? 3 : 1} placeholder="답변을 입력해주세요." /> : options.map((option) => <label key={option}><input type={question.type === 'multiple' ? 'checkbox' : 'radio'} name={`preview-${question.id}`} disabled /> <span>{option}</span></label>)}</fieldset>
@@ -31,7 +31,8 @@ export default function SurveyCreate() {
   // ?draft=<id>로 들어오면 그 초안을 이어서 편집한다(API 모드). 처음 값만 쓴다.
   const [initialDraftId] = useState(() => searchParams.get('draft') || '')
   const initialPrompt = location.state?.formMatePrompt || ''
-  const [form, setForm] = useState({ title: '', description: '', category: '교육', targetCount: 50, estimatedMinutes: 5, deadline: '', questions: [blankQuestion()] })
+  // 카테고리·예상 소요시간은 선택 입력이라 API 모드에서는 비워 둔다(비우면 null로 저장). 데모 모드는 기존 샘플 값 유지.
+  const [form, setForm] = useState({ title: '', description: '', category: isApiConfigured ? '' : '교육', targetCount: 50, estimatedMinutes: isApiConfigured ? '' : 5, deadline: '', questions: [blankQuestion()] })
   const [aiPrompt, setAiPrompt] = useState(initialPrompt)
   const [aiStep, setAiStep] = useState(0)
   const [aiPurpose, setAiPurpose] = useState(initialPrompt)
@@ -201,7 +202,7 @@ export default function SurveyCreate() {
   async function handleSubmit(event) {
     event?.preventDefault()
     setMessage('')
-    const validationMessage = validateSurvey({ title: form.title, questions: form.questions, targetCount: form.targetCount, deadline: form.deadline })
+    const validationMessage = validateSurvey({ title: form.title, questions: form.questions, targetCount: form.targetCount, deadline: form.deadline, estimatedMinutes: form.estimatedMinutes })
     if (validationMessage) return setMessage(validationMessage)
     if (isApiConfigured) {
       try {
@@ -230,5 +231,5 @@ export default function SurveyCreate() {
         <footer><span>{isApiConfigured ? draft.saveStatus || '작성을 시작하면 자동 저장돼요' : saveStatus}</span><div><button className="ui-button ui-button--secondary" type="button" onClick={() => isApiConfigured && draft.flush().catch(() => {})}>임시 저장</button>{editMode ? <button className="ui-button" type="button" onClick={() => setEditMode(false)}>수정 완료</button> : <button className="ui-button" type="button" onClick={() => setPreviewOpen(true)}>설문 등록하기</button>}</div></footer>
       </section>
     </section>
-  </div><Modal open={previewOpen} title="설문을 게시할까요?" onClose={() => setPreviewOpen(false)}><div className="survey-preview-list"><p><b>{form.title || '제목 없는 설문'}</b><br />{form.questions.filter((question) => question.title.trim()).length}개 문항 · 약 {form.estimatedMinutes}분 · 목표 {form.targetCount}명</p>{form.questions.filter((question) => question.title.trim()).map((question, index) => <div key={question.id}><span>{String(index + 1).padStart(2, '0')}</span><b>{question.title}</b></div>)}</div><ul className="publish-notices"><li>게시 후에는 설문 내용과 마감일을 수정할 수 없어요.</li><li>마감 30일 후 설문 원문은 파기돼요.</li><li>금지 내용을 포함한 설문은 운영자가 삭제할 수 있어요.</li></ul><div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" onClick={() => setPreviewOpen(false)}>편집 계속하기</button><button className="ui-button" type="button" disabled={submitting} onClick={handleSubmit}>{submitting ? '게시 중…' : '설문 게시하기'}</button></div></Modal></ServiceShell>
+  </div><Modal open={previewOpen} title="설문을 게시할까요?" onClose={() => setPreviewOpen(false)}><div className="survey-preview-list"><p><b>{form.title || '제목 없는 설문'}</b><br />{form.questions.filter((question) => question.title.trim()).length}개 문항{form.estimatedMinutes ? ` · 약 ${form.estimatedMinutes}분` : ''}{form.category ? ` · ${form.category}` : ''} · 목표 {form.targetCount}명</p>{form.questions.filter((question) => question.title.trim()).map((question, index) => <div key={question.id}><span>{String(index + 1).padStart(2, '0')}</span><b>{question.title}</b></div>)}</div><ul className="publish-notices"><li>게시 후에는 설문 내용과 마감일을 수정할 수 없어요.</li><li>마감 30일 후 설문 원문은 파기돼요.</li><li>금지 내용을 포함한 설문은 운영자가 삭제할 수 있어요.</li></ul><div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" onClick={() => setPreviewOpen(false)}>편집 계속하기</button><button className="ui-button" type="button" disabled={submitting} onClick={handleSubmit}>{submitting ? '게시 중…' : '설문 게시하기'}</button></div></Modal></ServiceShell>
 }

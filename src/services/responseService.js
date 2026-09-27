@@ -99,7 +99,16 @@ function optionIdOf(question, label) {
   return index === -1 ? null : question.optionIds?.[index] ?? null
 }
 
-function toApiAnswers(survey, answers) {
+// 복수선택 답이 문항의 선택 개수 범위(비어 있으면 1~보기 수) 안에 있는지
+function isWithinSelectRange(question, selected) {
+  const min = question.minSelect || 1
+  const max = question.maxSelect || (question.options || []).length
+  return selected.length >= min && selected.length <= max
+}
+
+// skipOutOfRange: 임시저장용. 서버는 값 하나라도 범위를 벗어나면 저장 요청 전체를 거부하므로,
+// 아직 최소 개수를 못 채운(또는 넘긴) 복수선택 답만 빼고 나머지 답은 저장되게 한다. 제출은 모두 보내 서버가 검증한다.
+function toApiAnswers(survey, answers, { skipOutOfRange = false } = {}) {
   const result = {}
   for (const question of survey.questions || []) {
     const value = answers[question.id]
@@ -110,6 +119,7 @@ function toApiAnswers(survey, answers) {
       const etcText = question.etcLabel && value === question.etcLabel ? (answers[etcAnswerKey(question.id)] || '').trim() : ''
       result[question.id] = etcText ? { optionId, etcText } : { optionId }
     } else if (question.type === 'multiple') {
+      if (skipOutOfRange && !isWithinSelectRange(question, value)) continue
       result[question.id] = value.map((label) => optionIdOf(question, label)).filter(Boolean)
     } else if (question.type === 'scale') {
       result[question.id] = Number(value)
@@ -149,7 +159,20 @@ export async function startResponseSession(survey) {
 // 제출 전 임시저장. 응답 수·점수에는 반영되지 않는다.
 export async function saveResponseAnswers(survey, sessionId, answers, { keepalive = false } = {}) {
   if (!isApiConfigured || !sessionId) return
-  await withResponseErrors(() => apiClient.patch(`/surveys/${encodeURIComponent(survey.id)}/sessions/${encodeURIComponent(sessionId)}/answers`, { answers: toApiAnswers(survey, answers) }, { keepalive }))
+  await withResponseErrors(() => apiClient.patch(`/surveys/${encodeURIComponent(survey.id)}/sessions/${encodeURIComponent(sessionId)}/answers`, { answers: toApiAnswers(survey, answers, { skipOutOfRange: true }) }, { keepalive }))
+}
+
+// 제출 검증 실패(400) 메시지 "N번 문항…"을 문항 id별 메시지로 바꾼다. 문항을 특정할 수 없는 메시지는 general로 모은다.
+export function mapAnswerErrorsToQuestions(survey, messages) {
+  const byQuestionId = {}
+  const general = []
+  for (const text of messages || []) {
+    const match = /^(\d+)번 문항/.exec(text)
+    const question = match ? (survey.questions || [])[Number(match[1]) - 1] : null
+    if (question) byQuestionId[question.id] = byQuestionId[question.id] ? `${byQuestionId[question.id]} ${text}` : text
+    else general.push(text)
+  }
+  return { byQuestionId, general }
 }
 
 // API 모드 응답: { success, pointsEarned, weeklyRank }. 같은 세션을 다시 제출해도 점수는 한 번만 준다.
