@@ -7,7 +7,7 @@ export default function SurveyRow({ survey, index = 0, user, responded = false, 
   const [busy, setBusy] = useState(false)
   const isOwner = survey.is_owner ?? survey.creator_id === user?.id
   const target = Math.max(Number(survey.target_count || 1), 1)
-  // 응답 수는 목록 API에 아직 없다(백엔드 제외). 값이 없으면 0으로 꾸미지 않고 숨긴다.
+  // 응답 수(responseCount)가 없는 응답(이전 버전 서버·캐시)이면 0으로 꾸미지 않고 숨긴다.
   const hasResponseCount = survey.response_count !== undefined && survey.response_count !== null
   const responses = Number(survey.response_count || 0)
   const progress = Math.min(100, Math.round((responses / target) * 100))

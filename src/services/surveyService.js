@@ -71,8 +71,8 @@ function toApiQuestion(question) {
 function toKstDate(isoString) { return isoString ? getKstDateString(new Date(isoString)) : '' }
 
 // SurveyResponseDto / SurveyDetailResponseDto / SurveyListItemResponseDto → 화면 설문
-// category·estimatedMinutes는 작성자가 입력하지 않았으면 null. 응답 수(responseCount)는 현재 목록·상세 응답에 없어서
-// 올 때만 채우고, 없으면 undefined로 둔다(화면은 0으로 꾸미지 않고 숨긴다).
+// category·estimatedMinutes는 작성자가 입력하지 않았으면 null. 응답 수(responseCount)는 목록·상세에 내려온다(Uniform-backend #39).
+// 필드가 없는 응답(이전 버전 서버·캐시)에 대비해 올 때만 채우고, 없으면 undefined로 둔다(화면은 0으로 꾸미지 않고 숨긴다).
 export function fromApiSurvey(survey) {
   return {
     id: survey.id,
