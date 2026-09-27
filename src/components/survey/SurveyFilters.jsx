@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
-export const surveyCategories = ['전체', '교육', '라이프스타일', '소비', '테크', '문화']
 
-export default function SurveyFilters({ query, onQueryChange, categories = surveyCategories, category, onCategoryChange, duration, onDurationChange }) {
+export default function SurveyFilters({ query, onQueryChange, categories = ['전체'], category, onCategoryChange, duration, onDurationChange }) {
   const [open, setOpen] = useState(false)
   const popoverRef = useRef(null)
   useEffect(() => {

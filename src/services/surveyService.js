@@ -1,25 +1,10 @@
-import { ApiError, apiClient, getAccessToken, getRefreshToken, isApiConfigured } from './apiClient'
-import { canDeleteSurvey, getKstDateString, isSurveyOpen } from '../utils/surveyPolicy'
+import { ApiError, apiClient, getAccessToken, getRefreshToken } from './apiClient'
+import { getKstDateString } from '../utils/surveyPolicy'
 import { getSelectRange } from '../utils/validation'
 
-export const demoSurveys = [
-  { id: 'ai-campus-use', creator_id: 'sample-user-3', title: '대학생의 AI 서비스 사용 경험 조사', description: '대학생의 생성형 AI 서비스 이용 경험과 인식을 알아보는 설문입니다.', target_count: 50, response_count: 63, estimated_minutes: 5, deadline: '2026-12-20', category: '테크', status: 'active', questions: [{ id: 'q1', type: 'single', title: '가장 자주 사용하는 AI 서비스는 무엇인가요?', options: ['대화형 AI', '이미지 생성', '번역·요약', '사용하지 않음'] }, { id: 'q2', type: 'scale', title: 'AI 서비스가 학업에 얼마나 도움이 되나요?', min: 1, max: 5 }] },
-  { id: 'online-focus', creator_id: 'sample-user-4', title: '온라인 강의 집중도 조사', description: '온라인 강의 수강 시 집중도와 학습 경험에 대한 설문입니다.', target_count: 80, response_count: 59, estimated_minutes: 4, deadline: '2026-11-30', category: '교육', status: 'active', questions: [{ id: 'q1', type: 'scale', title: '온라인 강의에 얼마나 집중할 수 있나요?', min: 1, max: 5 }, { id: 'q2', type: 'text', title: '집중을 방해하는 가장 큰 요인을 알려주세요.' }] },
-  { id: 'campus-community', creator_id: 'sample-user-5', title: '학교 커뮤니티 사용 경험 설문', description: '교내 및 온라인 커뮤니티 이용 경험과 만족도를 알아봅니다.', target_count: 90, response_count: 68, estimated_minutes: 4, deadline: '2026-12-10', category: '문화', status: 'active', questions: [{ id: 'q1', type: 'single', title: '학교 커뮤니티를 얼마나 자주 이용하나요?', options: ['매일', '주 2~3회', '가끔', '이용하지 않음'] }] },
-  { id: 'campus-life', creator_id: 'demo-user', title: '더 나은 캠퍼스 라이프를 위한 설문', description: '대학생의 공간 이용과 생활 습관을 알아봅니다.', target_count: 100, response_count: 82, estimated_minutes: 4, deadline: '2026-12-31', category: '교육', status: 'active', questions: [{ id: 'q1', type: 'single', title: '캠퍼스에서 가장 자주 이용하는 공간은?', options: ['도서관', '학생회관', '카페', '강의실'] }, { id: 'q2', type: 'scale', title: '현재 캠퍼스 생활에 얼마나 만족하나요?', min: 1, max: 5 }, { id: 'q3', type: 'text', title: '가장 개선되었으면 하는 점을 알려주세요.' }] },
-  { id: 'morning-routine', creator_id: 'sample-user-1', title: '나의 아침 루틴과 생산성', description: '하루의 시작을 만드는 작은 습관을 공유해주세요.', target_count: 80, response_count: 27, estimated_minutes: 3, deadline: '2026-10-31', category: '라이프스타일', status: 'active', questions: [{ id: 'q1', type: 'scale', title: '오늘 아침의 만족도는 어떤가요?', min: 1, max: 5 }, { id: 'q2', type: 'text', title: '가장 도움이 되는 아침 습관을 알려주세요.' }] },
-  { id: 'eco-choice', creator_id: 'sample-user-2', title: '친환경 소비 선택 조사', description: '환경을 생각하는 소비 기준과 행동을 조사합니다.', target_count: 90, response_count: 54, estimated_minutes: 6, deadline: '2026-11-15', category: '소비', status: 'active', questions: [{ id: 'q1', type: 'single', title: '친환경 제품을 얼마나 자주 구매하나요?', options: ['자주', '가끔', '거의 안 함'] }] },
-]
-
-const demoStorageKey = 'uni-form-created-surveys'
-export function getDemoCreatedSurveys() {
-  try { return JSON.parse(localStorage.getItem(demoStorageKey) || '[]') } catch { return [] }
-}
-export function getAllDemoSurveys() { return [...getDemoCreatedSurveys(), ...demoSurveys] }
-export function isDemoSurveyFixture(surveyId) { return demoSurveys.some((survey) => survey.id === surveyId) }
 
 // ── 백엔드 ↔ 화면 모델 변환 ──────────────────────────────────────────────
-// 화면은 기존 데모 데이터 모양(snake_case, 문항 type single/multiple/scale/text/long,
+// 화면은 기존 화면 데이터 모양(snake_case, 문항 type single/multiple/scale/text/long,
 // 보기는 문자열 배열)을 그대로 쓰고, 백엔드와 주고받을 때만 변환한다.
 const QUESTION_TYPE_FROM_API = { SINGLE_CHOICE: 'single', MULTI_CHOICE: 'multiple', SCALE: 'scale', SHORT_ANSWER: 'text', NARRATIVE: 'long' }
 const QUESTION_TYPE_TO_API = Object.fromEntries(Object.entries(QUESTION_TYPE_FROM_API).map(([api, ui]) => [ui, api]))
@@ -152,7 +137,6 @@ export async function getSurveyPage({ cursor, limit = 20, category, estimatedDur
 
 // 목록 화면이 검색어는 클라이언트에서 거르므로 조건에 맞는 모집 중 설문을 모두 받아온다(최대 maxPages쪽).
 export async function getSurveys({ maxPages = 10, category, estimatedDuration } = {}) {
-  if (!isApiConfigured) return getAllDemoSurveys().filter(isSurveyOpen)
   requireSignedIn('로그인하면 모집 중인 설문을 볼 수 있어요.')
   const surveys = []
   let cursor = null
@@ -166,12 +150,11 @@ export async function getSurveys({ maxPages = 10, category, estimatedDuration } 
 }
 
 export async function getSurvey(surveyId) {
-  if (!isApiConfigured) return getAllDemoSurveys().find((survey) => survey.id === surveyId) || null
   requireSignedIn('로그인하면 설문을 볼 수 있어요.')
   return fromApiSurvey(await apiClient.get(`/surveys/${encodeURIComponent(surveyId)}`))
 }
 
-// ── 초안 (API 모드 전용) ──────────────────────────────────────────────────
+// ── 초안 ──────────────────────────────────────────────────────────
 // 모두 백엔드 SurveyResponseDto 원본을 돌려준다. 화면 form으로는 draftToForm으로 바꾼다.
 export async function createDraft({ title, description } = {}) {
   const payload = { title: title?.trim() || '제목 없는 설문' }
@@ -214,7 +197,7 @@ export async function publishDraft(surveyId) {
   return published
 }
 
-// ── FormMate (API 모드 전용) ──────────────────────────────────────────────
+// ── FormMate ──────────────────────────────────────────────────────
 // 응답: { aiReply, proposedChanges: [{ id, type, summary, after }] }
 // type: ADD_QUESTION | UPDATE_QUESTION | DELETE_QUESTION | UPDATE_OPTION, DELETE_QUESTION은 after가 null.
 export async function sendFormMateMessage(surveyId, message) {
@@ -275,56 +258,25 @@ async function withMySurveyErrors(request) {
 }
 
 export async function getMySurveys(userId) {
-  if (!isApiConfigured) return getAllDemoSurveys().filter((survey) => survey.creator_id === userId)
   const items = await apiClient.get('/mypage/surveys')
   return items.map(fromApiMySurvey)
 }
 
 // 모집 중인 설문만 마감할 수 있다. 응답: 갱신된 내 설문 항목.
 export async function closeSurvey(surveyId) {
-  if (!isApiConfigured) return updateSurvey(surveyId, { status: 'closed' })
   const updated = await withMySurveyErrors(() => apiClient.post(`/mypage/surveys/${encodeURIComponent(surveyId)}/close`))
   return fromApiMySurvey(updated, 0)
 }
 
 // 백엔드는 임시저장(DRAFT) 설문만 삭제한다(영구 삭제). 게시된 설문은 응답 수와 관계없이 삭제할 수 없다.
 export async function deleteSurvey(surveyId) {
-  if (isApiConfigured) {
-    await withMySurveyErrors(() => apiClient.delete(`/surveys/drafts/${encodeURIComponent(surveyId)}`))
-    return
-  }
-  const survey = getDemoCreatedSurveys().find((item) => item.id === surveyId)
-  if (!canDeleteSurvey(survey)) throw new Error('임시저장 상태이며 응답이 없는 설문만 삭제할 수 있어요.')
-  localStorage.setItem(demoStorageKey, JSON.stringify(getDemoCreatedSurveys().filter((item) => item.id !== surveyId)))
+  await withMySurveyErrors(() => apiClient.delete(`/surveys/drafts/${encodeURIComponent(surveyId)}`))
 }
 
-// API 모드: 새 초안으로 복사한다(제목·설명·문항만, 목표 인원·마감일은 새로 정해야 함). 응답: { newSurveyId }
+// 새 초안으로 복사한다(제목·설명·문항만, 목표 인원·마감일은 새로 정해야 함). 응답: { newSurveyId }
 // teamId를 주면 그 팀의 팀 초안으로, 없으면 내 개인 초안으로 복사한다(팀으로 복사하려면 그 팀의 현재 팀원이어야 한다).
 export async function duplicateSurvey(survey, { teamId } = {}) {
-  if (isApiConfigured) {
-    const body = teamId ? { targetOwnerType: 'team', teamId } : { targetOwnerType: 'user' }
-    const { newSurveyId } = await withMySurveyErrors(() => apiClient.post(`/surveys/${encodeURIComponent(survey.id)}/copy`, body))
-    return { id: newSurveyId }
-  }
-  const futureDeadline = survey.deadline > getKstDateString() ? survey.deadline : getKstDateString(new Date(Date.now() + 30 * 86400000))
-  return createSurvey({
-    title: `${survey.title} 사본`, description: survey.description, category: survey.category,
-    target_count: Math.min(100, survey.target_count), estimated_minutes: survey.estimated_minutes,
-    deadline: futureDeadline, questions: survey.questions || [], status: 'draft',
-  })
-}
-
-// ── 데모 모드 전용 ────────────────────────────────────────────────────────
-export async function createSurvey(payload) {
-  const survey = { id: crypto.randomUUID(), creator_id: 'demo-user', response_count: 0, status: 'active', ...payload }
-  localStorage.setItem(demoStorageKey, JSON.stringify([survey, ...getDemoCreatedSurveys()]))
-  try { sessionStorage.setItem('uni-form-new-survey', survey.id) } catch { /* animation hint is optional */ }
-  return survey
-}
-
-export async function updateSurvey(surveyId, patch) {
-  const created = getDemoCreatedSurveys()
-  const next = created.map((survey) => survey.id === surveyId ? { ...survey, ...patch, updated_at: new Date().toISOString() } : survey)
-  localStorage.setItem(demoStorageKey, JSON.stringify(next))
-  return next.find((survey) => survey.id === surveyId) || { id: surveyId, ...patch }
+  const body = teamId ? { targetOwnerType: 'team', teamId } : { targetOwnerType: 'user' }
+  const { newSurveyId } = await withMySurveyErrors(() => apiClient.post(`/surveys/${encodeURIComponent(survey.id)}/copy`, body))
+  return { id: newSurveyId }
 }

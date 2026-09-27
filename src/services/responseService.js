@@ -1,33 +1,11 @@
-import { ApiError, apiClient, isApiConfigured } from './apiClient'
-import { getAllDemoSurveys, getSurvey, isDemoSurveyFixture } from './surveyService'
+import { ApiError, apiClient } from './apiClient'
+import { getSurvey } from './surveyService'
 
-const textSamples = ['사용 흐름이 더 단순해지면 좋겠어요.', '모바일에서도 편하게 참여하고 싶어요.', '결과를 한눈에 비교할 수 있으면 좋겠습니다.', '지금 구성도 전반적으로 만족스러워요.', '안내 문구가 조금 더 구체적이면 좋겠어요.']
-const demoRespondedKey = 'uni-form-demo-responded-surveys'
-
-// 응답을 제출한 설문 id 목록. API 모드에서는 GET /mypage/responses 중 SUBMITTED만 쓴다.
+// 응답을 제출한 설문 id 목록. GET /mypage/responses 중 SUBMITTED만 쓴다.
 export async function getRespondedSurveyIds(userId) {
   if (!userId) return []
-  if (!isApiConfigured) {
-    try { return JSON.parse(localStorage.getItem(demoRespondedKey) || '[]') } catch { return [] }
-  }
   const items = await apiClient.get('/mypage/responses')
   return [...new Set(items.filter((item) => item.status === 'SUBMITTED').map((item) => item.surveyId))]
-}
-
-function createDemoResponses(survey) {
-  return Array.from({ length: Number(survey.response_count || 0) }, (_, index) => ({
-    id: `${survey.id}-response-${index + 1}`,
-    survey_id: survey.id,
-    respondent_id: `demo-respondent-${index + 1}`,
-    created_at: new Date(Date.UTC(2026, 7, 1 + (index % 28), 9 + (index % 10))).toISOString(),
-    answers: Object.fromEntries((survey.questions || []).map((question, questionIndex) => {
-      if (String(question.type).includes('text')) return [question.id, textSamples[(index + questionIndex) % textSamples.length]]
-      if (question.type === 'scale') return [question.id, Number(question.min || 1) + ((index * 3 + questionIndex) % (Number(question.max || 5) - Number(question.min || 1) + 1))]
-      const options = question.options || []
-      if (question.type === 'multiple') return [question.id, options.filter((_, optionIndex) => (index + optionIndex) % 3 === 0).slice(0, 2)]
-      return [question.id, options.length ? options[(index * 2 + questionIndex) % options.length] : '응답']
-    })),
-  }))
 }
 
 export class ResultAccessError extends Error {
@@ -148,17 +126,16 @@ function fromApiAnswers(survey, savedAnswers) {
   return answers
 }
 
-// ── 응답 세션 (API 모드) ─────────────────────────────────────────────────
+// ── 응답 세션 ─────────────────────────────────────────────────────────
 // 설문당 사용자 세션은 하나다. 진행 중인 세션이 있으면 이어서 쓰고, 임시저장된 답을 화면 형식으로 돌려준다.
 export async function startResponseSession(survey) {
-  if (!isApiConfigured) return { sessionId: null, answers: {} }
   const session = await withResponseErrors(() => apiClient.post(`/surveys/${encodeURIComponent(survey.id)}/sessions`))
   return { sessionId: session.sessionId, answers: fromApiAnswers(survey, session.savedAnswers) }
 }
 
 // 제출 전 임시저장. 응답 수·점수에는 반영되지 않는다.
 export async function saveResponseAnswers(survey, sessionId, answers, { keepalive = false } = {}) {
-  if (!isApiConfigured || !sessionId) return
+  if (!sessionId) return
   await withResponseErrors(() => apiClient.patch(`/surveys/${encodeURIComponent(survey.id)}/sessions/${encodeURIComponent(sessionId)}/answers`, { answers: toApiAnswers(survey, answers, { skipOutOfRange: true }) }, { keepalive }))
 }
 
@@ -175,14 +152,8 @@ export function mapAnswerErrorsToQuestions(survey, messages) {
   return { byQuestionId, general }
 }
 
-// API 모드 응답: { success, pointsEarned, weeklyRank }. 같은 세션을 다시 제출해도 점수는 한 번만 준다.
+// 응답: { success, pointsEarned, weeklyRank }. 같은 세션을 다시 제출해도 점수는 한 번만 준다.
 export async function submitSurveyResponse(surveyId, answers, { survey, sessionId, sameScaleWarningAcknowledged = false } = {}) {
-  if (!isApiConfigured) {
-    const ids = await getRespondedSurveyIds('demo-user')
-    if (ids.includes(surveyId)) throw new ResponseError('ALREADY_RESPONDED', RESPONSE_ERROR_MESSAGES.ALREADY_RESPONDED)
-    localStorage.setItem(demoRespondedKey, JSON.stringify([...ids, surveyId]))
-    return { response_id: crypto.randomUUID() }
-  }
   return withResponseErrors(() => apiClient.post(`/surveys/${encodeURIComponent(surveyId)}/sessions/${encodeURIComponent(sessionId)}/submit`, { answers: toApiAnswers(survey, answers), sameScaleWarningAcknowledged }))
 }
 
@@ -205,15 +176,14 @@ function toAnalysis(question, result) {
   }
 }
 
-// API 모드: 결과 조회 권한(등록자 또는 팀원)은 백엔드가 판단한다(403 → FORBIDDEN).
-// 반환: { survey, responses: [], responseCount, excludedCount, analyses } — 집계는 서버가 한다.
-async function getApiSurveyResults(surveyId) {
+// 결과 조회 권한(등록자 또는 팀원)은 백엔드가 판단한다(403 → FORBIDDEN).
+// 반환: { survey, responseCount, excludedCount, dailyTrend, analyses } — 집계는 서버가 한다.
+export async function getOwnedSurveyResults(surveyId) {
   try {
     const [survey, result] = await Promise.all([getSurvey(surveyId), apiClient.get(`/surveys/${encodeURIComponent(surveyId)}/result`)])
     const resultByQuestionId = new Map(result.questions.map((item) => [item.questionId, item]))
     return {
       survey: { ...survey, response_count: result.responseCount, target_count: result.targetCount ?? survey.target_count },
-      responses: [],
       responseCount: result.responseCount,
       excludedCount: result.excludedCount,
       dailyTrend: result.dailyTrend,
@@ -226,12 +196,3 @@ async function getApiSurveyResults(surveyId) {
   }
 }
 
-export async function getOwnedSurveyResults(surveyId, userId) {
-  if (isApiConfigured) return getApiSurveyResults(surveyId)
-  const survey = getAllDemoSurveys().find((item) => item.id === surveyId)
-  if (!survey) throw new ResultAccessError('NOT_FOUND', '설문을 찾을 수 없습니다.')
-  const canAccess = survey.creator_id === userId || (userId === 'demo-user' && isDemoSurveyFixture(survey.id))
-  if (!canAccess) throw new ResultAccessError('FORBIDDEN', '이 결과를 확인할 권한이 없습니다.')
-  const responses = createDemoResponses(survey)
-  return { survey: { ...survey, response_count: responses.length }, responses, responseCount: responses.length }
-}

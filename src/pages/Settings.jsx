@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Modal from '../components/Modal'
 import ServiceShell, { ServiceHeading } from '../components/ServiceShell'
 import { useAuth } from '../hooks/useAuth'
-import { getProfile, saveProfile } from '../services/userService'
+import { getProfile, saveProfile, withdrawAccount } from '../services/userService'
+import { logout } from '../services/authService'
+import { validateNickname } from '../utils/validation'
 
 const tabs = [['account', '계정 및 보안'], ['notifications', '알림'], ['data', '데이터 관리']]
 const noticeRows = [['email', '이메일 알림', '설문 참여, 결과 완료 등 주요 알림을 이메일로 받습니다.'], ['push', '푸시 알림', '서비스 내 알림을 실시간으로 받습니다.'], ['marketing', '마케팅 알림', '새로운 기능, 이벤트, 유용한 팁을 받아보세요.']]
 
 export default function Settings() {
-  const { user, demoMode } = useAuth()
+  const { refreshProfile } = useAuth()
+  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') || 'account'
   const [profile, setProfile] = useState({ nickname: '', gender: '응답하지 않음', grade: '해당 없음', major: '해당 없음', enrollment_status: '해당 없음' })
@@ -18,10 +21,49 @@ export default function Settings() {
   const [toast, setToast] = useState('')
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteText, setDeleteText] = useState('')
+  // 서버에서 받은 원래 값(바뀐 항목만 저장하기 위해)과 불러오기·저장·탈퇴 오류
+  const [original, setOriginal] = useState(null)
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
-  useEffect(() => { getProfile(user.id).then(setProfile).catch(() => {}) }, [user.id])
+  useEffect(() => {
+    // 늦게 도착한 이전 요청이 사용자가 이미 바꾼 입력을 덮어쓰지 않게 한다.
+    let active = true
+    getProfile()
+      .then((loaded) => { if (active) { setProfile(loaded); setOriginal(loaded) } })
+      .catch((reason) => { if (active) setError(`프로필을 불러오지 못했어요. ${reason.message}`) })
+    return () => { active = false }
+  }, [])
   useEffect(() => { if (!toast) return undefined; const timer = window.setTimeout(() => setToast(''), 1800); return () => window.clearTimeout(timer) }, [toast])
-  async function save() { try { await saveProfile({ ...profile, id: user.id }); setToast(demoMode ? '데모 설정을 저장했습니다.' : '변경사항을 저장했습니다.') } catch (error) { setToast(error.message) } }
+  async function save() {
+    if (!original) return
+    const nicknameMessage = validateNickname(profile.nickname)
+    if (nicknameMessage) return setError(nicknameMessage)
+    try {
+      setSaving(true)
+      setError('')
+      const saved = await saveProfile(profile, original)
+      if (!saved) return setToast('변경된 내용이 없어요.')
+      setProfile(saved); setOriginal(saved)
+      await refreshProfile().catch(() => {})
+      setToast('변경사항을 저장했습니다.')
+    } catch (reason) {
+      setError(reason.messages?.length > 1 ? reason.messages.join(' · ') : reason.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+  async function withdraw() {
+    try {
+      setDeleteError('')
+      await withdrawAccount()
+      await logout()
+      navigate('/', { replace: true })
+    } catch (reason) {
+      setDeleteError(reason.message || '계정을 삭제하지 못했어요.')
+    }
+  }
   function toggle(key) { const before = notices[key]; setNotices((value) => ({ ...value, [key]: !before })); setPending(key); window.setTimeout(() => { setPending(''); setToast('알림 설정을 저장했습니다.') }, 420) }
   function download() {
     const blob = new Blob([JSON.stringify({ profile, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' })
@@ -41,8 +83,9 @@ export default function Settings() {
 
     {tab === 'data' && <section className="settings-tab-panel settings-sections"><article className="settings-section"><header><h2>데이터 관리</h2><p>내 데이터를 다운로드하거나 계정을 관리할 수 있습니다.</p></header><div className="settings-row"><div><strong>내 데이터 다운로드</strong><small>프로필과 설문 데이터를 파일로 받을 수 있습니다.</small></div><button className="mini-button" onClick={download}>다운로드하기</button></div><div className="settings-row"><div><strong>계정 삭제</strong><small>계정과 모든 데이터가 영구적으로 삭제됩니다.</small></div><button className="mini-button mini-button--danger" onClick={() => setDeleteOpen(true)}>계정 삭제하기</button></div></article></section>}
 
-    <div className="settings-save"><button className="ui-button ui-button--secondary" type="button" onClick={() => window.location.reload()}>변경사항 취소</button><button className="ui-button" type="button" onClick={save}>변경사항 저장</button></div>
-    <Modal open={deleteOpen} title="계정을 삭제할까요?" onClose={() => { setDeleteOpen(false); setDeleteText('') }}><p>이 작업은 되돌릴 수 없습니다. 계속하려면 아래에 <b>삭제</b>를 입력하세요.</p><input className="service-input" value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="삭제" /><div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={() => setDeleteOpen(false)}>취소</button><button className="ui-button ui-button--danger" disabled={deleteText !== '삭제'} onClick={() => setToast('데모에서는 계정이 삭제되지 않습니다.')}>계정 삭제</button></div></Modal>
+    {error && <p className="form-message form-message--error" role="alert">{error}</p>}
+    <div className="settings-save"><button className="ui-button ui-button--secondary" type="button" onClick={() => { if (original) setProfile(original); setError('') }}>변경사항 취소</button><button className="ui-button" type="button" disabled={saving || !original} onClick={save}>{saving ? '저장 중…' : '변경사항 저장'}</button></div>
+    <Modal open={deleteOpen} title="계정을 삭제할까요?" onClose={() => { setDeleteOpen(false); setDeleteText('') }}><p>이 작업은 되돌릴 수 없습니다. 탈퇴 후 30일 동안은 같은 이메일로 다시 가입할 수 없어요. 계속하려면 아래에 <b>삭제</b>를 입력하세요.</p>{deleteError && <p className="form-message form-message--error" role="alert">{deleteError}</p>}<input className="service-input" value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="삭제" /><div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={() => setDeleteOpen(false)}>취소</button><button className="ui-button ui-button--danger" disabled={deleteText !== '삭제'} onClick={withdraw}>계정 삭제</button></div></Modal>
     {toast && <div className="service-toast" role="status">✓ {toast}</div>}
   </div></ServiceShell>
 }
