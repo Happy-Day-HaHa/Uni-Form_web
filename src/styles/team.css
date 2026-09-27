@@ -42,3 +42,14 @@
   .team-drafts .managed-actions{grid-column:1;width:100%;justify-self:stretch}
   .team-drafts .managed-actions a{width:100%}
 }
+
+/* 여러 팀 선택 탭, 팀장 전용 버튼 묶음, 초대 코드 */
+.team-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.team-tabs button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border:1px solid #dce5f1;border-radius:999px;background:#fff;color:#52627f;font:inherit;font-size:.72rem;font-weight:700;cursor:pointer}
+.team-tabs button.active{border-color:var(--saas-blue,#1763f3);background:#eaf2ff;color:var(--saas-blue,#1763f3)}
+.team-tabs em{padding:2px 6px;border-radius:999px;background:#fff4d6;color:#a86b00;font-size:.56rem;font-style:normal}
+.team-heading-actions{display:flex;flex-wrap:wrap;gap:6px}
+.team-member-actions{display:flex;gap:6px}
+.team-invite-code{margin:0 0 12px;color:#52627f;font-size:.7rem}
+.team-invite-code code{margin-left:6px;padding:3px 7px;border-radius:6px;background:#f0f3f8;color:#243552;font-size:.66rem;word-break:break-all}
+.team-member-row>.team-member-actions{flex:none}

@@ -1,4 +1,5 @@
-import { getKstDateString } from '../../utils/surveyPolicy'
+import { getTomorrowKstDateString } from '../../utils/surveyPolicy'
+import { estimatedMinutesError, getSelectRange, validateSelectRange } from '../../utils/validation'
 
 const questionTypes = [
   ['single', '객관식 (단일선택)'],
@@ -10,6 +11,20 @@ const questionTypes = [
 
 function optionLabel(index) {
   return `선택지 ${index + 1}`
+}
+
+// 복수선택 문항의 최소/최대 선택 개수. 비워 두면 기본값(최소 1개, 최대 보기 수)으로 게시된다.
+function SelectRangeFields({ question, questionIndex, onQuestionChange }) {
+  const optionCount = (question.options || []).length
+  const error = validateSelectRange(question)
+  const { min, max } = getSelectRange(question)
+  const usesDefaults = (question.minSelect ?? null) === null && (question.maxSelect ?? null) === null
+  const toValue = (value) => (value === '' ? null : Number(value))
+  return <div className="formmate-select-range">
+    <label><span>최소 선택</span><input type="number" min="1" max={optionCount} value={question.minSelect ?? ''} placeholder="1" onChange={(event) => onQuestionChange(question.id, { minSelect: toValue(event.target.value) })} aria-label={`${questionIndex + 1}번 문항 최소 선택 개수`} /><small>개</small></label>
+    <label><span>최대 선택</span><input type="number" min="1" max={optionCount} value={question.maxSelect ?? ''} placeholder={String(optionCount)} onChange={(event) => onQuestionChange(question.id, { maxSelect: toValue(event.target.value) })} aria-label={`${questionIndex + 1}번 문항 최대 선택 개수`} /><small>개</small></label>
+    {error ? <p className="form-message form-message--error" role="alert">{error}</p> : <p className="formmate-select-range__hint">{usesDefaults ? `비워 두면 최소 1개, 최대 ${optionCount}개(보기 수)로 게시돼요.` : `응답자는 ${min}~${max}개를 선택하게 돼요.`}</p>}
+  </div>
 }
 
 export default function FormMateSurveyEditor({
@@ -46,7 +61,7 @@ export default function FormMateSurveyEditor({
     <section className="formmate-editor-meta" aria-label="설문 기본 정보">
       <div className="formmate-editor-field" data-editor-key="title"><header><span>01</span><b>설문 제목 <em>*</em></b></header><label><span><input maxLength="100" value={form.title} onChange={(event) => onChange({ title: event.target.value })} placeholder="설문 제목을 입력해주세요." /><small>{form.title.length}/100</small></span></label></div>
       <div className="formmate-editor-field" data-editor-key="description"><header><span>02</span><b>설문 설명</b></header><label><span><input maxLength="200" value={form.description} onChange={(event) => onChange({ description: event.target.value })} placeholder="설문에 대한 설명을 입력해주세요." /><small>{form.description.length}/200</small></span></label></div>
-      <div className="formmate-editor-field" data-editor-key="basic"><header><span>03</span><b>기본 정보</b></header><div className="formmate-editor-basic"><label><b>목표 응답 인원</b><span><input type="number" min="1" max="100" value={form.targetCount} onChange={(event) => onChange({ targetCount: Number(event.target.value) })} /><small>명</small></span></label><label><b>마감일</b><span><input type="date" min={getKstDateString()} required value={form.deadline || ''} onChange={(event) => onChange({ deadline: event.target.value })} /></span></label></div></div>
+      <div className="formmate-editor-field" data-editor-key="basic"><header><span>03</span><b>기본 정보</b></header><div className="formmate-editor-basic"><label><b>목표 응답 인원</b><span><input type="number" min="1" max="100" value={form.targetCount} onChange={(event) => onChange({ targetCount: Number(event.target.value) })} /><small>명</small></span></label><label><b>마감일</b><span><input type="date" min={getTomorrowKstDateString()} required value={form.deadline || ''} onChange={(event) => onChange({ deadline: event.target.value })} /></span></label><label><b>카테고리 <small>(선택)</small></b><span><input maxLength="20" value={form.category || ''} onChange={(event) => onChange({ category: event.target.value })} placeholder="예: 교육, 라이프스타일" aria-label="카테고리" /></span></label><label><b>예상 소요 시간 <small>(선택)</small></b><span><input type="number" min="1" step="1" value={form.estimatedMinutes ?? ''} onChange={(event) => onChange({ estimatedMinutes: event.target.value === '' ? '' : Number(event.target.value) })} placeholder="예: 5" aria-label="예상 소요 시간(분)" /><small>분</small></span></label></div>{estimatedMinutesError(form.estimatedMinutes) && <p className="form-message form-message--error" role="alert">{estimatedMinutesError(form.estimatedMinutes)}</p>}</div>
     </section>
 
     <section className="formmate-editor-section" aria-label="설문 문항 편집" data-editor-key="questions">
@@ -73,7 +88,12 @@ export default function FormMateSurveyEditor({
                 {(question.options || []).map((option, optionIndex) => <div className="formmate-option-row" key={`${question.id}-${optionIndex}`}><span aria-hidden="true">⠿</span><input value={option} maxLength="50" onChange={(event) => updateOption(question, optionIndex, event.target.value)} aria-label={`${questionIndex + 1}번 문항 ${optionIndex + 1}번째 선택지`} /><button type="button" aria-label="선택지 수정" onClick={(event) => event.currentTarget.previousElementSibling?.focus()}>✎</button><button type="button" aria-label="선택지 삭제" disabled={(question.options || []).length <= 2} onClick={() => removeOption(question, optionIndex)}>♲</button></div>)}
                 <button className="formmate-option-add" type="button" onClick={() => addOption(question)} disabled={(question.options || []).length >= 10}>＋ 선택지 추가</button>
               </div>}
+              {question.type === 'multiple' && <SelectRangeFields question={question} questionIndex={questionIndex} onQuestionChange={onQuestionChange} />}
               {question.type === 'scale' && <div className="formmate-scale-options"><strong>1</strong><span>—</span><strong>5</strong><small>척도는 1~5로 고정됩니다.</small></div>}
+              {question.type === 'scale' && <div className="formmate-option-list">
+                <div className="formmate-option-row"><span aria-hidden="true">1</span><input value={question.minLabel || ''} maxLength="50" onChange={(event) => onQuestionChange(question.id, { minLabel: event.target.value })} placeholder="1점의 의미 (예: 전혀 그렇지 않다)" aria-label={`${questionIndex + 1}번 문항 1점 설명`} /></div>
+                <div className="formmate-option-row"><span aria-hidden="true">5</span><input value={question.maxLabel || ''} maxLength="50" onChange={(event) => onQuestionChange(question.id, { maxLabel: event.target.value })} placeholder="5점의 의미 (예: 매우 그렇다)" aria-label={`${questionIndex + 1}번 문항 5점 설명`} /></div>
+              </div>}
               {(question.type === 'text' || question.type === 'long') && <div className="formmate-answer-placeholder">응답자가 여기에 답변을 입력합니다.</div>}
             </div>
           </article>

@@ -1,28 +1,25 @@
 import { createContext, createElement, useContext, useEffect, useMemo, useState } from 'react'
-import { isSupabaseConfigured, supabase } from '../services/supabase'
-import { getProfile } from '../services/userService'
+import { getAccessToken, getRefreshToken, isApiConfigured, onAuthStateChange } from '../services/apiClient'
+import { getCurrentUser } from '../services/authService'
 
 const demoUser = { id: 'demo-user', email: 'demo@uniform.test', user_metadata: { name: '김유니' } }
-const demoProfile = { id: 'demo-user', email: 'demo@uniform.test', nickname: '김유니', role: 'ADMIN', status: 'active', restriction: null }
 const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(isSupabaseConfigured ? null : demoUser)
-  const [profile, setProfile] = useState(isSupabaseConfigured ? null : demoProfile)
-  const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [user, setUser] = useState(isApiConfigured ? null : demoUser)
+  const [loading, setLoading] = useState(isApiConfigured)
   useEffect(() => {
-    if (!supabase) return undefined
-    const applySession = async (session) => {
-      const nextUser = session?.user ?? null
-      setUser(nextUser)
-      if (!nextUser) { setProfile(null); setLoading(false); return }
-      try { setProfile(await getProfile(nextUser.id)) } catch { setProfile(null) }
-      finally { setLoading(false) }
-    }
-    supabase.auth.getSession().then(({ data }) => applySession(data.session))
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => { applySession(session) })
-    return () => data.subscription.unsubscribe()
+    if (!isApiConfigured) return undefined
+    let active = true
+    const unsubscribe = onAuthStateChange((_event, nextUser) => { if (active) { setUser(nextUser ?? null); setLoading(false) } })
+    // 저장된 토큰이 있으면 /users/me로 유효성을 확인한다. 만료됐으면 apiClient가 refresh를 시도하고, 실패하면 토큰을 지운다.
+    if (!getAccessToken() && !getRefreshToken()) setLoading(false)
+    else getCurrentUser()
+      .then((me) => { if (active) setUser(me) })
+      .catch(() => { if (active) setUser(null) })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false; unsubscribe() }
   }, [])
-  const value = useMemo(() => ({ user, profile, loading, demoMode: !isSupabaseConfigured, refreshProfile: async () => { if (user) setProfile(await getProfile(user.id)) } }), [user, profile, loading])
+  const value = useMemo(() => ({ user, loading, demoMode: !isApiConfigured }), [user, loading])
   return createElement(AuthContext.Provider, { value }, children)
 }
 export function useAuth() { return useContext(AuthContext) }

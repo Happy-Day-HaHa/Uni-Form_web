@@ -10,7 +10,6 @@ function statusLabel(status) {
   if (status === 'draft') return '임시저장'
   if (status === 'closed') return '마감'
   if (status === 'archived') return '보관'
-  if (status === 'removed') return '운영 삭제'
   return '모집 중'
 }
 
@@ -22,12 +21,24 @@ export default function SurveyManage() {
   const [error, setError] = useState('')
   const [toast, setToast] = useState('')
   const [closeOpen, setCloseOpen] = useState(false)
+  const [closeError, setCloseError] = useState('')
+  // 관리 권한이 없는 팀 설문. 팀원인지는 알 수 없으므로(canManage만 온다) 결과 화면으로 안내만 하고,
+  // 실제 결과 조회 권한은 결과 API(비팀원 403)와 결과 화면이 판단한다.
+  const [teamSurveyDenied, setTeamSurveyDenied] = useState(false)
 
   useEffect(() => {
     getSurvey(surveyId).then((item) => {
       if (!item) throw new Error('설문을 찾을 수 없습니다.')
-      const canManage = item.creator_id === user.id || (demoMode && isDemoSurveyFixture(item.id))
-      if (!canManage) throw new Error('이 설문을 관리할 권한이 없습니다.')
+      // 팀 설문은 isOwner가 항상 false라서 백엔드의 canManage(팀장, 해산됐으면 해산 당시 팀장)로 판단한다.
+      if (item.owner_type === 'TEAM') {
+        if (!item.can_manage) {
+          setTeamSurveyDenied(true)
+          throw new Error('이 설문을 관리할 권한이 없습니다.')
+        }
+      } else {
+        const canManage = (item.is_owner ?? item.creator_id === user.id) || (demoMode && isDemoSurveyFixture(item.id))
+        if (!canManage) throw new Error('이 설문을 관리할 권한이 없습니다.')
+      }
       setSurvey(item)
     }).catch((loadError) => setError(loadError.message)).finally(() => setLoading(false))
   }, [demoMode, surveyId, user.id])
@@ -39,20 +50,24 @@ export default function SurveyManage() {
   }
 
   async function closeSurvey() {
-    const updated = await closeSurveyRequest(survey.id)
-    setSurvey((current) => ({ ...current, ...updated, status: 'closed' }))
-    setCloseOpen(false)
-    setToast('설문 모집을 종료했습니다.')
+    try {
+      setCloseError('')
+      await closeSurveyRequest(survey.id)
+      setSurvey((current) => ({ ...current, status: 'closed' }))
+      setCloseOpen(false)
+      setToast('설문 모집을 종료했습니다.')
+    } catch (closeFailure) {
+      setCloseError(closeFailure.message || '설문을 마감하지 못했습니다.')
+    }
   }
 
   if (loading) return <ServiceShell activePath="/my-surveys"><div className="survey-manage-loading">설문 관리 정보를 불러오고 있어요.</div></ServiceShell>
-  if (error) return <ServiceShell activePath="/my-surveys"><section className="result-state"><span>!</span><h1>{error}</h1><p>내 설문에서 다시 확인해주세요.</p><div><Link className="ui-button" to="/my-surveys">내 설문으로 돌아가기</Link></div></section></ServiceShell>
+  if (error) return <ServiceShell activePath="/my-surveys"><section className="result-state"><span>!</span><h1>{error}</h1><p>{teamSurveyDenied ? '팀 설문은 팀장만 관리할 수 있어요. 결과는 설문을 만든 팀의 팀원이면 결과 화면에서 확인할 수 있어요.' : '내 설문에서 다시 확인해주세요.'}</p><div><Link className="ui-button" to="/my-surveys">내 설문으로 돌아가기</Link>{teamSurveyDenied && <Link className="ui-button ui-button--secondary" to={`/surveys/${surveyId}/results`}>결과 화면으로 이동</Link>}</div></section></ServiceShell>
 
   const responses = Number(survey.response_count || 0)
   const target = Math.max(1, Number(survey.target_count || 1))
   const progress = Math.min(100, Math.round(responses / target * 100))
   const isDraft = survey.status === 'draft'
-  const isRemoved = survey.status === 'removed'
   const lifecycleStatus = getSurveyLifecycleStatus(survey)
   const isClosed = lifecycleStatus === 'closed'
 
@@ -67,14 +82,12 @@ export default function SurveyManage() {
       <article><small>문항</small><strong>{survey.questions?.length || 0}개</strong></article>
     </section>
 
-    {survey.status === 'removed' && <div className="admin-alert">운영 삭제 사유: {survey.removal_reason || '운영 정책 위반'} · 처리일 {survey.removed_at ? new Date(survey.removed_at).toLocaleDateString('ko-KR') : '-'} · 삭제 전에 수집한 결과는 계속 조회할 수 있습니다. <Link to="/support">고객센터 문의</Link></div>}
-
     <section className="survey-manage__actions"><header><h2>설문 관리</h2><p>이 설문에 필요한 작업만 모아두었습니다.</p></header><div>
       {!isDraft && <Link className="survey-manage-action survey-manage-action--primary" to={`/surveys/${survey.id}/results`}><span>결과 확인</span><small>모인 응답과 문항별 결과를 확인합니다.</small><b>→</b></Link>}
-      {!isRemoved && <button className="survey-manage-action" type="button" onClick={share}><span>설문 링크 복사</span><small>참여자에게 공유할 주소를 복사합니다.</small><b>→</b></button>}
-      {!isDraft && !isClosed && !isRemoved && <button className="survey-manage-action" type="button" onClick={() => setCloseOpen(true)}><span>직접 마감</span><small>새 응답 모집을 종료합니다.</small><b>→</b></button>}
+      <button className="survey-manage-action" type="button" onClick={share}><span>설문 링크 복사</span><small>참여자에게 공유할 주소를 복사합니다.</small><b>→</b></button>
+      {!isDraft && !isClosed && <button className="survey-manage-action" type="button" onClick={() => setCloseOpen(true)}><span>직접 마감</span><small>새 응답 모집을 종료합니다.</small><b>→</b></button>}
     </div></section>
-    <Modal open={closeOpen} title="설문을 직접 마감할까요?" onClose={() => setCloseOpen(false)}><p>마감한 설문은 다시 열 수 없습니다. 같은 주제로 다시 모집하려면 재업로드해야 하며, 마감 30일 후 설문 원문은 파기됩니다.</p><div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={() => setCloseOpen(false)}>취소</button><button className="ui-button ui-button--danger" onClick={closeSurvey}>마감하기</button></div></Modal>
+    <Modal open={closeOpen} title="설문을 직접 마감할까요?" onClose={() => { setCloseOpen(false); setCloseError('') }}><p>마감한 설문은 다시 열 수 없습니다. 같은 주제로 다시 모집하려면 재업로드해야 하며, 마감 30일 후 설문 원문은 파기됩니다.</p>{closeError && <p className="form-message form-message--error" role="alert">{closeError}</p>}<div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={() => setCloseOpen(false)}>취소</button><button className="ui-button ui-button--danger" onClick={closeSurvey}>마감하기</button></div></Modal>
     {toast && <div className="service-toast" role="status">✓ {toast}</div>}
   </div></ServiceShell>
 }

@@ -1,4 +1,5 @@
-import { supabase } from './supabase'
+import { apiClient, isApiConfigured } from './apiClient'
+import { getKstDateString } from '../utils/surveyPolicy'
 
 const nicknames = [
   '하윤서', '박도현', '이서진', '최은우', '정하람', '김도윤', '오지안', '윤서준',
@@ -64,16 +65,48 @@ export function getWeekMeta() {
   return { rangeLabel: `${format(monday)} ~ ${format(nextMonday)}`, remainingLabel }
 }
 
-export async function getLeaderboard(userId, { myWeeklyScore = 7 } = {}) {
-  if (supabase) {
-    const { data: notice } = await supabase.from('reward_notice').select('tiers,tie_rule_text').eq('id', true).maybeSingle()
-    const rewards = Array.isArray(notice?.tiers) && notice.tiers.length ? notice.tiers.map((label, index) => ({ rank: index + 1, label })) : REWARD_TIERS
-    const policyNotes = notice?.tie_rule_text ? [...POLICY_NOTES.slice(0, 2), notice.tie_rule_text, ...POLICY_NOTES.slice(3)] : POLICY_NOTES
-    return { entries: [], me: null, week: getWeekMeta(), rewards, policyNotes, lastWeekRank: null, available: false }
+// ── API 모드 ─────────────────────────────────────────────────────────────
+// 백엔드 리더보드는 이번 주(KST 월요일 시작)만 있고, 10명씩 최대 5쪽(50위)까지 준다.
+// 응답 제출 모달의 순위도 이 API의 myRank를 써서 리더보드 화면과 같은 숫자를 보여준다.
+function kstMonthDay(isoString) {
+  const [, month, day] = getKstDateString(new Date(isoString)).split('-')
+  return `${Number(month)}.${Number(day)}`
+}
+
+function apiWeekMeta(weekStart, weekEnd) {
+  const remainingMs = Math.max(0, new Date(weekEnd).getTime() - Date.now())
+  const remainingHours = Math.floor(remainingMs / 3600000)
+  const remainingDays = Math.floor(remainingHours / 24)
+  return {
+    rangeLabel: `${kstMonthDay(weekStart)} ~ ${kstMonthDay(weekEnd)}`,
+    remainingLabel: remainingDays > 0 ? `${remainingDays}일 ${remainingHours % 24}시간 남음` : `${remainingHours}시간 남음`,
   }
-  let configuredRewards = REWARD_TIERS
-  let policyNotes = POLICY_NOTES
-  try { const notice = JSON.parse(localStorage.getItem('uniform-admin-demo') || '{}').notice; if (notice?.tiers?.length) configuredRewards = notice.tiers.map((label, index) => ({ rank: index + 1, label })); if (notice?.tieRule) policyNotes = [...POLICY_NOTES.slice(0, 2), notice.tieRule, ...POLICY_NOTES.slice(3)] } catch { /* use defaults */ }
+}
+
+const toEntry = (item) => ({ rank: item.rank, nickname: item.nickname, score: item.points, lastActiveLabel: item.lastActiveAt ? kstMonthDay(item.lastActiveAt) : '' })
+
+async function getApiLeaderboard() {
+  const [first, config] = await Promise.all([apiClient.get('/leaderboard?page=1'), apiClient.get('/leaderboard/rewards/config').catch(() => null)])
+  const restPages = Array.from({ length: Math.max(0, first.ranks.totalPages - 1) }, (_, index) => index + 2)
+  const rest = await Promise.all(restPages.map((page) => apiClient.get(`/leaderboard?page=${page}`)))
+  const entries = [first, ...rest].flatMap((data) => data.ranks.items.map(toEntry))
+  const { myRank } = first
+  return {
+    entries,
+    participantCount: first.participantCount,
+    // pointsToNext: null이면 전체 1위, 0이면 공동 순위 — 화면의 gapToAbove 규칙과 같다.
+    me: myRank.rank ? { rank: myRank.rank, score: myRank.points, gapToAbove: myRank.pointsToNext } : null,
+    week: apiWeekMeta(first.weekStart, first.weekEnd),
+    rewards: REWARD_TIERS,
+    rewardText: config?.rewardText || '',
+    policyNotes: config?.tieRuleText ? [...POLICY_NOTES.filter((note) => !note.startsWith('동점자')), config.tieRuleText] : POLICY_NOTES,
+    lastWeekRank: myRank.previousWeekRank,
+    available: true,
+  }
+}
+
+export async function getLeaderboard(userId, { myWeeklyScore = 7 } = {}) {
+  if (isApiConfigured) return getApiLeaderboard()
   const entries = buildWeeklyEntries()
 
   let me = null
@@ -88,8 +121,8 @@ export async function getLeaderboard(userId, { myWeeklyScore = 7 } = {}) {
     entries,
     me,
     week: getWeekMeta(),
-    rewards: configuredRewards,
-    policyNotes,
+    rewards: REWARD_TIERS,
+    policyNotes: POLICY_NOTES,
     lastWeekRank: myWeeklyScore > 0 ? 31 : null, available: true,
   }
 }

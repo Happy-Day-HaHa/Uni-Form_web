@@ -104,7 +104,8 @@ export function isChartable(question) {
 
 export function renderQuestionChart(question, analysis) {
   const { canvas, ctx } = baseCanvas(question.title)
-  const total = analysis.values.length
+  // 화면 그래프와 같은 기준(응답한 사람 수). API 모드는 서버 집계만 오고 values가 비어 있다.
+  const total = analysis.responseCount ?? analysis.values.length
   if (question.type === 'single') drawPie(ctx, analysis.counts, total)
   else if (question.type === 'scale') drawVerticalBars(ctx, analysis.counts, total)
   else drawHorizontalBars(ctx, analysis.counts, total)
