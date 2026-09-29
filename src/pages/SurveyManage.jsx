@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import LoadingState from '../components/LoadingState'
 import { Link, useParams } from 'react-router-dom'
 import ServiceShell from '../components/ServiceShell'
 import Modal from '../components/Modal'
@@ -61,7 +62,7 @@ export default function SurveyManage() {
     }
   }
 
-  if (loading) return <ServiceShell activePath="/my-surveys"><div className="survey-manage-loading">설문 관리 정보를 불러오고 있어요.</div></ServiceShell>
+  if (loading) return <ServiceShell activePath="/my-surveys"><LoadingState>설문 관리 정보를 불러오고 있어요.</LoadingState></ServiceShell>
   if (error) return <ServiceShell activePath="/my-surveys"><section className="result-state"><span>!</span><h1>{error}</h1><p>{teamSurveyDenied ? '팀 설문은 팀장만 관리할 수 있어요. 결과는 설문을 만든 팀의 팀원이면 결과 화면에서 확인할 수 있어요.' : '내 설문에서 다시 확인해주세요.'}</p><div><Link className="ui-button" to="/my-surveys">내 설문으로 돌아가기</Link>{teamSurveyDenied && <Link className="ui-button ui-button--secondary" to={`/surveys/${surveyId}/results`}>결과 화면으로 이동</Link>}</div></section></ServiceShell>
 
   const responses = Number(survey.response_count || 0)
