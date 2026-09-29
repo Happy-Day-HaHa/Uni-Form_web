@@ -31,7 +31,8 @@ export async function getDashboardTrend({ range = '7', metric = 'responses' } = 
 export function toAppPath(targetUrl) {
   if (!targetUrl) return null
   if (targetUrl === '/mypage') return '/my-surveys'
-  if (targetUrl.startsWith('/mypage/')) return null // 예: /mypage/responses — 내 응답 목록 화면이 아직 없다
+  if (targetUrl === '/mypage/responses') return '/my-responses'
+  if (targetUrl.startsWith('/mypage/')) return null
   if (/^\/surveys\/[^/]+$/.test(targetUrl) || targetUrl === '/support') return targetUrl
   return null
 }

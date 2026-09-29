@@ -1,6 +1,21 @@
 import { ApiError, apiClient } from './apiClient'
 import { getSurvey } from './surveyService'
 
+// 내 응답 내역(GET /mypage/responses). 작성 중(IN_PROGRESS)인 응답도 함께 온다.
+// excluded: 운영자가 부정 응답으로 집계에서 제외했는지, excludedReason: 제외 사유.
+export async function getMyResponses() {
+  const items = await apiClient.get('/mypage/responses')
+  return items.map((item) => ({
+    surveyId: item.surveyId,
+    surveyTitle: item.surveyTitle,
+    status: item.status === 'SUBMITTED' ? 'submitted' : 'in_progress',
+    submittedAt: item.submittedAt,
+    points: item.points,
+    excluded: Boolean(item.excluded),
+    excludedReason: item.excludedReason || '',
+  }))
+}
+
 // 응답을 제출한 설문 id 목록. GET /mypage/responses 중 SUBMITTED만 쓴다.
 export async function getRespondedSurveyIds(userId) {
   if (!userId) return []
