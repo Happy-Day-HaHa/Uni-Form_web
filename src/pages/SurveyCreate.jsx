@@ -12,11 +12,30 @@ import { validateSurvey } from '../utils/validation'
 const blankQuestion = (type = 'text') => ({ id: crypto.randomUUID(), title: '', type, required: true, options: (type === 'single' || type === 'multiple') ? ['선택 1', '선택 2'] : [], ...(type === 'scale' ? { min: 1, max: 5, minLabel: DEFAULT_SCALE_LABELS.min, maxLabel: DEFAULT_SCALE_LABELS.max } : {}) })
 const initialMessages = [{ role: 'assistant', text: '안녕하세요. 어떤 설문을 만들고 싶으신가요?' }]
 const questionTypeLabels = { single: '단일 선택', multiple: '복수 선택', scale: '척도형', text: '단답형', long: '장문형' }
-function FormMatePreview({ form }) {
+const AUTO_UPDATE_HIGHLIGHT_MS = 1800
+
+// "제목을 X로/으로" — 마지막 글자의 받침으로 조사를 고른다(받침 없음·ㄹ받침은 '로').
+function withRo(text) {
+  const code = text.trim().charCodeAt(text.trim().length - 1) - 0xac00
+  const coda = code >= 0 && code <= 11171 ? code % 28 : 0
+  return `"${text}"${coda === 0 || coda === 8 ? '로' : '으로'}`
+}
+function shorten(text, max = 40) { return text.length > max ? `${text.slice(0, max)}…` : text }
+
+// FormMate가 이번 답변에서 바로 바꾼 제목/설명을 채팅에 짧게 알린다.
+function autoUpdateNotices({ updatedTitle, updatedDescription }) {
+  const notices = []
+  if (updatedTitle !== undefined) notices.push(`제목을 ${withRo(shorten(updatedTitle))} 설정했어요.`)
+  if (updatedDescription !== undefined) notices.push(updatedDescription ? `설명을 ${withRo(shorten(updatedDescription))} 설정했어요.` : '설명을 비웠어요.')
+  return notices
+}
+
+function FormMatePreview({ form, highlightKeys = [] }) {
+  const flash = (key) => highlightKeys.includes(key) ? ' is-auto-updated' : ''
   const questions = form.questions.filter((question) => question.title.trim())
   const visibleQuestions = questions.length ? questions : form.questions
   return <div className="formmate-preview-body">
-    <header className="formmate-preview-intro" data-preview-key="title"><h3>{form.title || '설문 제목을 입력해주세요.'}</h3><p data-preview-key="description">{form.description || '설문에 대한 설명을 입력해주세요.'}</p><div data-preview-key="basic">{form.category && <span>{form.category}</span>}{form.estimatedMinutes !== '' && form.estimatedMinutes != null && <span>약 {Number(form.estimatedMinutes)}분</span>}<span>{visibleQuestions.length}개 문항</span>{form.deadline && <span>{form.deadline} 마감</span>}</div></header>
+    <header className="formmate-preview-intro" data-preview-key="title"><h3 className={flash('title').trim() || undefined}>{form.title || '설문 제목을 입력해주세요.'}</h3><p data-preview-key="description" className={flash('description').trim() || undefined}>{form.description || '설문에 대한 설명을 입력해주세요.'}</p><div data-preview-key="basic">{form.category && <span>{form.category}</span>}{form.estimatedMinutes !== '' && form.estimatedMinutes != null && <span>약 {Number(form.estimatedMinutes)}분</span>}<span>{visibleQuestions.length}개 문항</span>{form.deadline && <span>{form.deadline} 마감</span>}</div></header>
     <div className="formmate-preview-questions">{visibleQuestions.map((question, index) => {
       const options = question.type === 'scale' ? Array.from({ length: Number(question.max || 5) - Number(question.min || 1) + 1 }, (_, offset) => Number(question.min || 1) + offset) : question.options || []
       return <fieldset key={question.id} data-preview-key={`question-${question.id}`}><legend><b>Q{index + 1}.</b> {question.title || '질문을 입력해주세요.'}{question.required !== false && <em>*</em>}<small>{questionTypeLabels[question.type] || question.type}</small></legend>{question.type === 'text' || question.type === 'long' ? <textarea readOnly rows={question.type === 'long' ? 3 : 1} placeholder="답변을 입력해주세요." /> : options.map((option) => <label key={option}><input type={question.type === 'multiple' ? 'checkbox' : 'radio'} name={`preview-${question.id}`} disabled /> <span>{option}</span></label>)}</fieldset>
@@ -45,6 +64,8 @@ export default function SurveyCreate() {
   const [history, setHistory] = useState([])
   const [editMode, setEditMode] = useState(false)
   const [editTargetKey, setEditTargetKey] = useState('title')
+  // FormMate가 방금 자동으로 바꾼 필드(title/description) — 잠깐 강조해 바뀐 곳을 알려준다.
+  const [autoUpdatedKeys, setAutoUpdatedKeys] = useState([])
   const surveyPanelContentRef = useRef(null)
   const selectedIndex = form.questions.findIndex((item) => item.id === selectedQuestionId)
   const draft = useSurveyDraft({
@@ -58,6 +79,12 @@ export default function SurveyCreate() {
       setMessage('다른 곳에서 먼저 저장되어 최신 내용으로 바꿨어요. "마지막 변경 되돌리기"를 누르면 내 편집을 다시 적용합니다.')
     },
   })
+
+  useEffect(() => {
+    if (!autoUpdatedKeys.length) return undefined
+    const timer = window.setTimeout(() => setAutoUpdatedKeys([]), AUTO_UPDATE_HIGHLIGHT_MS)
+    return () => window.clearTimeout(timer)
+  }, [autoUpdatedKeys])
 
   useEffect(() => {
     if (!editMode) return
@@ -141,8 +168,11 @@ export default function SurveyCreate() {
     setAiMessage('')
     setApplying(true)
     try {
-      const { aiReply, proposedChanges } = await draft.sendMessage(text)
-      setAiMessages((current) => [...current, { role: 'assistant', text: aiReply, changes: proposedChanges.map((change) => ({ ...change, status: 'pending' })) }])
+      const reply = await draft.sendMessage(text)
+      const { aiReply, proposedChanges } = reply
+      setAiMessages((current) => [...current, { role: 'assistant', text: aiReply, notices: autoUpdateNotices(reply), changes: proposedChanges.map((change) => ({ ...change, status: 'pending' })) }])
+      const updatedKeys = [reply.updatedTitle !== undefined && 'title', reply.updatedDescription !== undefined && 'description'].filter(Boolean)
+      if (updatedKeys.length) setAutoUpdatedKeys(updatedKeys)
       setAiStep((step) => step + 1)
       if (proposedChanges.length) setAiMessage('적용할 제안을 골라주세요.')
     } catch (error) {
@@ -180,7 +210,7 @@ export default function SurveyCreate() {
       <FormMatePanel value={aiPrompt} onChange={setAiPrompt} onSend={handleAgentSend} onUndo={handleUndo} onApplyChanges={handleApplyChanges} onRevertChanges={handleRevertChanges} busyLabel="FormMate가 작업하고 있어요." canUndo={history.length > 0 && !applying} selectedLabel={selectedIndex >= 0 ? `Q${selectedIndex + 1} 선택됨` : ''} messages={aiMessages} message={aiMessage} applying={applying} suggestions={[]} draftSummary={aiStep > 0 ? { title: form.title, count: form.questions.length, minutes: form.estimatedMinutes, onOpen: () => setEditMode(false) } : null} />
       <section className={`formmate-survey-panel ${editMode ? 'is-editing' : ''}`}>
         <header><div><h2>{editMode ? '설문 편집' : '미리보기'}</h2>{editMode && <span>편집 중</span>}</div><button type="button" onClick={() => editMode ? setEditMode(false) : openEditorAtCurrentPosition()}>{editMode ? '편집 취소' : '수정하기'}</button></header>
-        <div className="formmate-survey-panel__content" ref={surveyPanelContentRef}>{draft.loading ? <LoadingState>초안을 불러오고 있어요.</LoadingState> : editMode ? <FormMateSurveyEditor form={form} onChange={(patch) => commitForm(patch)} onQuestionChange={(id, patch) => { const current = form.questions.find((item) => item.id === id); updateQuestion(id, patch.type && patch.type !== current.type ? { ...blankQuestion(patch.type), id, serverId: current.serverId, title: current.title, required: current.required } : patch) }} onAddQuestion={() => commitForm((current) => ({ ...current, questions: [...current.questions, blankQuestion('single')] }))} onDeleteQuestion={(id) => commitForm((current) => ({ ...current, questions: current.questions.filter((item) => item.id !== id) }))} selectedQuestionId={selectedQuestionId} onSelectQuestion={setSelectedQuestionId} /> : <FormMatePreview form={form} />}</div>
+        <div className="formmate-survey-panel__content" ref={surveyPanelContentRef}>{draft.loading ? <LoadingState>초안을 불러오고 있어요.</LoadingState> : editMode ? <FormMateSurveyEditor form={form} onChange={(patch) => commitForm(patch)} onQuestionChange={(id, patch) => { const current = form.questions.find((item) => item.id === id); updateQuestion(id, patch.type && patch.type !== current.type ? { ...blankQuestion(patch.type), id, serverId: current.serverId, title: current.title, required: current.required } : patch) }} onAddQuestion={() => commitForm((current) => ({ ...current, questions: [...current.questions, blankQuestion('single')] }))} onDeleteQuestion={(id) => commitForm((current) => ({ ...current, questions: current.questions.filter((item) => item.id !== id) }))} selectedQuestionId={selectedQuestionId} onSelectQuestion={setSelectedQuestionId} highlightKeys={autoUpdatedKeys} /> : <FormMatePreview form={form} highlightKeys={autoUpdatedKeys} />}</div>
         {(message || draft.error) && <p className="form-message form-message--error">{message || draft.error}</p>}
         <footer><span>{draft.saveStatus || '작성을 시작하면 자동 저장돼요'}</span><div><button className="ui-button ui-button--secondary" type="button" onClick={() => draft.flush().catch(() => {})}>임시 저장</button>{editMode ? <button className="ui-button" type="button" onClick={() => setEditMode(false)}>수정 완료</button> : <button className="ui-button" type="button" onClick={() => setPreviewOpen(true)}>설문 등록하기</button>}</div></footer>
       </section>
