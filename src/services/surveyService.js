@@ -198,13 +198,17 @@ export async function publishDraft(surveyId) {
 }
 
 // ── FormMate ──────────────────────────────────────────────────────
-// 응답: { aiReply, proposedChanges: [{ id, type, summary, after }] }
+// 응답: { aiReply, proposedChanges: [{ id, type, summary, after }], updatedTitle?, updatedDescription? }
 // type: ADD_QUESTION | UPDATE_QUESTION | DELETE_QUESTION | UPDATE_OPTION, DELETE_QUESTION은 after가 null.
+// 문항과 달리 제목/설명은 서버가 이번 턴에 바로 초안에 반영하고(version +1), 반영했을 때만 새 값이 온다.
+// 설명은 빈 문자열로 비울 수도 있어 undefined와 구분한다.
 export async function sendFormMateMessage(surveyId, message) {
   const data = await apiClient.post(`/surveys/drafts/${encodeURIComponent(surveyId)}/formmate/message`, { message })
   return {
     aiReply: data.aiReply,
     proposedChanges: (data.proposedChanges || []).map((change) => ({ ...change, question: change.after ? fromApiQuestion(change.after) : null })),
+    updatedTitle: data.updatedTitle,
+    updatedDescription: data.updatedDescription,
   }
 }
 
