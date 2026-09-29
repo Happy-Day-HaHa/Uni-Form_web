@@ -283,3 +283,9 @@
 .formmate-select-range p{flex-basis:100%;margin:0}
 .formmate-select-range__hint{color:#8491a7;font-size:.62rem}
 .question__hint{margin:4px 0 8px;color:#74839c;font-size:.72rem}
+/* 내 응답: 부정 응답으로 처리된 응답 */
+.survey-state--excluded{background:#fdecec;color:#c62828}
+.my-responses__row--excluded{border-color:#f5c2c2}
+.my-responses__reason{margin:6px 0 2px;color:#b3261e;font-size:.7rem}
+.my-responses__notice{margin:0 0 14px;padding:12px 14px;border:1px solid #f5c2c2;border-radius:10px;background:#fff6f6;color:#8a1c1c;font-size:.72rem;line-height:1.6}
+.my-responses__notice a{color:#c62828;font-weight:700;text-decoration:underline}

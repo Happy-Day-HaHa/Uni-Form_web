@@ -8,6 +8,7 @@ import '../styles/service-shell.css'
 const navItems = [
   ['/dashboard', '대시보드'],
   ['/my-surveys', '내 설문'],
+  ['/my-responses', '내 응답'],
   ['/formmate', '설문 만들기'],
   ['/surveys', '설문 목록'],
   ['/team', '팀 관리'],
