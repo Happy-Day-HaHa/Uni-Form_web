@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 import { signup } from '../services/authService'
 import { validateSignup } from '../utils/validation'
 import AuthLayout from '../components/AuthLayout'
@@ -13,6 +14,7 @@ const enrollmentOptions = ['재학', '휴학', '졸업', '해당 없음']
 
 export default function Signup() {
   const navigate = useNavigate()
+  const { user, loading: authLoading } = useAuth()
   const [form, setForm] = useState({ nickname: '', email: '', password: '', gender: '응답하지 않음', grade: '해당 없음', major: '해당 없음', enrollmentStatus: '해당 없음' })
   const [agreements, setAgreements] = useState({ age14: false, terms: false, privacy: false, marketing: false })
   const [message, setMessage] = useState('')
@@ -33,6 +35,9 @@ export default function Signup() {
       setSubmitting(false)
     }
   }
+
+  // 이미 로그인한 사용자는 회원가입 화면 대신 서비스 화면으로 보낸다.
+  if (!authLoading && user) return <Navigate to="/surveys" replace />
 
   return <AuthLayout mode="signup">
     <div className="auth-saas__title"><div><h1>회원가입</h1><p>대학(원)생을 위한 설문 플랫폼, UniForm을 시작하세요.</p></div></div>
