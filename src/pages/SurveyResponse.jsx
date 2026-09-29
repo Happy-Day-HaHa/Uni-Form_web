@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import LoadingState from '../components/LoadingState'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Modal from '../components/Modal'
 import ProgressBar from '../components/ProgressBar'
@@ -129,7 +130,7 @@ export default function SurveyResponse() {
   }
 
   if (blocked.reason) return <ServiceShell activePath="/surveys"><div className="empty-state result-gate"><b>{blocked.reason === 'already' ? 'COMPLETED' : blocked.reason === 'closed' ? 'CLOSED' : 'MY SURVEY'}</b><h1>{survey.title}</h1><p>{blocked.message}</p><Link className="ui-button" to="/surveys">다른 설문 보기</Link></div></ServiceShell>
-  if (!survey) return <ServiceShell activePath="/surveys"><div className="empty-state">{message || '설문을 불러오고 있어요.'}</div></ServiceShell>
+  if (!survey) return <ServiceShell activePath="/surveys">{message ? <div className="empty-state">{message}</div> : <LoadingState>설문을 불러오고 있어요.</LoadingState>}</ServiceShell>
   const isOwner = survey.is_owner ?? survey.creator_id === user.id
   if (isOwner) return <ServiceShell activePath="/my-surveys"><div className="empty-state result-gate"><b>MY SURVEY</b><h1>{survey.title}</h1><p>본인이 만든 설문에는 직접 응답할 수 없어요.</p>{survey.response_count > 0 || survey.is_owner ? <Link className="ui-button" to={`/surveys/${survey.id}/results`}>문항별 결과 보기 →</Link> : <Link className="ui-button" to="/dashboard">응답 현황 확인하기 →</Link>}</div></ServiceShell>
   if (alreadyResponded) return <ServiceShell activePath="/surveys"><div className="empty-state result-gate"><b>COMPLETED</b><h1>{survey.title}</h1><p>이미 응답을 완료한 설문입니다.</p><Link className="ui-button" to="/surveys">다른 설문 보기</Link></div></ServiceShell>

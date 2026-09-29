@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import LoadingState from '../LoadingState'
 import Modal from '../Modal'
 
 const labels = { active: '활성', draft: '임시저장', closed: '마감', archived: '보관', removed: '운영 삭제', restricted: '이용 제한', pending: '인증 대기', withdrawn: '탈퇴', STAFF: '운영팀', ADMIN: '관리자', warning: '경고 후 제출', excluded: '집계 제외' }
@@ -21,7 +22,7 @@ export function getAdminErrorMessage(error) {
 export function StatusBadge({ value, children, scope }) { const key = `${scope ? `${scope}-` : ''}${String(value).toLowerCase()}`; return <span className={`admin-badge admin-badge--${key}`}>{children || labels[value] || value}</span> }
 export function PageHeader({ eyebrow, title, description, actions }) { return <header className="admin-page-head"><div>{eyebrow && <span>{eyebrow}</span>}<h1>{title}</h1>{description && <p>{description}</p>}</div>{actions && <div className="admin-page-head__actions">{actions}</div>}</header> }
 export function Empty({ title = '조건에 맞는 항목이 없어요', description = '검색어나 필터를 바꿔보세요.' }) { return <div className="admin-empty"><b>{title}</b><p>{description}</p></div> }
-export function Loading() { return <div className="admin-loading">데이터를 불러오고 있어요.</div> }
+export function Loading() { return <LoadingState>데이터를 불러오고 있어요.</LoadingState> }
 export function AdminTabs({ items, current, onChange }) { return <nav className="admin-tabs">{items.map(([key, label]) => <button key={key} type="button" className={current === key ? 'active' : ''} onClick={() => onChange(key)}>{label}</button>)}</nav> }
 export function Pagination({ page, totalItems, pageSize = 20, onChange }) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
