@@ -164,6 +164,26 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
     }
   }, [enabled, flush, hasUnsaved])
 
+  // FormMate가 제목/설명을 바로 반영하면 서버 version이 1 오르지만 응답에 새 version은 없다.
+  // 진행 중인 저장을 기다린 뒤 초안을 다시 받아 최신 version으로 맞춘다 — 이후 저장·제안 적용이 충돌하지 않게.
+  // 화면에서는 제목/설명만 바꾸고, 기다리는 동안 입력한 다른 편집은 그대로 둔다(그 편집은 자동 저장된다).
+  const syncAutoUpdated = useCallback(async ({ updatedTitle, updatedDescription }) => {
+    const patch = {}
+    if (updatedTitle !== undefined) patch.title = updatedTitle
+    if (updatedDescription !== undefined) patch.description = updatedDescription ?? ''
+    while (savingRef.current) await savingRef.current.catch(() => {})
+    try {
+      const latest = await getDraft(draftIdRef.current)
+      versionRef.current = latest.version
+      savedSignatureRef.current = signatureOf(draftToForm(latest))
+    } catch {
+      // 다시 받지 못하면 서버가 올린 만큼 직접 올린다. 어긋나면 다음 저장의 충돌 처리가 최신 내용으로 맞춘다.
+      versionRef.current += 1
+      savedSignatureRef.current = JSON.stringify({ ...JSON.parse(savedSignatureRef.current), ...patch })
+    }
+    setForm((current) => ({ ...current, ...patch }))
+  }, [setForm])
+
   const sendMessage = useCallback(async (message) => {
     await flush()
     if (!draftIdRef.current) {
@@ -175,8 +195,10 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
       if (mountedRef.current) callbacksRef.current.onDraftCreated?.(created.id)
       await flush()
     }
-    return sendFormMateMessage(draftIdRef.current, message)
-  }, [flush])
+    const reply = await sendFormMateMessage(draftIdRef.current, message)
+    if (reply.updatedTitle !== undefined || reply.updatedDescription !== undefined) await syncAutoUpdated(reply)
+    return reply
+  }, [flush, syncAutoUpdated])
 
   const applyChanges = useCallback(async (changeIds, { revert = false } = {}) => {
     await flush()

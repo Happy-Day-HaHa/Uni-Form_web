@@ -26,3 +26,11 @@
 .formmate-changes footer button.is-secondary{border:1px solid #dce5f1;background:#fff;color:#52627f}
 .formmate-changes footer button:disabled{opacity:.5;cursor:not-allowed}
 @media (max-width:640px){.formmate-changes{margin-left:0}}
+/* FormMate가 제목/설명을 바로 반영했다는 안내와, 바뀐 필드를 잠깐 강조하는 효과 */
+.formmate-auto-notices{display:grid;justify-items:start;gap:4px;min-width:0;margin:0 0 0 48px;padding:0;list-style:none}
+.formmate-auto-notices li{display:flex;align-items:flex-start;gap:6px;max-width:100%;overflow-wrap:anywhere;padding:6px 10px;border-radius:9px;background:#ecf8f4;color:#146c5b;font-size:.62rem;font-weight:700;line-height:1.5}
+.formmate-auto-notices li span{color:#168b75;font-weight:900}
+@keyframes formmate-auto-updated{0%,55%{border-color:#40abfc;background-color:#eef7ff;box-shadow:0 0 0 3px rgba(64,171,252,.28)}100%{box-shadow:0 0 0 3px rgba(64,171,252,0)}}
+.formmate-editor-field.is-auto-updated>label>span{animation:formmate-auto-updated 1.8s ease-out}
+.formmate-preview-intro .is-auto-updated{border-radius:8px;animation:formmate-auto-updated 1.8s ease-out}
+@media (max-width:640px){.formmate-auto-notices{margin-left:0}}
