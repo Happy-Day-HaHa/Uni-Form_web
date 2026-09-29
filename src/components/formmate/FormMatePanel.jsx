@@ -17,14 +17,18 @@ function FormMateChangeCards({ changes, busy, onApply, onRevert }) {
   function toggle(id) { setUnchecked((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next }) }
 
   return <div className="formmate-changes">
-    {changes.map((change) => <label className={`formmate-change formmate-change--${change.status}`} key={change.id}>
-      {change.status === 'pending' ? <input type="checkbox" checked={!unchecked.has(change.id)} disabled={busy} onChange={() => toggle(change.id)} /> : <i aria-hidden="true">{change.status === 'applied' ? '✓' : '↺'}</i>}
+    {changes.map((change) => {
+      // 대기 중인 제안은 체크 여부를 카드 전체에 드러낸다(선택됨/적용 안 함).
+      const pendingState = change.status === 'pending' ? (unchecked.has(change.id) ? ' is-skipped' : ' is-selected') : ''
+      return <label className={`formmate-change formmate-change--${change.status}${pendingState}`} key={change.id}>
+      {change.status === 'pending' ? <input type="checkbox" checked={!unchecked.has(change.id)} disabled={busy} onChange={() => toggle(change.id)} aria-label={`${change.summary} 적용`} /> : <i aria-hidden="true">{change.status === 'applied' ? '✓' : '↺'}</i>}
       <div>
-        <header><em>{changeTypeLabels[change.type] || change.type}</em>{change.status === 'applied' && <small>적용됨</small>}{change.status === 'reverted' && <small>되돌림</small>}</header>
+        <header><em>{changeTypeLabels[change.type] || change.type}</em>{change.status === 'applied' && <small>적용됨</small>}{change.status === 'reverted' && <small>되돌림</small>}{pendingState === ' is-skipped' && <small className="formmate-change__skip">적용 안 함</small>}</header>
         <b>{change.summary}</b>
         {change.question && <p>{change.question.title}<span>{questionTypeLabels[change.question.type]}{change.question.options?.length ? ` · ${change.question.options.join(' / ')}` : ''}</span></p>}
       </div>
-    </label>)}
+    </label>
+    })}
     <footer>
       {pending.length > 0 && <button type="button" disabled={busy || !selected.length} onClick={() => onApply(selected.map((change) => change.id))}>선택한 제안 적용 ({selected.length})</button>}
       {applied.length > 0 && <button type="button" className="is-secondary" disabled={busy} onClick={() => onRevert(applied.map((change) => change.id))}>적용한 제안 되돌리기</button>}
