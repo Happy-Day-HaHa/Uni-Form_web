@@ -34,6 +34,22 @@ function FormMateChangeCards({ changes, busy, onApply, onRevert }) {
 
 export default function FormMatePanel({ value, onChange, onCreateDraft, onSend, onUndo, onApplyChanges, onRevertChanges, canUndo = false, selectedLabel = '', messages = starterMessages, message = '', buttonLabel = '보내기', applying = false, busyLabel = '설문에 반영하고 있어요.', suggestions = [], draftSummary = null }) {
   const composerRef = useRef(null)
+  // 새 메시지가 오면 맨 아래로 스크롤한다. 사용자가 위로 올려 과거 메시지를 보는 중이면 방해하지 않는다.
+  const messagesRef = useRef(null)
+  const stickToBottomRef = useRef(true)
+  function handleMessagesScroll() {
+    const list = messagesRef.current
+    if (list) stickToBottomRef.current = list.scrollHeight - list.scrollTop - list.clientHeight < 80
+  }
+  useEffect(() => {
+    const list = messagesRef.current
+    if (!list) return
+    // 방금 보낸 내 메시지는 어디를 보고 있었든 보여준다.
+    const sentByMe = messages.at(-1)?.role === 'user'
+    if (!stickToBottomRef.current && !sentByMe) return
+    list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' })
+    stickToBottomRef.current = true
+  }, [messages, applying])
 
   useEffect(() => {
     const textarea = composerRef.current
@@ -54,7 +70,7 @@ export default function FormMatePanel({ value, onChange, onCreateDraft, onSend, 
   function keyDown(event) { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }
   return <aside className="formmate-agent">
     <header><div><h2>FormMate</h2><p>설문 제작을 함께 도와드릴게요.</p></div></header>
-    <div className="formmate-agent__messages" aria-live="polite">{messages.map((item, index) => <div className="formmate-thread-item" key={`${item.role}-${index}`}><div className={`formmate-message formmate-message--${item.role}`}><p>{item.text}</p></div>{item.changes?.length > 0 && <FormMateChangeCards changes={item.changes} busy={applying} onApply={(ids) => onApplyChanges?.(index, ids)} onRevert={(ids) => onRevertChanges?.(index, ids)} />}</div>)}
+    <div className="formmate-agent__messages" aria-live="polite" ref={messagesRef} onScroll={handleMessagesScroll}>{messages.map((item, index) => <div className="formmate-thread-item" key={`${item.role}-${index}`}><div className={`formmate-message formmate-message--${item.role}`}><p>{item.text}</p></div>{item.changes?.length > 0 && <FormMateChangeCards changes={item.changes} busy={applying} onApply={(ids) => onApplyChanges?.(index, ids)} onRevert={(ids) => onRevertChanges?.(index, ids)} />}</div>)}
       {messages.length <= 1 && <div className="formmate-examples"><span>이렇게 물어보세요</span>{['Z세대의 소비 트렌드에 대한 설문을 만들어줘', '대학생의 학습 플랫폼 이용 경험에 대해 10문항 정도 구성해줘', '3분 이내에 끝나는 간단한 만족도 조사를 만들어줘'].map((item) => <button key={item} type="button" onClick={() => onChange(item)}>“{item}”</button>)}</div>}
       {draftSummary && messages.length > 1 && <button className="formmate-draft-card" type="button" onClick={draftSummary.onOpen}><div><b>{draftSummary.title || '제목 없는 설문'}</b><small>{draftSummary.count}문항{draftSummary.minutes ? ` · 약 ${draftSummary.minutes}분 소요` : ''}</small></div><em>초안</em></button>}
       {applying && <div className="formmate-applying"><i /><i /><i /> {busyLabel}</div>}
