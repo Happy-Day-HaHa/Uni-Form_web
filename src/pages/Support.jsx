@@ -2,6 +2,9 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
 import { SUPPORT_EMAIL } from '../constants'
+import { useAuth } from '../hooks/useAuth'
+import { submitInquiry } from '../services/supportService'
+import { isEmail } from '../utils/validation'
 import '../styles/support.css'
 
 const categories = ['회원가입 / 로그인', '설문 제작', 'FormMate', '설문 참여', '리더보드', '팀 관리', '기타 문의']
@@ -19,8 +22,15 @@ export default function Support() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('기타 문의')
   const [openFaq, setOpenFaq] = useState('')
+  // 로그인 확인이 끝나기 전에는 비로그인으로 단정하지 않는다(이메일 칸이 잠깐 보였다 사라지지 않게).
+  const { user, loading: authLoading } = useAuth()
+  const needsEmail = !authLoading && !user
+  const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
-  const [submitted, setSubmitted] = useState(false)
+  const [email, setEmail] = useState('')
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  const [submitted, setSubmitted] = useState(null)
   const filteredFaq = useMemo(() => {
     const keyword = query.trim().toLocaleLowerCase('ko')
     return faqItems.filter(([type, question, answer]) => !keyword || `${type} ${question} ${answer}`.toLocaleLowerCase('ko').includes(keyword))
@@ -31,13 +41,23 @@ export default function Support() {
     else navigate('/')
   }
 
-  function submitInquiry(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    if (!message.trim()) return
-    setSubmitted(true)
+    setError('')
+    if (!subject.trim() || !message.trim()) return setError('제목과 문의 내용을 입력해주세요.')
+    // 로그인하지 않았으면 답변받을 이메일이 필요하다(로그인 상태면 서버가 계정 이메일을 쓴다).
+    if (needsEmail && !isEmail(email.trim())) return setError('답변받을 이메일 주소를 입력해주세요.')
+    try {
+      setSending(true)
+      const result = await submitInquiry({ subject: `[${category}] ${subject.trim()}`.slice(0, 200), message: message.trim(), email: needsEmail ? email.trim() : undefined })
+      setSubmitted(result)
+      setSubject(''); setMessage('')
+    } catch (reason) {
+      setError(reason.messages?.length > 1 ? reason.messages.join(' · ') : reason.message || '문의를 접수하지 못했어요. 잠시 후 다시 시도해주세요.')
+    } finally {
+      setSending(false)
+    }
   }
-
-  const mailHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`[UniForm 문의] ${category}`)}&body=${encodeURIComponent(message)}`
 
   return <main className="support-standalone motion-page">
     <header className="support-standalone__header"><Link to="/" aria-label="UniForm 홈"><BrandMark /></Link><button type="button" onClick={goBack}>← UniForm으로 돌아가기</button></header>
@@ -51,8 +71,13 @@ export default function Support() {
         </article>)}
         {!filteredFaq.length && <p className="support-empty">일치하는 도움말이 없습니다. 아래에서 직접 문의해주세요.</p>}
       </div></section>
-      <form className="support-inquiry" onSubmit={submitInquiry}><h2>직접 문의하기</h2><div className="support-category" role="group" aria-label="문의 유형">{categories.map((item) => <button className={category === item ? 'is-selected' : ''} type="button" key={item} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}</div><label><span>문의 내용</span><textarea value={message} onChange={(event) => { setMessage(event.target.value); setSubmitted(false) }} placeholder="겪고 있는 문제나 궁금한 내용을 자세히 적어주세요." rows="4" /></label><button className="support-submit" type="submit" disabled={!message.trim()}>문의 준비하기</button>
-        {submitted && <div className="support-ready" role="status"><div><b>문의 내용이 준비되었습니다.</b><p>현재 문의는 이메일로 접수됩니다.</p></div><a href={mailHref}>이메일로 보내기</a></div>}
+      <form className="support-inquiry" onSubmit={handleSubmit}><h2>직접 문의하기</h2><div className="support-category" role="group" aria-label="문의 유형">{categories.map((item) => <button className={category === item ? 'is-selected' : ''} type="button" key={item} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}</div>
+        <label><span>제목</span><input value={subject} maxLength={150} onChange={(event) => { setSubject(event.target.value); setSubmitted(null) }} placeholder="문의 제목을 입력해주세요." /></label>
+        <label><span>문의 내용</span><textarea value={message} maxLength={2000} onChange={(event) => { setMessage(event.target.value); setSubmitted(null) }} placeholder="겪고 있는 문제나 궁금한 내용을 자세히 적어주세요." rows="4" /></label>
+        {needsEmail && <label><span>답변받을 이메일</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="hello@example.com" /></label>}
+        {error && <p className="form-message form-message--error" role="alert">{error}</p>}
+        <button className="support-submit" type="submit" disabled={sending || authLoading || !subject.trim() || !message.trim()}>{sending ? '보내는 중…' : '문의 보내기'}</button>
+        {submitted && <div className="support-ready" role="status"><div><b>문의가 접수되었습니다.</b><p>{user ? '가입한 이메일' : '입력한 이메일'}로 답변을 보내드릴게요.</p></div></div>}
       </form>
     </section>
     <footer><span>{SUPPORT_EMAIL}</span><small>© 2026 UNIFORM</small></footer>
