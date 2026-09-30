@@ -44,8 +44,16 @@ export default function ServiceShell({ children, activePath }) {
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('uniform-sidebar-collapsed') === '1')
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 780px)').matches)
+  const sidebarOpen = isMobile ? mobileOpen : !collapsed
 
   useEffect(() => { localStorage.setItem('uniform-sidebar-collapsed', collapsed ? '1' : '0') }, [collapsed])
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 780px)')
+    const sync = () => setIsMobile(query.matches)
+    query.addEventListener('change', sync)
+    return () => query.removeEventListener('change', sync)
+  }, [])
   useEffect(() => {
     const close = (event) => {
       if (event.key === 'Escape') setMobileOpen(false)
@@ -54,23 +62,23 @@ export default function ServiceShell({ children, activePath }) {
     return () => window.removeEventListener('keydown', close)
   }, [])
 
-  function openMenu() {
-    if (window.matchMedia('(max-width: 780px)').matches) setMobileOpen(true)
-    else setCollapsed(false)
+  // 상단 토글: PC는 사이드바 접기/펼치기, 모바일은 서랍 열기/닫기.
+  function toggleMenu() {
+    if (isMobile) setMobileOpen((open) => !open)
+    else setCollapsed((value) => !value)
   }
 
   return <div className={`service-shell ${collapsed ? 'service-shell--collapsed' : ''} ${mobileOpen ? 'service-shell--mobile-open' : ''}`}>
     <button className="service-drawer-backdrop" type="button" aria-label="메뉴 닫기" onClick={() => setMobileOpen(false)} />
+    {/* 토글 + 로고는 사이드바 열림/닫힘과 관계없이 왼쪽 위 같은 자리에 고정한다. */}
+    <div className="service-corner"><button className="service-menu-button" type="button" aria-label={sidebarOpen ? '사이드바 닫기' : '사이드바 열기'} aria-expanded={sidebarOpen} onClick={toggleMenu}><span className="service-menu-button__icon" aria-hidden="true"><i /><i /></span></button><Link className="service-corner__brand" to="/" onClick={() => setMobileOpen(false)}><BrandMark /></Link></div>
     <aside className="service-sidebar" aria-label="서비스 사이드바">
-      <Link className="service-sidebar__brand" to="/"><BrandMark /></Link>
       <nav aria-label="서비스 메뉴">{navItems.map(([to, label]) => {
         const currentPath = activePath || location.pathname
         return <NavLink key={to} to={to} end onClick={() => setMobileOpen(false)} className={() => currentPath === to ? 'active' : ''}>{label}</NavLink>
       })}{profile?.role === 'ADMIN' && <NavLink to="/admin" className="service-sidebar__admin">관리자</NavLink>}</nav>
-      <button className="service-sidebar__collapse" type="button" onClick={handleLogout}>로그아웃</button>
-      <button className="service-sidebar__collapse" type="button" onClick={() => setCollapsed(true)}>사이드바 숨기기</button>
     </aside>
-    <div className="service-stage"><header className="service-topbar"><button className="service-menu-button" type="button" aria-label="메뉴 열기" aria-expanded={mobileOpen || !collapsed} onClick={openMenu}>메뉴</button><Link className="service-mobile-brand" to="/"><BrandMark /></Link><Link className="service-help" to="/support">고객센터</Link></header><main className="service-content motion-page">{children}</main></div>
+    <div className="service-stage"><header className="service-topbar"><Link className="service-help" to="/support">고객센터</Link><button className="service-logout" type="button" onClick={handleLogout}>로그아웃</button></header><main className="service-content motion-page">{children}</main></div>
   </div>
 }
 
