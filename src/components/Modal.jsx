@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 export default function Modal({ open, title, children, onClose }) {
   const closeRef = useRef(null)
@@ -16,5 +17,7 @@ export default function Modal({ open, title, children, onClose }) {
     return () => { document.removeEventListener('keydown', onKeyDown); window.clearTimeout(timer) }
   }, [open])
   if (!open) return null
-  return <div className="modal-backdrop" role="presentation" onMouseDown={onClose}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}><button ref={closeRef} className="modal__close" type="button" aria-label="닫기" onClick={onClose}>×</button><h2 id="modal-title">{title}</h2>{children}</section></div>
+  // body에 바로 렌더링한다. 페이지 안에 두면 transform이 걸린 조상(페이지 진입 애니메이션 등)이
+  // position:fixed의 기준이 되어, 어두운 배경이 화면 전체가 아니라 그 영역만 덮는다.
+  return createPortal(<div className="modal-backdrop" role="presentation" onMouseDown={onClose}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}><button ref={closeRef} className="modal__close" type="button" aria-label="닫기" onClick={onClose}>×</button><h2 id="modal-title">{title}</h2>{children}</section></div>, document.body)
 }
