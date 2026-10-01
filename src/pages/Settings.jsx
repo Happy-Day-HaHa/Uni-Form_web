@@ -64,6 +64,8 @@ export default function Settings() {
       setDeleteError(reason.message || '계정을 삭제하지 못했어요.')
     }
   }
+  // 닫을 때 입력도 비워, 다시 열면 "삭제"를 새로 입력하게 한다.
+  function closeDeleteModal() { setDeleteOpen(false); setDeleteText(''); setDeleteError('') }
   function toggle(key) { const before = notices[key]; setNotices((value) => ({ ...value, [key]: !before })); setPending(key); window.setTimeout(() => { setPending(''); setToast('알림 설정을 저장했습니다.') }, 420) }
   function download() {
     const blob = new Blob([JSON.stringify({ profile, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' })
@@ -85,7 +87,7 @@ export default function Settings() {
 
     {error && <p className="form-message form-message--error" role="alert">{error}</p>}
     <div className="settings-save"><button className="ui-button ui-button--secondary" type="button" onClick={() => { if (original) setProfile(original); setError('') }}>변경사항 취소</button><button className="ui-button" type="button" disabled={saving || !original} onClick={save}>{saving ? '저장 중…' : '변경사항 저장'}</button></div>
-    <Modal open={deleteOpen} title="계정을 삭제할까요?" onClose={() => { setDeleteOpen(false); setDeleteText('') }}><p>이 작업은 되돌릴 수 없습니다. 탈퇴 후 30일 동안은 같은 이메일로 다시 가입할 수 없어요. 계속하려면 아래에 <b>삭제</b>를 입력하세요.</p>{deleteError && <p className="form-message form-message--error" role="alert">{deleteError}</p>}<input className="service-input" value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="삭제" /><div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={() => setDeleteOpen(false)}>취소</button><button className="ui-button ui-button--danger" disabled={deleteText !== '삭제'} onClick={withdraw}>계정 삭제</button></div></Modal>
+    <Modal open={deleteOpen} title="계정을 삭제할까요?" onClose={closeDeleteModal}><p>이 작업은 되돌릴 수 없습니다. 탈퇴 후 30일 동안은 같은 이메일로 다시 가입할 수 없어요. 계속하려면 아래에 <b>삭제</b>를 입력하세요.</p>{deleteError && <p className="form-message form-message--error" role="alert">{deleteError}</p>}<input className="service-input" value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="삭제" /><div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={closeDeleteModal}>취소</button><button className="ui-button ui-button--danger" disabled={deleteText !== '삭제'} onClick={withdraw}>계정 삭제</button></div></Modal>
     {toast && <div className="service-toast" role="status">✓ {toast}</div>}
   </div></ServiceShell>
 }
