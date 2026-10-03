@@ -166,23 +166,35 @@ function QuestionEditor({ question, index, onQuestionChange }) {
   </div>
 }
 
-// 문항 순서가 바뀌면 각 카드를 원래 자리에서 새 자리로 미끄러지게 한다(FLIP). 내용 편집으로 높이만 바뀔 때는 움직이지 않는다.
-function useReorderAnimation(listRef, order) {
-  const positions = useRef(new Map())
-  const previousOrder = useRef(order)
+// 문항 순서나 선택 문항이 바뀌면 카드를 원래 자리·높이에서 새 자리·높이로 부드럽게 옮긴다(FLIP).
+// 선택한 카드는 살살 커지고, 선택이 풀린 카드는 살살 줄고, 그 아래 카드들은 미끄러져 따라온다.
+// 내용 편집으로 높이만 바뀔 때(key 그대로)는 움직이지 않는다.
+function useCardAnimation(listRef, key) {
+  const boxes = useRef(new Map())
+  const previousKey = useRef(key)
   useLayoutEffect(() => {
     const items = [...(listRef.current?.children || [])]
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (previousOrder.current !== order && !reduceMotion) {
+    if (previousKey.current !== key && !reduceMotion) {
       items.forEach((item) => {
-        const before = positions.current.get(item.dataset.qid)
-        if (before === undefined) return
-        const offset = before - (item.getBoundingClientRect().top + window.scrollY)
-        if (Math.abs(offset) > 1) item.animate([{ transform: `translateY(${offset}px)` }, { transform: 'none' }], { duration: 240, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' })
+        const before = boxes.current.get(item.dataset.qid)
+        if (!before) return
+        const box = item.getBoundingClientRect()
+        const offset = before.top - (box.top + window.scrollY)
+        const grow = Math.abs(before.height - box.height) > 1
+        if (Math.abs(offset) <= 1 && !grow) return
+        if (grow) item.style.overflow = 'hidden'
+        const animation = item.animate([
+          { transform: `translateY(${offset}px)`, ...(grow ? { height: `${before.height}px` } : {}) },
+          { transform: 'none', ...(grow ? { height: `${box.height}px` } : {}) },
+        ], { duration: 260, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' })
+        const reset = () => { item.style.overflow = '' }
+        animation.onfinish = reset
+        animation.oncancel = reset
       })
     }
-    previousOrder.current = order
-    positions.current = new Map(items.map((item) => [item.dataset.qid, item.getBoundingClientRect().top + window.scrollY]))
+    previousKey.current = key
+    boxes.current = new Map(items.map((item) => { const box = item.getBoundingClientRect(); return [item.dataset.qid, { top: box.top + window.scrollY, height: box.height }] }))
   })
 }
 
@@ -213,7 +225,7 @@ export default function SurveyBuilderEditor({ form, onChange, onQuestionChange, 
   const flash = (key) => (highlightKeys.includes(key) ? ' is-auto-updated' : '')
   const count = form.questions.length
   const listRef = useRef(null)
-  useReorderAnimation(listRef, form.questions.map((question) => question.id).join(','))
+  useCardAnimation(listRef, `${form.questions.map((question) => question.id).join(',')}|${selectedQuestionId}`)
 
   // 순서 바꾸기: 손잡이(⠿)를 마우스나 손가락으로 잡고 끈다(포인터 이벤트라 터치에서도 동작).
   // 4px 넘게 움직여야 드래그로 보고, 놓일 자리에 파란 선을 보여준다. dropIndex는 "몇 번째 앞에 끼울지"(0~count).

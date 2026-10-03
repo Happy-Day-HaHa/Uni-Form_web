@@ -28,16 +28,12 @@
 .sb-empty { margin: 2px 0 0; padding: 14px 16px; border-radius: 12px; background: var(--sb-soft); color: var(--sb-muted); font-size: .7rem; line-height: 1.6; }
 
 /* 제목·설명: 문서처럼 바로 입력 */
-.sb-doc-head { display: grid; gap: 6px; padding: 4px 2px 6px; }
-.sb-doc-head input, .sb-doc-head textarea { width: 100%; padding: 6px 4px; border: 0; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; background: transparent; color: var(--sb-ink); font: inherit; outline: none; resize: none; transition: border-color var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out; }
-.sb-doc-head input:hover, .sb-doc-head textarea:hover { background: var(--sb-soft); }
-.sb-doc-head input:focus, .sb-doc-head textarea:focus { border-bottom-color: var(--sb-blue); background: var(--sb-soft); }
+.sb-doc-head { display: grid; gap: 2px; margin: 0 -9px; padding: 4px 2px 6px; }
+.sb-doc-head input, .sb-doc-head textarea { width: 100%; padding: 6px 9px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--sb-ink); font: inherit; outline: none; resize: none; transition: border-color var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out, box-shadow var(--motion-fast, 150ms) ease-out; }
+.sb-doc-head input:hover, .sb-doc-head textarea:hover { border-color: var(--sb-line); }
+.sb-doc-head input:focus, .sb-doc-head textarea:focus { border-color: #c9d8ff; background: #fff; box-shadow: 0 0 0 3px rgba(41, 87, 255, .08); }
 .sb-doc-head .sb-doc-head__title { font-size: 1.45rem; font-weight: 850; letter-spacing: -.03em; }
 .sb-doc-head .sb-doc-head__desc { color: #475569; font-size: .78rem; line-height: 1.6; }
-/* 설명은 제목과 다르게: 둥근 테두리 메모 칸(마우스를 올리면 옅은 테두리, 입력 중엔 흰 바탕 + 파란 테두리) */
-.sb-doc-head textarea.sb-doc-head__desc { padding: 7px 3px; border: 1px solid transparent; border-radius: 10px; }
-.sb-doc-head textarea.sb-doc-head__desc:hover { border-color: var(--sb-line); background: transparent; }
-.sb-doc-head textarea.sb-doc-head__desc:focus { padding-inline: 9px; border-color: #c9d8ff; background: #fff; box-shadow: 0 0 0 3px rgba(41, 87, 255, .08); }
 .sb-doc-head .is-auto-updated { animation: formmate-auto-updated 1.8s ease-out; }
 
 /* 설문 설정: 접히는 한 줄 */
@@ -63,14 +59,14 @@
 
 /* 문항 카드 */
 .sb-questions { display: grid; gap: 12px; margin: 4px 0 0; padding: 0; list-style: none; }
-.sb-q { position: relative; padding: 16px 20px 18px; border: 1px solid var(--sb-line); border-radius: 14px; background: #fff; cursor: pointer; transition: border-color var(--motion-fast, 150ms) ease-out, box-shadow var(--motion-fast, 150ms) ease-out; }
+.sb-q { position: relative; box-sizing: border-box; padding: 16px 20px 18px; border: 1px solid var(--sb-line); border-radius: 14px; background: #fff; cursor: pointer; transition: border-color var(--motion-fast, 150ms) ease-out, box-shadow var(--motion-fast, 150ms) ease-out; }
 .sb-q:hover { border-color: #c9d6ea; }
 .sb-q.is-active { border-color: var(--sb-blue); box-shadow: 0 0 0 3px rgba(41, 87, 255, .1), 0 10px 26px rgba(15, 24, 56, .06); cursor: default; }
-.sb-q__meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: .6rem; }
+.sb-q__meta { display: flex; min-height: 24px; align-items: center; gap: 8px; margin-bottom: 6px; font-size: .6rem; }
 .sb-q__meta b { color: var(--sb-blue); font-weight: 850; }
 .sb-q__meta span { color: var(--sb-muted); font-weight: 700; }
 .sb-q__meta em { padding: 2px 7px; border-radius: 999px; background: #fef2f2; color: #dc2626; font-style: normal; font-weight: 750; }
-.sb-q__title { margin: 0 0 12px; color: var(--sb-ink); font-size: .84rem; font-weight: 750; line-height: 1.5; }
+.sb-q__title { margin: 0 0 10px; color: var(--sb-ink); font-size: .84rem; font-weight: 750; line-height: 1.5; }
 .sb-q__title.is-empty { color: #94a3b8; font-weight: 600; }
 .sb-q__choices { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .sb-q__choices li { display: flex; align-items: center; gap: 10px; color: #475569; font-size: .72rem; }
@@ -83,20 +79,21 @@
 .sb-q__answer.is-long { max-width: none; padding-bottom: 28px; }
 
 /* 선택된 문항 편집 */
-.sb-q__edit-head { display: grid; margin-bottom: 14px; }
-.sb-q__title-input { min-height: 44px; padding: 0 12px; border: 0; border-bottom: 2px solid #dfe5ee; border-radius: 8px 8px 0 0; background: var(--sb-soft); color: var(--sb-ink); font: inherit; font-size: .82rem; font-weight: 700; outline: none; }
-.sb-q__title-input:focus { border-bottom-color: var(--sb-blue); }
-.sb-options { display: grid; gap: 6px; }
+.sb-q__edit-head { display: grid; margin: -5px -9px 6px; }
+.sb-q__title-input { min-height: 34px; padding: 0 8px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--sb-ink); font: inherit; font-size: .84rem; font-weight: 750; outline: none; transition: border-color var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out, box-shadow var(--motion-fast, 150ms) ease-out; }
+.sb-q__title-input:hover { border-color: var(--sb-line); }
+.sb-q__title-input:focus { border-color: #c9d8ff; background: #fff; box-shadow: 0 0 0 3px rgba(41, 87, 255, .08); }
+.sb-options { display: grid; gap: 2px; }
 /* 선택지: 마우스를 올리면 줄 전체가 옅은 둥근 배경, 입력 중엔 칸에 옅은 둥근 테두리 */
-.sb-option { display: flex; align-items: center; gap: 10px; margin: 0 -6px; padding: 2px 6px; border-radius: 10px; transition: background var(--motion-fast, 150ms) ease-out; }
+.sb-option { display: flex; align-items: center; gap: 10px; margin: 0 -6px; padding: 1px 6px; border-radius: 9px; transition: background var(--motion-fast, 150ms) ease-out; }
 .sb-option:hover { background: var(--sb-soft); }
-.sb-option input { flex: 1; min-width: 0; min-height: 34px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #334155; font: inherit; font-size: .72rem; outline: none; transition: border-color var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out; }
+.sb-option input { flex: 1; min-width: 0; min-height: 30px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #334155; font: inherit; font-size: .72rem; outline: none; transition: border-color var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out; }
 .sb-option input:focus { border-color: #c9d8ff; background: #fff; box-shadow: 0 0 0 3px rgba(41, 87, 255, .08); }
-.sb-option button { display: grid; width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: #94a3b8; font-size: .9rem; cursor: pointer; place-items: center; }
+.sb-option button { display: grid; width: 26px; height: 26px; border: 0; border-radius: 8px; background: transparent; color: #94a3b8; font-size: .9rem; cursor: pointer; place-items: center; }
 .sb-option button:hover:not(:disabled) { background: #fef2f2; color: #dc2626; }
 .sb-option button:disabled { opacity: .3; cursor: not-allowed; }
 /* 선택지 추가 버튼 줄: [＋ 선택지 추가] [＋ 기타(직접 입력) 추가] */
-.sb-option-adds { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 0 22px; }
+.sb-option-adds { display: flex; flex-wrap: wrap; gap: 0 14px; margin: 2px 0 0 22px; }
 .sb-option-add.is-etc { color: #64748b; }
 .sb-option-add.is-etc:hover { color: var(--sb-blue); }
 /* 기타 보기: 점선 밑줄 + '응답자가 직접 입력' 표시 */
@@ -104,7 +101,7 @@
 .sb-option.is-etc input:focus { border-style: solid; }
 .sb-etc-hint { flex: none; padding: 2px 8px; border-radius: 999px; background: #f1f5f9; color: #64748b; font-size: .58rem; font-weight: 700; white-space: nowrap; }
 .sb-q__choices .sb-etc-hint { margin-left: 4px; }
-.sb-option-add { justify-self: start; margin: 0; padding: 6px 4px; border: 0; background: transparent; color: var(--sb-blue); font: inherit; font-size: .68rem; font-weight: 750; cursor: pointer; }
+.sb-option-add { justify-self: start; margin: 0; padding: 4px; border: 0; background: transparent; color: var(--sb-blue); font: inherit; font-size: .68rem; font-weight: 750; cursor: pointer; }
 .sb-range { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--sb-soft); color: #475569; font-size: .66rem; }
 .sb-range label { display: flex; align-items: center; gap: 6px; }
 .sb-range input { width: 56px; min-height: 30px; padding: 0 8px; border: 1px solid #dfe5ee; border-radius: 7px; font: inherit; font-size: .68rem; }
