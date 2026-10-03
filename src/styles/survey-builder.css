@@ -61,7 +61,7 @@
 .sb-questions { display: grid; gap: 12px; margin: 4px 0 0; padding: 0; list-style: none; }
 .sb-q { position: relative; box-sizing: border-box; padding: 16px 20px 18px; border: 1px solid var(--sb-line); border-radius: 14px; background: #fff; cursor: pointer; transition: border-color var(--motion-fast, 150ms) ease-out, box-shadow var(--motion-fast, 150ms) ease-out; }
 .sb-q:hover { border-color: #c9d6ea; }
-.sb-q.is-active { border-color: var(--sb-blue); box-shadow: 0 0 0 3px rgba(41, 87, 255, .1), 0 10px 26px rgba(15, 24, 56, .06); cursor: default; }
+.sb-q.is-active { border-color: var(--sb-blue); box-shadow: 0 0 0 1px rgba(41, 87, 255, .14), 0 6px 18px rgba(15, 24, 56, .05); cursor: default; }
 .sb-q__meta { display: flex; min-height: 24px; align-items: center; gap: 8px; margin-bottom: 6px; font-size: .6rem; }
 .sb-q__meta b { color: var(--sb-blue); font-weight: 850; }
 .sb-q__meta span { color: var(--sb-muted); font-weight: 700; }
