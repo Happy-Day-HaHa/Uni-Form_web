@@ -18,6 +18,7 @@ function formatDeadline(value) {
 }
 
 // 목표 인원·마감일·카테고리·소요 시간. 다 채우면 접어서 한 줄 요약만 보이게 한다.
+// 마감일 max: 상한이 없으면 브라우저가 연도 칸에 6자리까지 받아서(20261010 → 202610년) 4자리 연도로 묶는다.
 function SettingsBar({ form, onChange }) {
   const missingDeadline = !form.deadline
   const missingTarget = form.targetCount === '' || form.targetCount == null
@@ -38,7 +39,7 @@ function SettingsBar({ form, onChange }) {
     </button>
     {open && <div className="sb-settings__body">
       <label><span>목표 응답 인원 <em>*</em></span><div><input type="number" min="1" max="100" value={form.targetCount} placeholder="예: 50" onChange={(event) => onChange({ targetCount: event.target.value === '' ? '' : Number(event.target.value) })} /><small>명</small></div></label>
-      <label><span>마감일 <em>*</em></span><div><input type="date" min={getTomorrowKstDateString()} required value={form.deadline || ''} onChange={(event) => onChange({ deadline: event.target.value })} /></div></label>
+      <label><span>마감일 <em>*</em></span><div><input type="date" min={getTomorrowKstDateString()} max="9999-12-31" required value={form.deadline || ''} onChange={(event) => onChange({ deadline: event.target.value })} /></div></label>
       <label><span>카테고리</span><div><input maxLength="20" value={form.category || ''} onChange={(event) => onChange({ category: event.target.value })} placeholder="예: 교육, 라이프스타일" /></div></label>
       <label><span>예상 소요 시간</span><div><input type="number" min="1" step="1" value={form.estimatedMinutes ?? ''} onChange={(event) => onChange({ estimatedMinutes: event.target.value === '' ? '' : Number(event.target.value) })} placeholder="예: 5" /><small>분</small></div></label>
       {minutesError && <p className="form-message form-message--error" role="alert">{minutesError}</p>}
