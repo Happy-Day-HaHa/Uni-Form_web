@@ -84,3 +84,34 @@ export function validateSurvey({ title, questions, targetCount, deadline, estima
   if (deadline <= getKstDateString()) return '마감일은 오늘 이후 날짜로 선택해주세요.'
   return ''
 }
+
+// 게시 전 점검: validateSurvey처럼 첫 문제만이 아니라 남은 문제를 모두 돌려준다(게시 확인 창에 목록으로 보여줌).
+// 서버(게시 검증)는 빈 문항도 하나의 문항으로 세고 질문 길이를 검사하므로, 빈 문항도 문제로 잡는다.
+export function listSurveyIssues({ title, questions, targetCount, deadline, estimatedMinutes }) {
+  const issues = []
+  if (title.trim().length < 3) issues.push('설문 제목을 3자 이상 입력해주세요.')
+  if (questions.length < 3) issues.push(`문항이 ${questions.length}개예요. 3개 이상 만들어주세요.`)
+  if (questions.length > 30) issues.push('문항은 최대 30개까지 만들 수 있어요.')
+  questions.forEach((question, index) => {
+    const label = `Q${index + 1}`
+    const length = question.title.trim().length
+    if (!length) issues.push(`${label}: 질문이 비어 있어요.`)
+    else if (length < 5 || length > 200) issues.push(`${label}: 질문은 5~200자로 입력해주세요.`)
+    if (question.type === 'single' || question.type === 'multiple') {
+      const options = question.options || []
+      if (options.some((option) => !option.trim())) issues.push(`${label}: 비어 있는 선택지가 있어요.`)
+      else if (options.length < 2 || options.length > 10) issues.push(`${label}: 선택지는 2~10개여야 해요.`)
+      if (options.some((option) => option.length > 50)) issues.push(`${label}: 선택지는 50자까지 입력할 수 있어요.`)
+    }
+    if (question.type === 'multiple') {
+      const rangeMessage = validateSelectRange(question)
+      if (rangeMessage) issues.push(`${label}: ${rangeMessage}`)
+    }
+  })
+  if (targetCount === '' || targetCount < 1 || targetCount > 100) issues.push('목표 응답 인원을 1~100명으로 입력해주세요.')
+  const minutesMessage = estimatedMinutesError(estimatedMinutes)
+  if (minutesMessage) issues.push(minutesMessage)
+  if (!deadline) issues.push('마감일을 정해주세요.')
+  else if (deadline <= getKstDateString()) issues.push('마감일은 오늘 이후 날짜로 선택해주세요.')
+  return issues
+}

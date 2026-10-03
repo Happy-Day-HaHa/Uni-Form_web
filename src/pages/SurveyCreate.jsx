@@ -2,17 +2,23 @@ import { useEffect, useRef, useState } from 'react'
 import LoadingState from '../components/LoadingState'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import FormMatePanel from '../components/formmate/FormMatePanel'
-import FormMateSurveyEditor from '../components/formmate/FormMateSurveyEditor'
+import SurveyBuilderEditor from '../components/formmate/SurveyBuilderEditor'
 import Modal from '../components/Modal'
 import ServiceShell from '../components/ServiceShell'
 import { DEFAULT_SCALE_LABELS } from '../services/surveyService'
+import { useSmoothFollow } from '../hooks/useSmoothFollow'
 import { useSurveyDraft } from '../hooks/useSurveyDraft'
-import { validateSurvey } from '../utils/validation'
+import { listSurveyIssues, validateSurvey } from '../utils/validation'
+import '../styles/survey-builder.css'
 
 const blankQuestion = (type = 'text') => ({ id: crypto.randomUUID(), title: '', type, required: true, options: (type === 'single' || type === 'multiple') ? ['선택 1', '선택 2'] : [], ...(type === 'scale' ? { min: 1, max: 5, minLabel: DEFAULT_SCALE_LABELS.min, maxLabel: DEFAULT_SCALE_LABELS.max } : {}) })
 const initialMessages = [{ role: 'assistant', text: '안녕하세요. 어떤 설문을 만들고 싶으신가요?' }]
 const questionTypeLabels = { single: '단일 선택', multiple: '복수 선택', scale: '척도형', text: '단답형', long: '장문형' }
 const AUTO_UPDATE_HIGHLIGHT_MS = 1800
+const FORMMATE_OPEN_KEY = 'uniform-formmate-open'
+const isNarrow = () => window.matchMedia('(max-width: 900px)').matches
+// FormMate 패널이 멈춰 설 위치: 상단바(64px) + 작업 줄 높이 + 여백
+const formMateTopOffset = () => 64 + (document.querySelector('.sb-toolbar')?.offsetHeight ?? 66) + 16
 
 // "제목을 X로/으로" — 마지막 글자의 받침으로 조사를 고른다(받침 없음·ㄹ받침은 '로').
 function withRo(text) {
@@ -51,7 +57,7 @@ export default function SurveyCreate() {
   const [initialDraftId] = useState(() => searchParams.get('draft') || '')
   const initialPrompt = location.state?.formMatePrompt || ''
   // 카테고리·예상 소요시간은 선택 입력이라 비워 둔다(비우면 null로 저장).
-  const [form, setForm] = useState({ title: '', description: '', category: '', targetCount: 50, estimatedMinutes: '', deadline: '', questions: [blankQuestion()] })
+  const [form, setForm] = useState({ title: '', description: '', category: '', targetCount: 50, estimatedMinutes: '', deadline: '', questions: [] })
   const [aiPrompt, setAiPrompt] = useState(initialPrompt)
   const [aiStep, setAiStep] = useState(0)
   const [aiMessages, setAiMessages] = useState(initialMessages)
@@ -60,13 +66,19 @@ export default function SurveyCreate() {
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [respondentPreviewOpen, setRespondentPreviewOpen] = useState(false)
   const [selectedQuestionId, setSelectedQuestionId] = useState('')
   const [history, setHistory] = useState([])
-  const [editMode, setEditMode] = useState(false)
-  const [editTargetKey, setEditTargetKey] = useState('title')
+  // FormMate 패널: PC는 마지막 상태를 기억하고(기본 열림), 좁은 화면은 닫힌 채로 시작한다.
+  const [narrow, setNarrow] = useState(isNarrow)
+  const formMateColumnRef = useRef(null)
+  const formMatePanelRef = useRef(null)
+  const [formMateOpen, setFormMateOpen] = useState(() => {
+    if (isNarrow()) return Boolean(initialPrompt)
+    try { return localStorage.getItem(FORMMATE_OPEN_KEY) !== '0' } catch { return true }
+  })
   // FormMate가 방금 자동으로 바꾼 필드(title/description) — 잠깐 강조해 바뀐 곳을 알려준다.
   const [autoUpdatedKeys, setAutoUpdatedKeys] = useState([])
-  const surveyPanelContentRef = useRef(null)
   const selectedIndex = form.questions.findIndex((item) => item.id === selectedQuestionId)
   const draft = useSurveyDraft({
     enabled: true,
@@ -87,21 +99,18 @@ export default function SurveyCreate() {
   }, [autoUpdatedKeys])
 
   useEffect(() => {
-    if (!editMode) return
-    window.requestAnimationFrame(() => {
-      const container = surveyPanelContentRef.current
-      const target = container?.querySelector(`[data-editor-key="${editTargetKey}"]`)
-      if (container && target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    })
-  }, [editMode, editTargetKey])
+    const query = window.matchMedia('(max-width: 900px)')
+    const sync = () => setNarrow(query.matches)
+    query.addEventListener('change', sync)
+    return () => query.removeEventListener('change', sync)
+  }, [])
+  // PC에서는 FormMate 패널이 스크롤을 부드럽게 따라온다(좁은 화면은 서랍이라 제외).
+  useSmoothFollow(formMateColumnRef, formMatePanelRef, { getTopOffset: formMateTopOffset, disabled: narrow || !formMateOpen })
 
-  function openEditorAtCurrentPosition() {
-    const container = surveyPanelContentRef.current
-    const previewItems = [...(container?.querySelectorAll('[data-preview-key]') || [])]
-    const containerTop = container?.getBoundingClientRect().top || 0
-    const closest = previewItems.reduce((selected, item) => Math.abs(item.getBoundingClientRect().top - containerTop - 12) < Math.abs(selected.getBoundingClientRect().top - containerTop - 12) ? item : selected, previewItems[0])
-    setEditTargetKey(closest?.dataset.previewKey || 'title')
-    setEditMode(true)
+  function toggleFormMate(next) {
+    const value = typeof next === 'boolean' ? next : !formMateOpen
+    setFormMateOpen(value)
+    if (!isNarrow()) { try { localStorage.setItem(FORMMATE_OPEN_KEY, value ? '1' : '0') } catch { /* 저장 못 해도 동작에는 지장 없음 */ } }
   }
 
   function commitForm(updater) {
@@ -160,6 +169,41 @@ export default function SurveyCreate() {
     commitForm((current) => ({ ...current, questions: current.questions.map((question) => question.id === id ? { ...question, ...patch } : question) }))
   }
 
+  function addQuestion(type) {
+    const question = blankQuestion(type)
+    commitForm((current) => ({ ...current, questions: [...current.questions, question] }))
+    setSelectedQuestionId(question.id)
+  }
+
+  function deleteQuestion(id) {
+    const index = form.questions.findIndex((item) => item.id === id)
+    commitForm((current) => ({ ...current, questions: current.questions.filter((item) => item.id !== id) }))
+    setSelectedQuestionId(form.questions[index + 1]?.id || form.questions[index - 1]?.id || '')
+  }
+
+  function reorderQuestion(id, toIndex) {
+    commitForm((current) => {
+      const questions = current.questions.filter((item) => item.id !== id)
+      questions.splice(toIndex, 0, current.questions.find((item) => item.id === id))
+      return { ...current, questions }
+    })
+  }
+
+  // 문항 카드 바깥(여백)을 누르거나 Esc를 누르면 선택을 푼다. FormMate 패널·모달 안을 누를 때는 유지한다(선택 문항이 FormMate 요청 대상이라서).
+  useEffect(() => {
+    if (!selectedQuestionId) return undefined
+    function handlePointerDown(event) {
+      if (event.target.closest?.('.sb-q, .sb-formmate, .sb-formmate-backdrop, .modal-backdrop')) return
+      setSelectedQuestionId('')
+    }
+    function handleKeyDown(event) {
+      if (event.key === 'Escape' && !document.querySelector('.modal-backdrop')) setSelectedQuestionId('')
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => { document.removeEventListener('pointerdown', handlePointerDown); document.removeEventListener('keydown', handleKeyDown) }
+  }, [selectedQuestionId])
+
   async function sendToFormMate(value) {
     const selected = form.questions[selectedIndex]
     const text = selected ? `[Q${selectedIndex + 1} "${selected.title || '제목 없는 문항'}"에 대해] ${value}` : value
@@ -204,16 +248,29 @@ export default function SurveyCreate() {
     }
   }
 
-  return <ServiceShell activePath="/formmate"><div className="create-saas formmate-page motion-page">
-    <header className="formmate-page-title"><h1>설문 만들기</h1><p>FormMate와 대화하면서 질문을 만들고 바로 수정하세요.</p></header>
-    <section className="create-saas__workspace formmate-workspace">
-      <FormMatePanel value={aiPrompt} onChange={setAiPrompt} onSend={handleAgentSend} onUndo={handleUndo} onApplyChanges={handleApplyChanges} onRevertChanges={handleRevertChanges} busyLabel="FormMate가 작업하고 있어요." canUndo={history.length > 0 && !applying} selectedLabel={selectedIndex >= 0 ? `Q${selectedIndex + 1} 선택됨` : ''} messages={aiMessages} message={aiMessage} applying={applying} suggestions={[]} draftSummary={aiStep > 0 ? { title: form.title, count: form.questions.length, minutes: form.estimatedMinutes, onOpen: () => setEditMode(false) } : null} />
-      <section className={`formmate-survey-panel ${editMode ? 'is-editing' : ''}`}>
-        <header><div><h2>{editMode ? '설문 편집' : '미리보기'}</h2>{editMode && <span>편집 중</span>}</div><button type="button" onClick={() => editMode ? setEditMode(false) : openEditorAtCurrentPosition()}>{editMode ? '편집 취소' : '수정하기'}</button></header>
-        <div className="formmate-survey-panel__content" ref={surveyPanelContentRef}>{draft.loading ? <LoadingState>초안을 불러오고 있어요.</LoadingState> : editMode ? <FormMateSurveyEditor form={form} onChange={(patch) => commitForm(patch)} onQuestionChange={(id, patch) => { const current = form.questions.find((item) => item.id === id); updateQuestion(id, patch.type && patch.type !== current.type ? { ...blankQuestion(patch.type), id, serverId: current.serverId, title: current.title, required: current.required } : patch) }} onAddQuestion={() => commitForm((current) => ({ ...current, questions: [...current.questions, blankQuestion('single')] }))} onDeleteQuestion={(id) => commitForm((current) => ({ ...current, questions: current.questions.filter((item) => item.id !== id) }))} selectedQuestionId={selectedQuestionId} onSelectQuestion={setSelectedQuestionId} highlightKeys={autoUpdatedKeys} /> : <FormMatePreview form={form} highlightKeys={autoUpdatedKeys} />}</div>
-        {(message || draft.error) && <p className="form-message form-message--error">{message || draft.error}</p>}
-        <footer><span>{draft.saveStatus || '작성을 시작하면 자동 저장돼요'}</span><div><button className="ui-button ui-button--secondary" type="button" onClick={() => draft.flush().catch(() => {})}>임시 저장</button>{editMode ? <button className="ui-button" type="button" onClick={() => setEditMode(false)}>수정 완료</button> : <button className="ui-button" type="button" onClick={() => setPreviewOpen(true)}>설문 등록하기</button>}</div></footer>
-      </section>
-    </section>
-  </div><Modal open={previewOpen} title="설문을 게시할까요?" onClose={() => setPreviewOpen(false)}><div className="survey-preview-list"><p><b>{form.title || '제목 없는 설문'}</b><br />{form.questions.filter((question) => question.title.trim()).length}개 문항{form.estimatedMinutes ? ` · 약 ${form.estimatedMinutes}분` : ''}{form.category ? ` · ${form.category}` : ''} · 목표 {form.targetCount}명</p>{form.questions.filter((question) => question.title.trim()).map((question, index) => <div key={question.id}><span>{String(index + 1).padStart(2, '0')}</span><b>{question.title}</b></div>)}</div><ul className="publish-notices"><li>게시 후에는 설문 내용과 마감일을 수정할 수 없어요.</li><li>마감 30일 후 설문 원문은 파기돼요.</li><li>금지 내용을 포함한 설문은 운영자가 삭제할 수 있어요.</li></ul><div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" onClick={() => setPreviewOpen(false)}>편집 계속하기</button><button className="ui-button" type="button" disabled={submitting} onClick={handleSubmit}>{submitting ? '게시 중…' : '설문 게시하기'}</button></div></Modal></ServiceShell>
+  const filledCount = form.questions.filter((question) => question.title.trim()).length
+  // 게시 확인 창을 열었을 때만 점검한다.
+  const publishIssues = previewOpen ? listSurveyIssues(form) : []
+  return <ServiceShell activePath="/formmate"><div className="create-saas formmate-page sb-page motion-page">
+    <header className="sb-toolbar">
+      <div className="sb-toolbar__title"><h1>설문 만들기</h1><span>{draft.saveStatus || '작성을 시작하면 자동 저장돼요'}</span></div>
+      <div className="sb-toolbar__actions">
+        <button className="sb-btn" type="button" onClick={() => setRespondentPreviewOpen(true)}>미리보기</button>
+        <button className={`sb-btn sb-btn--formmate${formMateOpen ? ' is-on' : ''}`} type="button" aria-pressed={formMateOpen} onClick={() => toggleFormMate()}><span aria-hidden="true">✦</span> FormMate</button>
+        <button className="sb-btn" type="button" onClick={() => draft.flush().catch(() => {})}>임시 저장</button>
+        <button className="sb-btn sb-btn--primary" type="button" onClick={() => setPreviewOpen(true)}>설문 등록하기</button>
+      </div>
+    </header>
+    <div className={`sb-layout${formMateOpen ? ' has-formmate' : ''}`}>
+      <main className="sb-canvas">
+        {(message || draft.error) && <p className="form-message form-message--error sb-canvas__error">{message || draft.error}</p>}
+        {draft.loading ? <LoadingState>초안을 불러오고 있어요.</LoadingState> : <SurveyBuilderEditor form={form} onChange={(patch) => commitForm(patch)} onQuestionChange={updateQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} onReorderQuestion={reorderQuestion} selectedQuestionId={selectedQuestionId} onSelectQuestion={setSelectedQuestionId} highlightKeys={autoUpdatedKeys} />}
+      </main>
+      {formMateOpen && <button className="sb-formmate-backdrop" type="button" aria-label="FormMate 닫기" onClick={() => toggleFormMate(false)} />}
+      {formMateOpen && <div className="sb-formmate-col" ref={formMateColumnRef}><div className="sb-formmate" ref={formMatePanelRef}>
+        <header><div><b><span aria-hidden="true">✦</span> FormMate</b><small>원하는 설문을 말하면 문항을 제안해요</small></div><button type="button" aria-label="FormMate 닫기" title="닫기" onClick={() => toggleFormMate(false)}>×</button></header>
+        <FormMatePanel value={aiPrompt} onChange={setAiPrompt} onSend={handleAgentSend} onUndo={handleUndo} onApplyChanges={handleApplyChanges} onRevertChanges={handleRevertChanges} busyLabel="FormMate가 작업하고 있어요." canUndo={history.length > 0 && !applying} selectedLabel={selectedIndex >= 0 ? `Q${selectedIndex + 1} 선택됨` : ''} messages={aiMessages} message={aiMessage} applying={applying} suggestions={[]} draftSummary={aiStep > 0 ? { title: form.title, count: filledCount || form.questions.length, minutes: form.estimatedMinutes, onOpen: () => window.scrollTo({ top: 0, behavior: 'smooth' }) } : null} />
+      </div></div>}
+    </div>
+  </div><Modal open={respondentPreviewOpen} title="응답자 화면 미리보기" onClose={() => setRespondentPreviewOpen(false)}><div className="sb-respondent-preview"><FormMatePreview form={form} /></div></Modal><Modal open={previewOpen} title="설문을 게시할까요?" onClose={() => setPreviewOpen(false)}><div className="survey-preview-list"><p><b>{form.title || '제목 없는 설문'}</b><br />{form.questions.filter((question) => question.title.trim()).length}개 문항{form.estimatedMinutes ? ` · 약 ${form.estimatedMinutes}분` : ''}{form.category ? ` · ${form.category}` : ''} · 목표 {form.targetCount ? `${form.targetCount}명` : '미정'}</p>{form.questions.filter((question) => question.title.trim()).map((question, index) => <div key={question.id}><span>{String(index + 1).padStart(2, '0')}</span><b>{question.title}</b></div>)}</div>{publishIssues.length > 0 && <div className="sb-publish-issues" role="alert"><b>아직 게시할 수 없어요</b><p>아래 항목을 고치면 게시할 수 있어요.</p><ul>{publishIssues.map((issue) => <li key={issue}>{issue}</li>)}</ul></div>}<ul className="publish-notices"><li>게시 후에는 설문 내용과 마감일을 수정할 수 없어요.</li><li>마감 30일 후 설문 원문은 파기돼요.</li><li>금지 내용을 포함한 설문은 운영자가 삭제할 수 있어요.</li></ul><div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" onClick={() => setPreviewOpen(false)}>편집 계속하기</button><button className="ui-button" type="button" disabled={submitting || publishIssues.length > 0} onClick={handleSubmit}>{submitting ? '게시 중…' : '설문 게시하기'}</button></div></Modal></ServiceShell>
 }
