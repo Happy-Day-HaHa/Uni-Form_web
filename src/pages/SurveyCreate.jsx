@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import LoadingState from '../components/LoadingState'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import FormMatePanel from '../components/formmate/FormMatePanel'
-import SurveyBuilderEditor from '../components/formmate/SurveyBuilderEditor'
+import SurveyBuilderEditor, { QUESTION_TYPES } from '../components/formmate/SurveyBuilderEditor'
 import Modal from '../components/Modal'
 import ServiceShell from '../components/ServiceShell'
 import { DEFAULT_SCALE_LABELS } from '../services/surveyService'
@@ -14,6 +14,7 @@ import '../styles/survey-builder.css'
 const blankQuestion = (type = 'text') => ({ id: crypto.randomUUID(), title: '', type, required: true, options: (type === 'single' || type === 'multiple') ? ['선택 1', '선택 2'] : [], ...(type === 'scale' ? { min: 1, max: 5, minLabel: DEFAULT_SCALE_LABELS.min, maxLabel: DEFAULT_SCALE_LABELS.max } : {}) })
 const initialMessages = [{ role: 'assistant', text: '안녕하세요. 어떤 설문을 만들고 싶으신가요?' }]
 const questionTypeLabels = { single: '단일 선택', multiple: '복수 선택', scale: '척도형', text: '단답형', long: '장문형' }
+const typeLabel = (type) => QUESTION_TYPES.find(([value]) => value === type)?.[1] || type
 const AUTO_UPDATE_HIGHLIGHT_MS = 1800
 const FORMMATE_OPEN_KEY = 'uniform-formmate-open'
 const isNarrow = () => window.matchMedia('(max-width: 900px)').matches
@@ -272,5 +273,14 @@ export default function SurveyCreate() {
         <FormMatePanel value={aiPrompt} onChange={setAiPrompt} onSend={handleAgentSend} onUndo={handleUndo} onApplyChanges={handleApplyChanges} onRevertChanges={handleRevertChanges} busyLabel="FormMate가 작업하고 있어요." canUndo={history.length > 0 && !applying} selectedLabel={selectedIndex >= 0 ? `Q${selectedIndex + 1} 선택됨` : ''} messages={aiMessages} message={aiMessage} applying={applying} suggestions={[]} draftSummary={aiStep > 0 ? { title: form.title, count: filledCount || form.questions.length, minutes: form.estimatedMinutes, onOpen: () => window.scrollTo({ top: 0, behavior: 'smooth' }) } : null} />
       </div></div>}
     </div>
-  </div><Modal open={respondentPreviewOpen} title="응답자 화면 미리보기" onClose={() => setRespondentPreviewOpen(false)}><div className="sb-respondent-preview"><FormMatePreview form={form} /></div></Modal><Modal open={previewOpen} title="설문을 게시할까요?" onClose={() => setPreviewOpen(false)}><div className="survey-preview-list"><p><b>{form.title || '제목 없는 설문'}</b><br />{form.questions.filter((question) => question.title.trim()).length}개 문항{form.estimatedMinutes ? ` · 약 ${form.estimatedMinutes}분` : ''}{form.category ? ` · ${form.category}` : ''} · 목표 {form.targetCount ? `${form.targetCount}명` : '미정'}</p>{form.questions.filter((question) => question.title.trim()).map((question, index) => <div key={question.id}><span>{String(index + 1).padStart(2, '0')}</span><b>{question.title}</b></div>)}</div>{publishIssues.length > 0 && <div className="sb-publish-issues" role="alert"><b>아직 게시할 수 없어요</b><p>아래 항목을 고치면 게시할 수 있어요.</p><ul>{publishIssues.map((issue) => <li key={issue}>{issue}</li>)}</ul></div>}<ul className="publish-notices"><li>게시 후에는 설문 내용과 마감일을 수정할 수 없어요.</li><li>마감 30일 후 설문 원문은 파기돼요.</li><li>금지 내용을 포함한 설문은 운영자가 삭제할 수 있어요.</li></ul><div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" onClick={() => setPreviewOpen(false)}>편집 계속하기</button><button className="ui-button" type="button" disabled={submitting || publishIssues.length > 0} onClick={handleSubmit}>{submitting ? '게시 중…' : '설문 게시하기'}</button></div></Modal></ServiceShell>
+  </div><Modal open={respondentPreviewOpen} title="응답자 화면 미리보기" onClose={() => setRespondentPreviewOpen(false)}><div className="sb-respondent-preview"><FormMatePreview form={form} /></div></Modal><Modal className="sb-publish-modal" open={previewOpen} title="설문을 게시할까요?" onClose={() => setPreviewOpen(false)}><div className="sb-publish">
+    <section className="sb-publish__summary">
+      <b>{form.title.trim() || '제목 없는 설문'}</b>
+      <ul>{[`${form.questions.length}개 문항`, form.estimatedMinutes ? `약 ${form.estimatedMinutes}분` : null, form.category || null, form.targetCount ? `목표 ${form.targetCount}명` : '목표 미정', form.deadline ? `${form.deadline.replaceAll('-', '.')} 마감` : '마감일 미정'].filter(Boolean).map((item) => <li key={item}>{item}</li>)}</ul>
+    </section>
+    {form.questions.length > 0 && <ol className="sb-publish__list" aria-label="게시할 문항">{form.questions.map((question, index) => <li key={question.id}><span>{String(index + 1).padStart(2, '0')}</span><b className={question.title.trim() ? undefined : 'is-empty'}>{question.title.trim() || '질문이 비어 있어요'}</b><em>{typeLabel(question.type)}</em></li>)}</ol>}
+    {publishIssues.length > 0 && <div className="sb-publish-issues" role="alert"><b>아직 게시할 수 없어요</b><p>아래 항목을 고치면 게시할 수 있어요.</p><ul>{publishIssues.map((issue) => <li key={issue}>{issue}</li>)}</ul></div>}
+    <ul className="publish-notices"><li>게시 후에는 설문 내용과 마감일을 수정할 수 없어요.</li><li>마감 30일 후 설문 원문은 파기돼요.</li><li>금지 내용을 포함한 설문은 운영자가 삭제할 수 있어요.</li></ul>
+    <div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" onClick={() => setPreviewOpen(false)}>편집 계속하기</button><button className="ui-button" type="button" disabled={submitting || publishIssues.length > 0} onClick={handleSubmit}>{submitting ? '게시 중…' : '설문 게시하기'}</button></div>
+  </div></Modal></ServiceShell>
 }

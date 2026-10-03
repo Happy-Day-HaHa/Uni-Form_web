@@ -215,3 +215,26 @@
 /* 입력칸을 누르면 전역 포커스 외곽선(motion.css: 3px, 3px 바깥)이 칸 테두리 바깥에 한 겹 더 생겨 과했다.
    설문 만들기의 글 입력칸은 외곽선을 없애고, 칸 자체의 파란 테두리·흰 바탕으로 입력 중임을 보여준다(버튼·링크 포커스는 그대로). */
 .sb-page input:not([type='checkbox']):focus-visible, .sb-page textarea:focus-visible { outline: none; }
+
+/* 게시 확인 창: 창 전체가 아니라 문항 목록만 스크롤한다(스크롤바가 창 둥근 가장자리에 붙지 않게, 목록 상자 안쪽에).
+   목록이 줄어들어(최소 72px) 보통은 창이 화면에 들어오고, 아주 낮은 화면에서만 창 자체가 스크롤된다. */
+.modal.sb-publish-modal { display: flex; width: min(560px, calc(100vw - 32px)); flex-direction: column; overflow-y: auto; padding: 30px 26px 24px; text-align: left; }
+.modal.sb-publish-modal h2 { margin: 0 0 16px; font-size: 1.25rem; text-align: left; }
+.sb-publish { display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 12px; }
+.sb-publish__summary { display: grid; gap: 8px; }
+.sb-publish__summary b { color: #0f1838; font-size: .9rem; line-height: 1.4; word-break: break-all; }
+.sb-publish__summary ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.sb-publish__summary li { padding: 4px 9px; border-radius: 999px; background: #f1f5f9; color: #475569; font-size: .62rem; font-weight: 700; }
+.sb-publish__list { display: grid; min-height: 72px; max-height: min(36vh, 300px); flex: 0 1 auto; align-content: start; margin: 0; padding: 6px 6px 6px 0; overflow-y: auto; border: 1px solid #e3e9f2; border-radius: 12px; list-style: none; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; scrollbar-gutter: stable; }
+.sb-publish__list::-webkit-scrollbar { width: 8px; }
+.sb-publish__list::-webkit-scrollbar-thumb { border: 2px solid #fff; border-radius: 999px; background: #cbd5e1; }
+.sb-publish__list::-webkit-scrollbar-track { background: transparent; }
+.sb-publish__list li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 9px 8px 9px 12px; border-bottom: 1px solid #f1f4f8; }
+.sb-publish__list li:last-child { border-bottom: 0; }
+.sb-publish__list span { color: #94a3b8; font-size: .62rem; font-weight: 800; }
+.sb-publish__list b { overflow: hidden; color: #1e293b; font-size: .7rem; font-weight: 650; white-space: nowrap; text-overflow: ellipsis; }
+.sb-publish__list b.is-empty { color: #dc2626; font-weight: 600; }
+.sb-publish__list em { color: #64748b; font-size: .58rem; font-style: normal; font-weight: 700; }
+.sb-publish .sb-publish-issues { margin: 0; }
+.sb-publish .publish-notices { margin: 0; padding: 12px 14px 12px 30px; font-size: .64rem; line-height: 1.6; }
+.sb-publish .modal-actions { margin-top: 4px; }
