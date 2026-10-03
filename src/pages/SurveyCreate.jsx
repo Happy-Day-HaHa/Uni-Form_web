@@ -57,7 +57,7 @@ export default function SurveyCreate() {
   const [initialDraftId] = useState(() => searchParams.get('draft') || '')
   const initialPrompt = location.state?.formMatePrompt || ''
   // 카테고리·예상 소요시간은 선택 입력이라 비워 둔다(비우면 null로 저장).
-  const [form, setForm] = useState({ title: '', description: '', category: '', targetCount: 50, estimatedMinutes: '', deadline: '', questions: [] })
+  const [form, setForm] = useState({ title: '', description: '', category: '', targetCount: '', estimatedMinutes: '', deadline: '', questions: [] })
   const [aiPrompt, setAiPrompt] = useState(initialPrompt)
   const [aiStep, setAiStep] = useState(0)
   const [aiMessages, setAiMessages] = useState(initialMessages)

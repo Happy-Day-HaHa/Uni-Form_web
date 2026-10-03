@@ -34,6 +34,10 @@
 .sb-doc-head input:focus, .sb-doc-head textarea:focus { border-bottom-color: var(--sb-blue); background: var(--sb-soft); }
 .sb-doc-head .sb-doc-head__title { font-size: 1.45rem; font-weight: 850; letter-spacing: -.03em; }
 .sb-doc-head .sb-doc-head__desc { color: #475569; font-size: .78rem; line-height: 1.6; }
+/* 설명은 제목과 다르게: 둥근 테두리 메모 칸(마우스를 올리면 옅은 테두리, 입력 중엔 흰 바탕 + 파란 테두리) */
+.sb-doc-head textarea.sb-doc-head__desc { padding: 7px 3px; border: 1px solid transparent; border-radius: 10px; }
+.sb-doc-head textarea.sb-doc-head__desc:hover { border-color: var(--sb-line); background: transparent; }
+.sb-doc-head textarea.sb-doc-head__desc:focus { padding-inline: 9px; border-color: #c9d8ff; background: #fff; box-shadow: 0 0 0 3px rgba(41, 87, 255, .08); }
 .sb-doc-head .is-auto-updated { animation: formmate-auto-updated 1.8s ease-out; }
 
 /* 설문 설정: 접히는 한 줄 */
@@ -84,10 +88,11 @@
 .sb-q__title-input { min-height: 44px; padding: 0 12px; border: 0; border-bottom: 2px solid #dfe5ee; border-radius: 8px 8px 0 0; background: var(--sb-soft); color: var(--sb-ink); font: inherit; font-size: .82rem; font-weight: 700; outline: none; }
 .sb-q__title-input:focus { border-bottom-color: var(--sb-blue); }
 .sb-options { display: grid; gap: 6px; }
-.sb-option { display: flex; align-items: center; gap: 10px; }
-.sb-option input { flex: 1; min-width: 0; min-height: 36px; padding: 0 6px; border: 0; border-bottom: 1px solid transparent; background: transparent; color: #334155; font: inherit; font-size: .72rem; outline: none; }
-.sb-option input:hover { border-bottom-color: #dfe5ee; }
-.sb-option input:focus { border-bottom-color: var(--sb-blue); }
+/* 선택지: 마우스를 올리면 줄 전체가 옅은 둥근 배경, 입력 중엔 칸에 옅은 둥근 테두리 */
+.sb-option { display: flex; align-items: center; gap: 10px; margin: 0 -6px; padding: 2px 6px; border-radius: 10px; transition: background var(--motion-fast, 150ms) ease-out; }
+.sb-option:hover { background: var(--sb-soft); }
+.sb-option input { flex: 1; min-width: 0; min-height: 34px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #334155; font: inherit; font-size: .72rem; outline: none; transition: border-color var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out; }
+.sb-option input:focus { border-color: #c9d8ff; background: #fff; box-shadow: 0 0 0 3px rgba(41, 87, 255, .08); }
 .sb-option button { display: grid; width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: #94a3b8; font-size: .9rem; cursor: pointer; place-items: center; }
 .sb-option button:hover:not(:disabled) { background: #fef2f2; color: #dc2626; }
 .sb-option button:disabled { opacity: .3; cursor: not-allowed; }
@@ -96,7 +101,8 @@
 .sb-option-add.is-etc { color: #64748b; }
 .sb-option-add.is-etc:hover { color: var(--sb-blue); }
 /* 기타 보기: 점선 밑줄 + '응답자가 직접 입력' 표시 */
-.sb-option.is-etc input { border-bottom: 1px dashed #c9d4e5; }
+.sb-option.is-etc input { border: 1px dashed #c9d4e5; }
+.sb-option.is-etc input:focus { border-style: solid; }
 .sb-etc-hint { flex: none; padding: 2px 8px; border-radius: 999px; background: #f1f5f9; color: #64748b; font-size: .58rem; font-weight: 700; white-space: nowrap; }
 .sb-q__choices .sb-etc-hint { margin-left: 4px; }
 .sb-option-add { justify-self: start; margin: 0; padding: 6px 4px; border: 0; background: transparent; color: var(--sb-blue); font: inherit; font-size: .68rem; font-weight: 750; cursor: pointer; }

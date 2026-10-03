@@ -20,7 +20,8 @@ function formatDeadline(value) {
 // 목표 인원·마감일·카테고리·소요 시간. 다 채우면 접어서 한 줄 요약만 보이게 한다.
 function SettingsBar({ form, onChange }) {
   const missingDeadline = !form.deadline
-  const [open, setOpen] = useState(missingDeadline)
+  const missingTarget = form.targetCount === '' || form.targetCount == null
+  const [open, setOpen] = useState(missingDeadline || missingTarget)
   const minutesError = estimatedMinutesError(form.estimatedMinutes)
   const summary = [
     form.targetCount ? `목표 ${form.targetCount}명` : null,
@@ -32,11 +33,11 @@ function SettingsBar({ form, onChange }) {
   return <section className={`sb-settings${open ? ' is-open' : ''}`}>
     <button className="sb-settings__toggle" type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
       <b>설문 설정</b>
-      <span className="sb-settings__summary">{summary.map((item) => <em key={item}>{item}</em>)}{missingDeadline && <em className="is-warning">마감일을 정해주세요</em>}</span>
+      <span className="sb-settings__summary">{summary.map((item) => <em key={item}>{item}</em>)}{missingTarget && <em className="is-warning">목표 인원을 정해주세요</em>}{missingDeadline && <em className="is-warning">마감일을 정해주세요</em>}</span>
       <i aria-hidden="true">{open ? '접기' : '펼치기'}</i>
     </button>
     {open && <div className="sb-settings__body">
-      <label><span>목표 응답 인원 <em>*</em></span><div><input type="number" min="1" max="100" value={form.targetCount} onChange={(event) => onChange({ targetCount: event.target.value === '' ? '' : Number(event.target.value) })} /><small>명</small></div></label>
+      <label><span>목표 응답 인원 <em>*</em></span><div><input type="number" min="1" max="100" value={form.targetCount} placeholder="예: 50" onChange={(event) => onChange({ targetCount: event.target.value === '' ? '' : Number(event.target.value) })} /><small>명</small></div></label>
       <label><span>마감일 <em>*</em></span><div><input type="date" min={getTomorrowKstDateString()} required value={form.deadline || ''} onChange={(event) => onChange({ deadline: event.target.value })} /></div></label>
       <label><span>카테고리</span><div><input maxLength="20" value={form.category || ''} onChange={(event) => onChange({ category: event.target.value })} placeholder="예: 교육, 라이프스타일" /></div></label>
       <label><span>예상 소요 시간</span><div><input type="number" min="1" step="1" value={form.estimatedMinutes ?? ''} onChange={(event) => onChange({ estimatedMinutes: event.target.value === '' ? '' : Number(event.target.value) })} placeholder="예: 5" /><small>분</small></div></label>
