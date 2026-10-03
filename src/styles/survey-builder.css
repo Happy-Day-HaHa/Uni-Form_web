@@ -211,3 +211,7 @@
 @media (max-width: 560px), (pointer: coarse) {
   .sb-q__handle { width: 30px; height: 30px; opacity: 1; font-size: .9rem; }
 }
+
+/* 입력칸을 누르면 전역 포커스 외곽선(motion.css: 3px, 3px 바깥)이 칸 테두리 바깥에 한 겹 더 생겨 과했다.
+   설문 만들기의 글 입력칸만 얇게 줄인다(버튼·링크 포커스는 그대로). */
+.sb-page input:not([type='checkbox']):focus-visible, .sb-page textarea:focus-visible { outline: 1px solid rgba(37, 99, 235, .25); outline-offset: 2px; }
