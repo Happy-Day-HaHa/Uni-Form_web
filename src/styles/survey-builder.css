@@ -1,0 +1,240 @@
+/* 설문 만들기(빌더) — 가운데 편집 캔버스 + 오른쪽 접히는 FormMate 패널 */
+/* 예전 FormMate 화면은 페이지를 화면 높이에 고정하고 패널 안만 스크롤했다. 새 화면은 페이지 전체가 스크롤되므로 높이를 내용에 맞춘다
+   (고정돼 있으면 내용이 틀 밖으로 넘쳐 배경색이 바뀌고, 사이드바 sticky도 풀린다). */
+.service-content:has(.formmate-page.sb-page) { height: auto; padding-top: 22px; padding-bottom: 0; }
+.formmate-page.sb-page { display: block; height: auto; min-height: 0; }
+.sb-page { --sb-blue: var(--saas-blue, #2957ff); --sb-ink: #0f1838; --sb-muted: #64748b; --sb-line: #e3e9f2; --sb-soft: #f6f8fc; --sb-top: 64px; }
+
+/* 상단 작업 줄: 상단바 바로 아래에 붙어 따라온다 */
+.sb-toolbar { position: sticky; top: var(--sb-top); z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; margin: -20px 0 24px; padding: 14px 0; border-bottom: 1px solid var(--sb-line); background: #fff; }
+.sb-toolbar__title { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.sb-toolbar__title h1 { margin: 0; color: var(--sb-ink); font-size: 1.15rem; letter-spacing: -.02em; }
+.sb-toolbar__title span { overflow: hidden; color: var(--sb-muted); font-size: .66rem; white-space: nowrap; text-overflow: ellipsis; }
+.sb-toolbar__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.sb-btn { display: inline-flex; min-height: 38px; align-items: center; gap: 6px; padding: 0 14px; border: 1px solid #dfe5ee; border-radius: 10px; background: #fff; color: #334155; font: inherit; font-size: .7rem; font-weight: 750; cursor: pointer; transition: background var(--motion-fast, 150ms) ease-out, border-color var(--motion-fast, 150ms) ease-out, color var(--motion-fast, 150ms) ease-out; }
+.sb-btn:hover { border-color: #c7d2e3; background: var(--sb-soft); }
+.sb-btn--formmate span { color: var(--sb-blue); }
+.sb-btn--formmate.is-on { border-color: #c9d8ff; background: #eef3ff; color: var(--sb-blue); }
+.sb-btn--primary { border-color: var(--sb-blue); background: var(--sb-blue); color: #fff; }
+.sb-btn--primary:hover { border-color: #1f47e0; background: #1f47e0; }
+
+/* 본문 배치 */
+.sb-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+.sb-layout.has-formmate { grid-template-columns: minmax(0, 1fr) 360px; }
+.sb-canvas { min-width: 0; }
+.sb-canvas__error { max-width: 760px; margin: 0 auto 14px; }
+/* 아래 여백: 마지막 블록이 화면 바닥에 붙지 않고 더 내려 볼 수 있게 */
+.sb-editor { display: grid; max-width: 760px; gap: 14px; margin: 0 auto; padding-bottom: 38vh; }
+.sb-empty { margin: 2px 0 0; padding: 14px 16px; border-radius: 12px; background: var(--sb-soft); color: var(--sb-muted); font-size: .7rem; line-height: 1.6; }
+
+/* 제목·설명: 문서처럼 바로 입력 */
+.sb-doc-head { display: grid; gap: 2px; margin: 0 -9px; padding: 4px 2px 6px; }
+.sb-doc-head input, .sb-doc-head textarea { width: 100%; padding: 6px 9px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--sb-ink); font: inherit; outline: none; resize: none; transition: border-color var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out, box-shadow var(--motion-fast, 150ms) ease-out; }
+.sb-doc-head input:hover, .sb-doc-head textarea:hover { border-color: var(--sb-line); }
+.sb-doc-head input:focus, .sb-doc-head textarea:focus { border-color: #a9c0ff; background: #fff; }
+.sb-doc-head .sb-doc-head__title { font-size: 1.45rem; font-weight: 850; letter-spacing: -.03em; }
+.sb-doc-head .sb-doc-head__desc { color: #475569; font-size: .78rem; line-height: 1.6; }
+.sb-doc-head .is-auto-updated { animation: formmate-auto-updated 1.8s ease-out; }
+
+/* 설문 설정: 접히는 한 줄 */
+.sb-settings { border: 1px solid var(--sb-line); border-radius: 14px; background: #fff; }
+.sb-settings__toggle { display: flex; width: 100%; min-height: 50px; align-items: center; gap: 14px; padding: 0 16px; border: 0; border-radius: 14px; background: transparent; color: var(--sb-ink); font: inherit; text-align: left; cursor: pointer; }
+.sb-settings__toggle:hover { background: var(--sb-soft); }
+.sb-settings__toggle b { flex: none; font-size: .74rem; }
+.sb-settings__toggle i { flex: none; margin-left: auto; color: var(--sb-muted); font-size: .64rem; font-style: normal; font-weight: 700; }
+.sb-settings__summary { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.sb-settings__summary em { padding: 4px 9px; border-radius: 999px; background: #f1f5f9; color: #475569; font-size: .62rem; font-style: normal; font-weight: 700; }
+.sb-settings__summary em.is-warning { background: #fff4e5; color: #b45309; }
+.sb-settings__body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; padding: 4px 16px 16px; border-top: 1px solid #eef2f7; }
+.sb-settings__body > label { display: grid; gap: 6px; padding-top: 12px; }
+.sb-settings__body > label > span { color: #334155; font-size: .66rem; font-weight: 750; }
+.sb-settings__body > label > span em { color: #dc2626; font-style: normal; }
+.sb-settings__body > label > div { display: flex; align-items: center; gap: 8px; }
+.sb-settings__body input { width: 100%; min-height: 40px; padding: 0 12px; border: 1px solid #dfe5ee; border-radius: 9px; background: #fff; color: var(--sb-ink); font: inherit; font-size: .72rem; }
+.sb-settings__body input:focus { border-color: #a9c0ff; outline: none; }
+.sb-settings__body small { flex: none; color: var(--sb-muted); font-size: .66rem; }
+.sb-settings__body .form-message, .sb-settings__body footer { grid-column: 1 / -1; margin: 0; }
+.sb-settings__body footer { display: flex; justify-content: flex-end; }
+.sb-settings__body footer button { min-height: 34px; padding: 0 14px; border: 0; border-radius: 9px; background: var(--sb-ink); color: #fff; font: inherit; font-size: .66rem; font-weight: 750; cursor: pointer; }
+
+/* 문항 카드 */
+.sb-questions { display: grid; gap: 12px; margin: 4px 0 0; padding: 0; list-style: none; }
+.sb-q { position: relative; box-sizing: border-box; padding: 16px 20px 18px; border: 1px solid var(--sb-line); border-radius: 14px; background: #fff; cursor: pointer; transition: border-color var(--motion-fast, 150ms) ease-out, box-shadow var(--motion-fast, 150ms) ease-out; }
+.sb-q:hover { border-color: #c9d6ea; }
+.sb-q.is-active { border-color: var(--sb-blue); box-shadow: 0 0 0 3px rgba(41, 87, 255, .1), 0 10px 26px rgba(15, 24, 56, .06); cursor: default; }
+.sb-q__meta { display: flex; min-height: 24px; align-items: center; gap: 8px; margin-bottom: 6px; font-size: .6rem; }
+.sb-q__meta b { color: var(--sb-blue); font-weight: 850; }
+.sb-q__meta span { color: var(--sb-muted); font-weight: 700; }
+.sb-q__meta em { padding: 2px 7px; border-radius: 999px; background: #fef2f2; color: #dc2626; font-style: normal; font-weight: 750; }
+.sb-q__title { margin: 0 0 10px; color: var(--sb-ink); font-size: .84rem; font-weight: 750; line-height: 1.5; }
+.sb-q__title.is-empty { color: #94a3b8; font-weight: 600; }
+.sb-q__choices { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sb-q__choices li { display: flex; align-items: center; gap: 10px; color: #475569; font-size: .72rem; }
+.sb-q__choices i, .sb-option i { flex: none; width: 15px; height: 15px; border: 1.5px solid #b6c2d4; border-radius: 50%; }
+.sb-q__choices.is-multiple i, .sb-option.is-multiple i { border-radius: 4px; }
+.sb-q__choices .is-empty { color: #a3adbd; }
+.sb-q__scale { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--sb-muted); font-size: .64rem; }
+.sb-q__scale b { display: grid; width: 30px; height: 30px; border: 1px solid #dfe5ee; border-radius: 8px; color: #475569; font-size: .66rem; place-items: center; }
+.sb-q__answer { max-width: 60%; padding: 9px 0; border-bottom: 1px dashed #c8d2e0; color: #a3adbd; font-size: .68rem; }
+.sb-q__answer.is-long { max-width: none; padding-bottom: 28px; }
+
+/* 선택된 문항 편집 */
+.sb-q__edit-head { display: grid; margin: -5px -9px 6px; }
+.sb-q__title-input { min-height: 34px; padding: 0 8px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--sb-ink); font: inherit; font-size: .84rem; font-weight: 750; outline: none; transition: border-color var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out, box-shadow var(--motion-fast, 150ms) ease-out; }
+.sb-q__title-input:hover { border-color: var(--sb-line); }
+.sb-q__title-input:focus { border-color: #a9c0ff; background: #fff; }
+.sb-options { display: grid; gap: 2px; }
+/* 선택지: 마우스를 올리면 줄 전체가 옅은 둥근 배경, 입력 중엔 칸에 옅은 둥근 테두리 */
+.sb-option { display: flex; align-items: center; gap: 10px; margin: 0 -6px; padding: 1px 6px; border-radius: 9px; transition: background var(--motion-fast, 150ms) ease-out; }
+.sb-option:hover { background: var(--sb-soft); }
+.sb-option input { flex: 1; min-width: 0; min-height: 30px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #334155; font: inherit; font-size: .72rem; outline: none; transition: border-color var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out; }
+.sb-option input:focus { border-color: #a9c0ff; background: #fff; }
+.sb-option button { display: grid; width: 26px; height: 26px; border: 0; border-radius: 8px; background: transparent; color: #94a3b8; font-size: .9rem; cursor: pointer; place-items: center; }
+.sb-option button:hover:not(:disabled) { background: #fef2f2; color: #dc2626; }
+.sb-option button:disabled { opacity: .3; cursor: not-allowed; }
+/* 선택지 추가 버튼 줄: [＋ 선택지 추가] [＋ 기타(직접 입력) 추가] */
+.sb-option-adds { display: flex; flex-wrap: wrap; gap: 0 14px; margin: 2px 0 0 22px; }
+.sb-option-add.is-etc { color: #64748b; }
+.sb-option-add.is-etc:hover { color: var(--sb-blue); }
+/* 기타 보기: 점선 밑줄 + '응답자가 직접 입력' 표시 */
+.sb-option.is-etc input { border: 1px dashed #c9d4e5; }
+.sb-option.is-etc input:focus { border-style: solid; }
+.sb-etc-hint { flex: none; padding: 2px 8px; border-radius: 999px; background: #f1f5f9; color: #64748b; font-size: .58rem; font-weight: 700; white-space: nowrap; }
+.sb-q__choices .sb-etc-hint { margin-left: 4px; }
+.sb-option-add { justify-self: start; margin: 0; padding: 4px; border: 0; background: transparent; color: var(--sb-blue); font: inherit; font-size: .68rem; font-weight: 750; cursor: pointer; }
+.sb-range { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--sb-soft); color: #475569; font-size: .66rem; }
+.sb-range label { display: flex; align-items: center; gap: 6px; }
+.sb-range input { width: 56px; min-height: 30px; padding: 0 8px; border: 1px solid #dfe5ee; border-radius: 7px; font: inherit; font-size: .68rem; }
+.sb-range small { color: var(--sb-muted); }
+.sb-range .form-message { width: 100%; margin: 0; }
+.sb-scale-edit { display: grid; gap: 8px; }
+.sb-scale-edit__row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; }
+.sb-scale-edit__row ol { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.sb-scale-edit__row li { display: grid; width: 34px; height: 34px; border: 1px solid #dfe5ee; border-radius: 9px; background: #fff; color: #475569; font-size: .68rem; font-weight: 750; place-items: center; }
+/* 고칠 수 있는 문구: 평소엔 옅은 칩, 누르면 밑줄 입력칸 */
+.sb-scale-edit__row input { min-width: 0; min-height: 34px; padding: 0 10px; border: 1px dashed #c9d4e5; border-radius: 9px; background: var(--sb-soft); color: #334155; font: inherit; font-size: .68rem; font-weight: 700; outline: none; transition: border-color var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out; }
+.sb-scale-edit__row input:hover { border-color: #9fb3d1; }
+.sb-scale-edit__row input:focus { border-style: solid; border-color: var(--sb-blue); background: #fff; }
+/* 문구 길이만큼만 넓어져서 숫자 바로 옆에 붙는다(지원 안 하는 브라우저는 칸을 채움) */
+.sb-scale-edit__row input { field-sizing: content; min-width: 72px; max-width: 100%; }
+.sb-scale-edit__row input.is-min { justify-self: end; text-align: right; }
+.sb-scale-edit__row input.is-max { justify-self: start; text-align: left; }
+.sb-scale-edit small { color: var(--sb-muted); font-size: .62rem; }
+/* 선택된 문항 맨 위 줄 오른쪽: [필수 토글] [삭제] */
+.sb-q__actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.sb-q__delete { min-height: 28px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: #64748b; font: inherit; font-size: .62rem; font-weight: 750; cursor: pointer; }
+.sb-q__delete:hover { background: #fef2f2; color: #dc2626; }
+.sb-switch { display: flex; align-items: center; gap: 6px; padding: 0 10px 0 4px; border-right: 1px solid #eef2f7; color: #334155; font-size: .62rem; font-weight: 750; cursor: pointer; }
+.sb-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.sb-switch i { position: relative; width: 30px; height: 18px; border-radius: 999px; background: #cbd5e1; transition: background var(--motion-fast, 150ms) ease-out; }
+.sb-switch i::after { position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .2); content: ''; transition: transform var(--motion-fast, 150ms) ease-out; }
+.sb-switch input:checked + i { background: var(--sb-blue); }
+.sb-switch input:checked + i::after { transform: translateX(12px); }
+.sb-switch input:focus-visible + i { outline: 3px solid rgba(41, 87, 255, .25); }
+
+/* 문항 추가 */
+.sb-add { display: grid; gap: 10px; padding: 16px; border: 1.5px dashed #cdd7e6; border-radius: 14px; }
+.sb-add > span { color: #334155; font-size: .68rem; font-weight: 800; }
+.sb-add > div { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.sb-add button { display: grid; gap: 2px; padding: 10px 8px; border: 1px solid var(--sb-line); border-radius: 10px; background: #fff; color: var(--sb-ink); font: inherit; text-align: center; cursor: pointer; transition: border-color var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out; }
+.sb-add button:hover:not(:disabled) { border-color: #c9d8ff; background: #f5f8ff; }
+.sb-add button:disabled { opacity: .45; cursor: not-allowed; }
+.sb-add button b { font-size: .68rem; }
+.sb-add button small { color: var(--sb-muted); font-size: .58rem; }
+.sb-add > small { color: var(--sb-muted); font-size: .62rem; }
+
+/* FormMate 패널 (오른쪽, 따라 내려옴) */
+.sb-formmate-backdrop { display: none; }
+.sb-formmate-col { align-self: stretch; min-width: 0; }
+.sb-formmate { position: relative; display: grid; will-change: transform; height: calc(100svh - var(--sb-top) - 104px); min-height: 420px; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; border: 1px solid var(--sb-line); border-radius: 16px; background: #fff; }
+.sb-formmate > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 12px 12px 16px; border-bottom: 1px solid #eef2f7; }
+.sb-formmate > header div { display: grid; gap: 2px; }
+.sb-formmate > header b { color: var(--sb-ink); font-size: .76rem; }
+.sb-formmate > header b span { color: var(--sb-blue); }
+.sb-formmate > header small { color: var(--sb-muted); font-size: .6rem; }
+.sb-formmate > header button { display: grid; width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: #64748b; font-size: 1rem; cursor: pointer; place-items: center; }
+.sb-formmate > header button:hover { background: var(--sb-soft); color: var(--sb-ink); }
+.formmate-page.sb-page .sb-formmate .formmate-agent { position: static; height: 100%; min-height: 0; max-height: none; grid-template-rows: minmax(0, 1fr); grid-auto-rows: auto; border: 0; border-radius: 0; box-shadow: none; }
+.formmate-page.sb-page .sb-formmate .formmate-agent__messages { min-height: 0; overflow-y: auto; }
+.formmate-page.sb-page .sb-formmate .formmate-agent > header { display: none; }
+
+/* 응답자 화면 미리보기 모달 */
+.sb-respondent-preview { max-height: min(70svh, 640px); overflow-y: auto; }
+
+@media (max-width: 1180px) {
+  .sb-layout.has-formmate { grid-template-columns: minmax(0, 1fr) 320px; }
+}
+
+/* 좁은 화면: FormMate는 오른쪽에서 밀려 나오는 서랍 */
+@media (max-width: 900px) {
+  .sb-layout, .sb-layout.has-formmate { grid-template-columns: minmax(0, 1fr); }
+  .sb-formmate-backdrop { position: fixed; inset: 0; z-index: 58; display: block; border: 0; background: rgba(15, 24, 56, .3); }
+  .sb-formmate-col { display: contents; }
+  .sb-formmate { position: fixed; top: 0; right: 0; bottom: 0; z-index: 60; width: min(420px, 100%); height: auto; min-height: 0; border-width: 0 0 0 1px; border-radius: 0; box-shadow: -18px 0 50px rgba(15, 24, 56, .16); }
+  .sb-toolbar { margin-top: -10px; }
+  .sb-add > div { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .sb-toolbar__title span { display: none; }
+  .sb-toolbar__actions { width: 100%; }
+  .sb-toolbar__actions .sb-btn { flex: 1; justify-content: center; padding: 0 8px; }
+  .sb-settings__body { grid-template-columns: minmax(0, 1fr); }
+  .sb-q { padding: 14px 14px 16px; }
+  .sb-add > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sb-q__answer { max-width: none; }
+  .sb-scale-edit__row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'points points' 'min max'; }
+  .sb-scale-edit__row ol { grid-area: points; justify-content: space-between; }
+  .sb-scale-edit__row input.is-min { grid-area: min; text-align: left; }
+  .sb-scale-edit__row input.is-max { grid-area: max; text-align: right; }
+}
+
+/* 드래그 앤 드롭 */
+.sb-q__handle { display: grid; width: 22px; height: 26px; margin-left: -8px; touch-action: none; user-select: none; -webkit-user-select: none; border-radius: 5px; color: #b6c2d4; font-size: .78rem; line-height: 1; cursor: grab; opacity: .55; place-items: center; transition: opacity var(--motion-fast, 150ms) ease-out, background var(--motion-fast, 150ms) ease-out; }
+.sb-q:hover .sb-q__handle, .sb-q.is-active .sb-q__handle { opacity: 1; }
+.sb-q__handle:hover { background: var(--sb-soft); color: #64748b; }
+.sb-q__handle:active { cursor: grabbing; }
+.sb-q.is-dragged { opacity: .4; }
+.sb-questions.is-dragging .sb-q { cursor: grabbing; }
+.sb-q.is-drop-before::after, .sb-q.is-drop-after::after { position: absolute; right: 8px; left: 8px; height: 3px; border-radius: 3px; background: var(--sb-blue); box-shadow: 0 0 0 3px rgba(41, 87, 255, .15); content: ''; pointer-events: none; }
+.sb-q.is-drop-before::after { top: -8px; }
+.sb-q.is-drop-after::after { bottom: -8px; }
+
+/* 게시 확인 창: 안내 목록은 왼쪽 정렬, 미완성 항목은 경고 상자로 */
+.publish-notices { text-align: left; }
+.sb-publish-issues { margin: 14px 0 0; padding: 14px 16px; border: 1px solid #fcd9b6; border-radius: 12px; background: #fff8f0; color: #9a3412; text-align: left; }
+.sb-publish-issues b { display: block; font-size: .74rem; }
+.sb-publish-issues p { margin: 4px 0 8px; color: #b45309; font-size: .64rem; }
+.sb-publish-issues ul { display: grid; gap: 4px; max-height: 180px; margin: 0; padding-left: 18px; overflow-y: auto; font-size: .66rem; line-height: 1.5; }
+
+/* 터치 화면: 손잡이를 손가락으로 잡기 쉽게 크게(위의 손잡이 기본 규칙보다 뒤에 둬야 적용됨) */
+@media (max-width: 560px), (pointer: coarse) {
+  .sb-q__handle { width: 30px; height: 30px; opacity: 1; font-size: .9rem; }
+}
+
+/* 입력칸을 누르면 전역 포커스 외곽선(motion.css: 3px, 3px 바깥)이 칸 테두리 바깥에 한 겹 더 생겨 과했다.
+   설문 만들기의 글 입력칸은 외곽선을 없애고, 칸 자체의 파란 테두리·흰 바탕으로 입력 중임을 보여준다(버튼·링크 포커스는 그대로). */
+.sb-page input:not([type='checkbox']):focus-visible, .sb-page textarea:focus-visible { outline: none; }
+
+/* 게시 확인 창: 창 전체가 아니라 문항 목록만 스크롤한다(스크롤바가 창 둥근 가장자리에 붙지 않게, 목록 상자 안쪽에).
+   목록이 줄어들어(최소 72px) 보통은 창이 화면에 들어오고, 아주 낮은 화면에서만 창 자체가 스크롤된다. */
+.modal.sb-publish-modal { display: flex; width: min(560px, calc(100vw - 32px)); flex-direction: column; overflow-y: auto; padding: 30px 26px 24px; text-align: left; }
+.modal.sb-publish-modal h2 { margin: 0 0 16px; font-size: 1.25rem; text-align: left; }
+.sb-publish { display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 12px; }
+.sb-publish__summary { display: grid; gap: 8px; }
+.sb-publish__summary b { color: #0f1838; font-size: .9rem; line-height: 1.4; word-break: break-all; }
+.sb-publish__summary ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.sb-publish__summary li { padding: 4px 9px; border-radius: 999px; background: #f1f5f9; color: #475569; font-size: .62rem; font-weight: 700; }
+.sb-publish__list { display: grid; min-height: 72px; max-height: min(36vh, 300px); flex: 0 1 auto; align-content: start; margin: 0; padding: 6px 6px 6px 0; overflow-y: auto; border: 1px solid #e3e9f2; border-radius: 12px; list-style: none; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; scrollbar-gutter: stable; }
+.sb-publish__list::-webkit-scrollbar { width: 8px; }
+.sb-publish__list::-webkit-scrollbar-thumb { border: 2px solid #fff; border-radius: 999px; background: #cbd5e1; }
+.sb-publish__list::-webkit-scrollbar-track { background: transparent; }
+.sb-publish__list li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 9px 8px 9px 12px; border-bottom: 1px solid #f1f4f8; }
+.sb-publish__list li:last-child { border-bottom: 0; }
+.sb-publish__list span { color: #94a3b8; font-size: .62rem; font-weight: 800; }
+.sb-publish__list b { overflow: hidden; color: #1e293b; font-size: .7rem; font-weight: 650; white-space: nowrap; text-overflow: ellipsis; }
+.sb-publish__list b.is-empty { color: #dc2626; font-weight: 600; }
+.sb-publish__list em { color: #64748b; font-size: .58rem; font-style: normal; font-weight: 700; }
+.sb-publish .sb-publish-issues { margin: 0; }
+.sb-publish .publish-notices { margin: 0; padding: 12px 14px 12px 30px; font-size: .64rem; line-height: 1.6; }
+.sb-publish .modal-actions { margin-top: 4px; }

@@ -47,7 +47,8 @@
 .service-user span { display: grid; width: 38px; height: 38px; border-radius: 50%; background: #1755d6; color: #fff; font-weight: 850; place-items: center; }
 .service-user i { color: #73819c; font-style: normal; }
 .service-content { width: min(100% - 48px, 1240px); margin: 0 auto; padding: 48px 0 86px; }
-.motion-page { animation: motion-page-enter var(--motion-enter) var(--motion-ease) both; }
+/* backwards: 끝나면 transform을 남기지 않는다(남으면 안쪽 position:fixed 모달·서랍이 화면 대신 페이지 안에 갇힘) */
+.motion-page { animation: motion-page-enter var(--motion-enter) var(--motion-ease) backwards; }
 .service-heading { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 17px; }
 .service-heading > span { display: grid; width: 38px; height: 38px; border: 2px solid var(--saas-navy); border-radius: 10px; font-size: 1.15rem; place-items: center; }
 .service-heading h1 { margin: -6px 0 4px; font-size: clamp(2rem,3.2vw,2.8rem); letter-spacing: -.06em; }
@@ -309,3 +310,5 @@
 @media(max-width:780px){.service-corner{padding-left:14px;gap:12px}.service-corner .brand-mark__word{font-size:1.15rem}.service-menu-button,.service-shell--collapsed .service-menu-button{width:40px;min-width:40px;height:40px}}
 /* 781~1080px: 사이드바는 220px 고정인데 칸만 190px로 좁아져 상단바를 30px 가리던 문제 */
 @media(max-width:1080px) and (min-width:781px){.service-shell:not(.service-shell--collapsed){grid-template-columns:220px minmax(0,1fr)}}
+/* 로그아웃 확인 창 */
+.service-logout-confirm{margin:0 0 4px;color:#64748b;font-size:.74rem;line-height:1.6}
