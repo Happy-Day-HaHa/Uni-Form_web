@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
-export default function Modal({ open, title, children, onClose }) {
+export default function Modal({ open, title, children, onClose, className = '' }) {
   const closeRef = useRef(null)
   // 부모가 onClose를 인라인 함수로 넘기면 렌더마다 새 함수가 된다. 효과가 그걸 의존하면
   // 모달 안 입력란에 한 글자 칠 때마다 다시 실행돼 포커스를 닫기 버튼으로 옮기고 한글 조합을 깬다.
@@ -19,5 +19,5 @@ export default function Modal({ open, title, children, onClose }) {
   if (!open) return null
   // body에 바로 렌더링한다. 페이지 안에 두면 transform이 걸린 조상(페이지 진입 애니메이션 등)이
   // position:fixed의 기준이 되어, 어두운 배경이 화면 전체가 아니라 그 영역만 덮는다.
-  return createPortal(<div className="modal-backdrop" role="presentation" onMouseDown={onClose}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}><button ref={closeRef} className="modal__close" type="button" aria-label="닫기" onClick={onClose}>×</button><h2 id="modal-title">{title}</h2>{children}</section></div>, document.body)
+  return createPortal(<div className="modal-backdrop" role="presentation" onMouseDown={onClose}><section className={`modal${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}><button ref={closeRef} className="modal__close" type="button" aria-label="닫기" onClick={onClose}>×</button><h2 id="modal-title">{title}</h2>{children}</section></div>, document.body)
 }

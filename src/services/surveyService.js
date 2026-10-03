@@ -86,7 +86,8 @@ export function draftToForm(survey) {
   return {
     title: survey.title || '',
     description: survey.description || '',
-    targetCount: survey.targetCount ?? 50,
+    // 목표 인원은 작성자가 직접 정한다(초안에 없으면 빈 칸).
+    targetCount: survey.targetCount ?? '',
     category: survey.category ?? '',
     estimatedMinutes: survey.estimatedMinutes ?? '',
     deadline: toKstDate(survey.deadlineAt),
