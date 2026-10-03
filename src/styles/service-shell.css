@@ -312,5 +312,3 @@
 @media(max-width:1080px) and (min-width:781px){.service-shell:not(.service-shell--collapsed){grid-template-columns:220px minmax(0,1fr)}}
 /* 로그아웃 확인 창 */
 .service-logout-confirm{margin:0 0 4px;color:#64748b;font-size:.74rem;line-height:1.6}
-.ui-button.service-logout-confirm__ok{border-color:#dc2626;background:#dc2626;color:#fff}
-.ui-button.service-logout-confirm__ok:hover:not(:disabled){border-color:#b91c1c;background:#b91c1c}

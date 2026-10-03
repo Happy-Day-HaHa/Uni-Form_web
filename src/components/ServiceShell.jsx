@@ -88,7 +88,7 @@ export default function ServiceShell({ children, activePath }) {
       })}{profile?.role === 'ADMIN' && <NavLink to="/admin" className="service-sidebar__admin">관리자</NavLink>}</nav>
     </aside>
     <div className="service-stage"><header className="service-topbar"><Link className="service-help" to="/support">고객센터</Link><button className="service-logout" type="button" onClick={() => setLogoutConfirmOpen(true)}>로그아웃</button></header><main className="service-content motion-page">{children}</main></div>
-    <Modal open={logoutConfirmOpen} title="로그아웃할까요?" onClose={() => !loggingOut && setLogoutConfirmOpen(false)}><p className="service-logout-confirm">로그아웃하면 다시 로그인해야 서비스를 이용할 수 있어요.</p><div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" disabled={loggingOut} onClick={() => setLogoutConfirmOpen(false)}>취소</button><button className="ui-button service-logout-confirm__ok" type="button" disabled={loggingOut} onClick={handleLogout}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button></div></Modal>
+    <Modal open={logoutConfirmOpen} title="로그아웃할까요?" onClose={() => !loggingOut && setLogoutConfirmOpen(false)}><p className="service-logout-confirm">로그아웃하면 다시 로그인해야 서비스를 이용할 수 있어요.</p><div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" disabled={loggingOut} onClick={() => setLogoutConfirmOpen(false)}>취소</button><button className="ui-button ui-button--danger" type="button" disabled={loggingOut} onClick={handleLogout}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button></div></Modal>
   </div>
 }
 
