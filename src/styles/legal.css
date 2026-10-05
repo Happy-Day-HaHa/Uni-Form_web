@@ -26,3 +26,10 @@
 .legal-links a{color:#5b6576;font-weight:700}
 .legal-links a:hover{color:#168fda}
 @media(max-width:640px){.legal-document{margin-top:20px;padding:24px 18px}}
+.not-found{display:grid;justify-items:center;width:min(100%,520px);margin:72px auto 0;text-align:center}
+.not-found>b{color:#168fda;font-size:2.6rem;font-weight:900;letter-spacing:-.04em}
+.not-found h1{margin:6px 0 0;font-size:1.5rem;letter-spacing:-.03em}
+.not-found p{margin:10px 0 0;color:#5b6576;font-size:.8rem;line-height:1.7}
+.not-found>div{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:24px}
+.not-found .ui-button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 18px;border:1px solid #40abfc;border-radius:8px;background:#40abfc;color:#fff;font-size:.74rem;font-weight:800}
+.not-found .ui-button--secondary{border-color:#d1d5db;background:#fff;color:#374151}
