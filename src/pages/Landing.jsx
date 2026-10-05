@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { logout } from '../services/authService'
 import SurveyPainSection from '../components/SurveyPainSection'
 import { useReveal } from '../hooks/useReveal'
+import { getLeaderboardWeekLabel } from '../utils/leaderboardWeek'
 import '../styles/landing-canva.css'
 
 const leaders = [
@@ -20,7 +21,7 @@ const leaders = [
 ]
 
 function ProductFrame({ label, children, className = '', ...props }) {
-  return <div className={`uf-product-frame ${className}`} {...props}><div className="uf-product-frame__bar"><span>{label}</span><small>화면 미리보기</small></div><div className="uf-product-frame__canvas" inert="" aria-hidden="true">{children}</div></div>
+  return <div className={`uf-product-frame ${className}`} {...props}><div className="uf-product-frame__bar"><span>{label}</span><small>화면 미리보기</small></div><div className="uf-product-frame__canvas" inert aria-hidden="true">{children}</div></div>
 }
 
 function FormMatePreview({ compact = false }) {
@@ -50,7 +51,7 @@ function FormMatePreview({ compact = false }) {
 function LeaderboardPreview() {
   const [first, second, third] = leaders
   return <div className="uf-leaderboard-service">
-    <header><div><small>WEEKLY LEADERBOARD</small><h3>응답 횟수 리더보드</h3><p>이번 주 9.14 ~ 9.20 · 매주 월요일 초기화</p></div><span>10명 참여 중</span></header>
+    <header><div><small>WEEKLY LEADERBOARD</small><h3>응답 횟수 리더보드</h3><p>{getLeaderboardWeekLabel()}</p></div><span>10명 참여 중</span></header>
     <div className="uf-leaderboard-service__layout">
       <div className="uf-leaderboard-service__main">
         <section className="uf-service-podium"><p>이번 주 가장 활발히 설문에 참여한 유저입니다.</p><div>{[[second, 'silver'], [first, 'gold'], [third, 'bronze']].map(([entry, tier]) => <article className={`is-${tier}`} key={entry.rank}><span>{entry.nickname[0]}</span><b>{entry.nickname}</b><small>{entry.score}회</small><i>{entry.rank}</i></article>)}</div></section>
@@ -77,12 +78,12 @@ export default function Landing() {
 
   return <main className="uf-landing motion-page" ref={rootRef}>
     <nav className="uf-nav" aria-label="주요 메뉴"><Link className="uf-nav__brand" to="/"><BrandMark /></Link><div className="uf-nav__links"><a href="#formmate">FormMate</a><a href="#leaderboard">리더보드</a><a href="#team">팀 관리</a></div><div className="uf-nav__actions">{user ? <><button className="uf-nav__signup" type="button" onClick={() => logout()}>로그아웃</button><Link className="uf-button uf-button--primary" to="/surveys">서비스로 이동</Link></> : <><Link className="uf-nav__signup" to="/signup">회원가입</Link><Link className="uf-button uf-button--primary" to="/login">로그인</Link></>}</div></nav>
-    <section className="uf-hero" aria-labelledby="hero-title"><div className="uf-hero__copy"><span className="uf-kicker" data-motion-reveal>UNIFORM</span><h1 id="hero-title" data-motion-reveal style={{ '--delay': '60ms' }}>설문에 재미를 더한<br /><em>AI 폼빌더</em></h1><p data-motion-reveal style={{ '--delay': '120ms' }}>FormMate와 대화해 설문을 만들고,<br />응답이 하나의 활동이 되는 UniForm에서 참여자를 만나보세요.</p><div className="uf-hero__actions" data-motion-reveal style={{ '--delay': '180ms' }}><Link className="uf-button uf-button--primary" to="/formmate">FormMate로 설문 만들기</Link><Link className="uf-button uf-button--secondary" to="/surveys">설문 둘러보기</Link></div></div><ProductFrame label="UniForm 설문 만들기" className="uf-hero__product" data-motion-reveal style={{ '--delay': '160ms' }}><FormMatePreview compact /></ProductFrame></section>
+    <section className="uf-hero" aria-labelledby="hero-title"><div className="uf-hero__copy"><span className="uf-kicker" data-motion-reveal>UNIFORM</span><h1 id="hero-title" data-motion-reveal style={{ '--delay': '60ms' }}>설문에 재미를 더한<br /><em>AI 폼빌더</em></h1><p data-motion-reveal style={{ '--delay': '120ms' }}>FormMate와 대화해 설문을 만들고, <br />응답이 하나의 활동이 되는 UniForm에서 참여자를 만나보세요.</p><div className="uf-hero__actions" data-motion-reveal style={{ '--delay': '180ms' }}><Link className="uf-button uf-button--primary" to="/formmate">FormMate로 설문 만들기</Link><Link className="uf-button uf-button--secondary" to="/surveys">설문 둘러보기</Link></div></div><ProductFrame label="UniForm 설문 만들기" className="uf-hero__product" data-motion-reveal style={{ '--delay': '160ms' }}><FormMatePreview compact /></ProductFrame></section>
     <SurveyPainSection />
     <section className="uf-feature uf-feature--formmate" id="formmate"><div className="uf-feature__copy" data-motion-reveal><span className="uf-kicker">FORMMATE</span><h2>FormMate와 대화하며<br />설문을 만들어보세요</h2><p>원하는 주제와 목적을 말하면 설문 제목, 설명, 질문 유형과 선택지까지 초안을 제안합니다. 생성된 내용은 직접 확인하고 바로 수정할 수 있습니다.</p><Link className="uf-text-link" to="/formmate">FormMate로 설문 만들기 <span>→</span></Link></div><ProductFrame label="UniForm 설문 만들기" className="uf-feature__product" data-motion-reveal style={{ '--delay': '80ms' }}><FormMatePreview /></ProductFrame></section>
     <section className="uf-feature uf-feature--leaderboard" id="leaderboard"><ProductFrame label="UniForm 리더보드" className="uf-feature__product" data-motion-reveal><LeaderboardPreview /></ProductFrame><div className="uf-feature__copy" data-motion-reveal style={{ '--delay': '80ms' }}><span className="uf-kicker">LEADERBOARD &amp; REWARD</span><h2>응답에<br />재미를 더하다</h2><p>설문에 답할수록 참여 기록이 쌓이고, 리더보드에서 나의 순위를 확인할 수 있어요. 참여의 재미를 따라가다 보면 어느새 누군가의 설문에도 힘이 됩니다.</p><div className="uf-reward-summary"><b>매주 TOP 3</b><span>보상은 추후 공지</span></div><Link className="uf-text-link" to="/leaderboard">이번 주 순위 확인하기 <span>→</span></Link></div></section>
     <section className="uf-feature uf-feature--team" id="team"><div className="uf-feature__copy" data-motion-reveal><span className="uf-kicker">TEAM</span><h2>팀플 설문도,<br />팀원들과 함께 관리하세요</h2><p>최대 6명이 하나의 설문을 함께 만들고 수정 기록과 응답 현황을 공유합니다. 초안부터 결과 확인까지 팀 단위로 이어집니다.</p><Link className="uf-text-link" to="/team">팀 관리 시작하기 <span>→</span></Link></div><ProductFrame label="UniForm 팀 관리" className="uf-feature__product" data-motion-reveal style={{ '--delay': '80ms' }}><TeamPreview /></ProductFrame></section>
     <section className="uf-final" data-motion-reveal><div><h2>설문에 새로운 경험을<br />더해보세요</h2><p>FormMate로 만들고, 응답이 활동이 되는 UniForm에서 시작하세요.</p><Link className="uf-button uf-button--primary" to="/login">시작하기</Link></div></section>
-    <footer className="uf-footer"><BrandMark /><p>대학생을 위한 설문 제작과 참여 플랫폼</p><nav><Link to="/support">고객센터</Link></nav><small>© 2026 UNIFORM</small></footer>
+    <footer className="uf-footer"><BrandMark /><p>대학생을 위한 설문 제작과 참여 플랫폼</p><nav><Link to="/terms">이용약관</Link><Link to="/privacy">개인정보 처리방침</Link><Link to="/support">고객센터</Link></nav><small>© 2026 UNIFORM</small></footer>
   </main>
 }

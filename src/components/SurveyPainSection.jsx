@@ -25,7 +25,7 @@ export default function SurveyPainSection() {
     <header className="survey-pain-heading" data-motion-reveal>
       <span>REAL VOICES</span>
       <h2 id="survey-pain-title">설문은 완성됐는데,<br /><em>참여자는 충분한가요?</em></h2>
-      <p>많은 대학생들이 설문은 쉽게 만들지만,<br />정작 응답자를 모으는 과정에서 어려움을 겪고 있어요.</p>
+      <p>많은 대학생들이 설문은 쉽게 만들지만, <br />정작 응답자를 모으는 과정에서 어려움을 겪고 있어요.</p>
     </header>
     <div className="survey-pain-spiral" data-motion-reveal style={{ '--delay': '100ms' }}>
       <InfiniteSpiral
