@@ -1,0 +1,28 @@
+.legal-document{width:min(100%,800px);margin:36px auto 0;padding:36px 40px;border:1px solid #e5e7eb;border-radius:16px;background:#fff;line-height:1.75}
+.legal-document__head{padding-bottom:22px;border-bottom:1px solid #e5e7eb}
+.legal-document__head>span{color:#168fda;font-size:.62rem;font-weight:850;letter-spacing:.14em}
+.legal-document__head h1{margin:8px 0 0;font-size:clamp(1.6rem,4vw,2.1rem);letter-spacing:-.04em}
+.legal-document__head p{margin:8px 0 0;color:#5b6576;font-size:.8rem}
+.legal-document__head dl{display:flex;flex-wrap:wrap;gap:6px 22px;margin:16px 0 0;font-size:.68rem}
+.legal-document__head dl div{display:flex;gap:8px}
+.legal-document__head dt{color:#7b8493}
+.legal-document__head dd{margin:0;color:#374151;font-weight:700}
+.legal-document__toc{margin:22px 0 6px;padding:16px 20px;border-radius:12px;background:#f7fafc;font-size:.72rem}
+.legal-document__toc ol{display:grid;gap:4px;margin:8px 0 0;padding:0;list-style:none;color:#4b5563}
+.legal-document__toc a{color:#374151}
+.legal-document__toc a:hover{color:#168fda}
+.legal-document__section{padding-top:26px;scroll-margin-top:20px}
+.legal-document__section h2{margin:0 0 8px;font-size:1rem;letter-spacing:-.02em}
+.legal-document__section p,.legal-document__section li{margin:0;color:#374151;font-size:.78rem}
+.legal-document__section ul{display:grid;gap:4px;margin:0;padding-left:18px}
+.legal-document__section a{color:#168fda;font-weight:700}
+.legal-pending{color:#9aa3b2;font-style:italic}
+.legal-table-wrap{overflow-x:auto;margin-top:10px}
+.legal-table{width:100%;border-collapse:collapse;font-size:.72rem}
+.legal-table th,.legal-table td{padding:9px 12px;border-bottom:1px solid #edf0f4;text-align:left;white-space:nowrap}
+.legal-table thead th{background:#f7fafc;color:#5b6576;font-weight:700}
+.legal-table tbody th{color:#111827}
+.legal-links{display:flex;flex-wrap:wrap;gap:14px}
+.legal-links a{color:#5b6576;font-weight:700}
+.legal-links a:hover{color:#168fda}
+@media(max-width:640px){.legal-document{margin-top:20px;padding:24px 18px}}

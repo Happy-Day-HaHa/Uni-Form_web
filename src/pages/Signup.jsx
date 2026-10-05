@@ -57,8 +57,8 @@ export default function Signup() {
         <legend>약관 동의</legend>
         <Checkbox className="auth-agreements__all" checked={Object.values(agreements).every(Boolean)} indeterminate={Object.values(agreements).some(Boolean) && !Object.values(agreements).every(Boolean)} onChange={(event) => setAgreements({ age14: event.target.checked, terms: event.target.checked, privacy: event.target.checked, marketing: event.target.checked })}>전체 동의</Checkbox>
         <Checkbox checked={agreements.age14} onChange={(event) => setAgreements({ ...agreements, age14: event.target.checked })}><span>[필수] 만 14세 이상입니다.</span></Checkbox>
-        <Checkbox checked={agreements.terms} onChange={(event) => setAgreements({ ...agreements, terms: event.target.checked })}><span>[필수] 이용약관에 동의합니다.</span></Checkbox>
-        <Checkbox checked={agreements.privacy} onChange={(event) => setAgreements({ ...agreements, privacy: event.target.checked })}><span>[필수] 개인정보 처리방침에 동의합니다.</span></Checkbox>
+        <div className="auth-agreements__row"><Checkbox checked={agreements.terms} onChange={(event) => setAgreements({ ...agreements, terms: event.target.checked })}><span>[필수] 이용약관에 동의합니다.</span></Checkbox><a className="auth-agreements__view" href="/terms" target="_blank" rel="noopener noreferrer" aria-label="이용약관 보기 (새 탭)">보기</a></div>
+        <div className="auth-agreements__row"><Checkbox checked={agreements.privacy} onChange={(event) => setAgreements({ ...agreements, privacy: event.target.checked })}><span>[필수] 개인정보 처리방침에 동의합니다.</span></Checkbox><a className="auth-agreements__view" href="/privacy" target="_blank" rel="noopener noreferrer" aria-label="개인정보 처리방침 보기 (새 탭)">보기</a></div>
         <Checkbox checked={agreements.marketing} onChange={(event) => setAgreements({ ...agreements, marketing: event.target.checked })}><span>[선택] 서비스 소식과 혜택을 받습니다.</span></Checkbox>
       </fieldset>
       {message && <p className="form-message form-message--error">{message}</p>}

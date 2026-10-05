@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth'
 import { submitInquiry } from '../services/supportService'
 import { isEmail } from '../utils/validation'
 import '../styles/support.css'
+import '../styles/legal.css'
 
 const categories = ['회원가입 / 로그인', '설문 제작', 'FormMate', '설문 참여', '리더보드', '팀 관리', '기타 문의']
 const faqItems = [
@@ -80,6 +81,6 @@ export default function Support() {
         {submitted && <div className="support-ready" role="status"><div><b>문의가 접수되었습니다.</b><p>{user ? '가입한 이메일' : '입력한 이메일'}로 답변을 보내드릴게요.</p></div></div>}
       </form>
     </section>
-    <footer><span>{SUPPORT_EMAIL}</span><small>© 2026 UNIFORM</small></footer>
+    <footer><span>{SUPPORT_EMAIL}</span><nav className="legal-links" aria-label="정책 문서"><Link to="/terms">이용약관</Link><Link to="/privacy">개인정보 처리방침</Link></nav><small>© 2026 UNIFORM</small></footer>
   </main>
 }

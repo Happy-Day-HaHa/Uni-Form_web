@@ -38,3 +38,5 @@
 .modal-backdrop{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh}.modal{max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);overflow:auto;color:#111827}
 /* Destructive button variant: 되돌릴 수 없는 작업(삭제·탈퇴·해체 등). 페이지별 .ui-button 색 지정보다 우선하도록 두 클래스로 지정한다. */
 .ui-button.ui-button--danger{border-color:#dc2626;background:#dc2626;color:#fff}.ui-button.ui-button--danger:hover:not(:disabled){border-color:#b91c1c;background:#b91c1c;box-shadow:0 8px 18px rgba(220,38,38,.18)}.ui-button.ui-button--danger:focus-visible{outline:2px solid #fca5a5;outline-offset:2px}.ui-button.ui-button--danger:disabled{border-color:#f1a7a7;background:#f1a7a7;box-shadow:none;transform:none;cursor:not-allowed}
+/* 회원가입 약관 동의: 체크박스 옆 "보기" 링크(새 탭) */
+.auth-agreements__row{display:flex;align-items:center;justify-content:space-between;gap:12px}.auth-agreements__row .ui-checkbox{flex:1}.auth-agreements__view{flex:none;padding:2px 4px;color:#6b7280;font-size:.68rem;font-weight:700;text-decoration:underline;text-underline-offset:3px}.auth-agreements__view:hover{color:#168fda}
