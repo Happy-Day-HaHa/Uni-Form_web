@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { logout } from '../services/authService'
 import SurveyPainSection from '../components/SurveyPainSection'
 import { useReveal } from '../hooks/useReveal'
+import { getLeaderboardWeekLabel } from '../utils/leaderboardWeek'
 import '../styles/landing-canva.css'
 
 const leaders = [
@@ -50,7 +51,7 @@ function FormMatePreview({ compact = false }) {
 function LeaderboardPreview() {
   const [first, second, third] = leaders
   return <div className="uf-leaderboard-service">
-    <header><div><small>WEEKLY LEADERBOARD</small><h3>응답 횟수 리더보드</h3><p>이번 주 9.14 ~ 9.20 · 매주 월요일 초기화</p></div><span>10명 참여 중</span></header>
+    <header><div><small>WEEKLY LEADERBOARD</small><h3>응답 횟수 리더보드</h3><p>{getLeaderboardWeekLabel()}</p></div><span>10명 참여 중</span></header>
     <div className="uf-leaderboard-service__layout">
       <div className="uf-leaderboard-service__main">
         <section className="uf-service-podium"><p>이번 주 가장 활발히 설문에 참여한 유저입니다.</p><div>{[[second, 'silver'], [first, 'gold'], [third, 'bronze']].map(([entry, tier]) => <article className={`is-${tier}`} key={entry.rank}><span>{entry.nickname[0]}</span><b>{entry.nickname}</b><small>{entry.score}회</small><i>{entry.rank}</i></article>)}</div></section>
