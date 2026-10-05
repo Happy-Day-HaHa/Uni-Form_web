@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { login } from '../services/authService'
 import { validateAuth } from '../utils/validation'
+import { redirectFromState, safeRedirectPath } from '../utils/safeRedirect'
 import AuthLayout from '../components/AuthLayout'
 import Checkbox from '../components/Checkbox'
 import '../styles/auth-dandy.css'
@@ -12,8 +13,10 @@ export default function Login() {
   // 로그인이 필요한 화면(예: 팀 초대 링크)에서 넘어왔으면 로그인 후 그 화면으로 돌아간다.
   const location = useLocation()
   const { user, loading: authLoading } = useAuth()
-  // 로그인이 필요한 화면에서 보내졌으면(PrivateRoute가 state.from을 넘김) 로그인 후 그 화면으로 돌아간다.
-  const redirectTo = location.state?.from ? `${location.state.from.pathname}${location.state.from.search || ''}${location.state.from.hash || ''}` : '/surveys'
+  // 로그인이 필요한 화면에서 보내졌으면(PrivateRoute가 라우터 state.from을 넘김) 로그인 후 그 화면으로 돌아간다.
+  // 같은 사이트 내부 경로만 따르고, 이상한 값이면 대시보드로 보낸다. from이 없으면(직접 로그인) 설문 목록으로.
+  const requestedPath = redirectFromState(location.state?.from)
+  const redirectTo = requestedPath === null ? '/surveys' : safeRedirectPath(requestedPath)
   const [form, setForm] = useState({ email: '', password: '' })
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
