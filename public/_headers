@@ -6,3 +6,14 @@
 
 /assets/*
   Cache-Control: no-cache, no-store, must-revalidate
+
+# 보안 헤더(모든 경로)
+# - 다른 사이트가 iframe으로 감싸지 못하게 막는다(X-Frame-Options + CSP frame-ancestors).
+# - CSP는 우선 Report-Only로 둔다: 막지는 않고 위반만 브라우저 콘솔에 남긴다. 문제가 없으면 이름을 Content-Security-Policy로 바꿔 적용한다.
+#   font-src의 cdn.jsdelivr.net은 랜딩 웹폰트(NoonnuBasicGothic), connect-src의 api.uniform-app.com은 백엔드 API.
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=(), magnetometer=(), gyroscope=(), accelerometer=(), browsing-topics=()
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://api.uniform-app.com; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
