@@ -160,6 +160,8 @@ export default function SurveyCreate() {
     const previous = history.at(-1)
     if (!previous) return
     if (previous.changeIds) return handleRevertChanges(previous.messageIndex, previous.changeIds)
+    // 옛 스냅샷에는 그사이 서버에서 지워진 문항의 serverId가 남아 있을 수 있다. 저장 직전에 useSurveyDraft가
+    // 서버 문항 상태에 맞춰 보정하므로(없는 serverId는 새 문항으로 보냄) 여기서는 그대로 복원한다.
     setForm(previous.form)
     setHistory((past) => past.slice(0, -1))
     setMessage('')
