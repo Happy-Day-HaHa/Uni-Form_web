@@ -14,12 +14,23 @@
 .legal-document__section{padding-top:26px;scroll-margin-top:20px}
 .legal-document__section h2{margin:0 0 8px;font-size:1rem;letter-spacing:-.02em}
 .legal-document__section p,.legal-document__section li{margin:0;color:#374151;font-size:.78rem}
-.legal-document__section ul{display:grid;gap:4px;margin:0;padding-left:18px}
+.legal-document__section ul,.legal-document__section ol{display:grid;gap:4px;margin:8px 0 0;padding-left:20px}
+.legal-document__section li>ul,.legal-document__section li>ol{margin-top:4px}
+.legal-document__section h3{margin:18px 0 6px;font-size:.86rem;letter-spacing:-.01em}
+.legal-document__section p+p,.legal-document__section p+ul,.legal-document__section p+ol,.legal-document__section ul+p,.legal-document__section ol+p,.legal-document__section .legal-table-wrap+p{margin-top:10px}
+.legal-document__section strong{color:#111827}
+.legal-document__intro p{margin:10px 0 0;color:#374151;font-size:.78rem;line-height:1.75}
 .legal-document__section a{color:#168fda;font-weight:700}
 .legal-pending{color:#9aa3b2;font-style:italic}
-.legal-table-wrap{overflow-x:auto;margin-top:10px}
+.legal-table-wrap{overflow-x:auto;margin:10px 0 0;border:1px solid #edf0f4;border-radius:10px;-webkit-overflow-scrolling:touch}
+.legal-table-wrap:focus-visible{outline:2px solid #40abfc;outline-offset:2px}
 .legal-table{width:100%;border-collapse:collapse;font-size:.72rem}
-.legal-table th,.legal-table td{padding:9px 12px;border-bottom:1px solid #edf0f4;text-align:left;white-space:nowrap}
+.legal-table th,.legal-table td{padding:9px 12px;border-bottom:1px solid #edf0f4;text-align:left;vertical-align:top;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere}
+.legal-table tbody tr:last-child td{border-bottom:0}
+/* 좁은 화면에서 짧은 칸("구분", "필수")이 한 글자씩 세로로 쌓이지 않게 */
+.legal-table th,.legal-table td{min-width:4.5em}
+/* 칸이 많은 표(국외 이전 등)는 좁은 화면에서 글자가 세로로 쌓이지 않게 최소 너비를 두고 가로로 스크롤한다. */
+.legal-table--wide{min-width:700px}
 .legal-table thead th{background:#f7fafc;color:#5b6576;font-weight:700}
 .legal-table tbody th{color:#111827}
 .legal-links{display:flex;flex-wrap:wrap;gap:14px}
