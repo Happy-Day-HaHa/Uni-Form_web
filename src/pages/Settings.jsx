@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import Modal from '../components/Modal'
 import ServiceShell, { ServiceHeading } from '../components/ServiceShell'
 import { useAuth } from '../hooks/useAuth'
+import { openTermsConsent } from '../components/TermsConsentGate'
 import { getProfile, saveProfile, withdrawAccount } from '../services/userService'
 import { logout } from '../services/authService'
 import { validateNickname } from '../utils/validation'
@@ -11,7 +12,7 @@ const tabs = [['account', '계정 및 보안'], ['notifications', '알림'], ['d
 const noticeRows = [['email', '이메일 알림', '설문 참여, 결과 완료 등 주요 알림을 이메일로 받습니다.'], ['push', '푸시 알림', '서비스 내 알림을 실시간으로 받습니다.'], ['marketing', '마케팅 알림', '새로운 기능, 이벤트, 유용한 팁을 받아보세요.']]
 
 export default function Settings() {
-  const { refreshProfile } = useAuth()
+  const { user, refreshProfile } = useAuth()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') || 'account'
@@ -83,6 +84,7 @@ export default function Settings() {
 
     {tab === 'notifications' && <section className="settings-tab-panel settings-sections"><article className="settings-section"><header><h2>알림 설정</h2><p>중요한 활동을 놓치지 않도록 알림을 설정하세요.</p></header>{noticeRows.map(([key, title, copy]) => <div className="settings-row" key={key}><div><strong>{title}</strong><small>{copy}</small></div><button className={`toggle ${notices[key] ? 'is-on' : ''}`} disabled={pending === key} aria-busy={pending === key} aria-pressed={notices[key]} aria-label={`${title} ${notices[key] ? '끄기' : '켜기'}`} onClick={() => toggle(key)} /></div>)}</article></section>}
 
+    {tab === 'data' && user?.needsTermsConsent && <div className="terms-consent-notice" role="alert"><p>약관에 동의하지 않으면 UniForm을 계속 이용할 수 없어요. 여기서 회원 탈퇴를 할 수 있어요.</p><button className="ui-button" type="button" onClick={openTermsConsent}>약관 다시 보고 동의하기</button></div>}
     {tab === 'data' && <section className="settings-tab-panel settings-sections"><article className="settings-section"><header><h2>데이터 관리</h2><p>내 데이터를 다운로드하거나 계정을 관리할 수 있습니다.</p></header><div className="settings-row"><div><strong>내 데이터 다운로드</strong><small>프로필과 설문 데이터를 파일로 받을 수 있습니다.</small></div><button className="mini-button" onClick={download}>다운로드하기</button></div><div className="settings-row"><div><strong>계정 삭제</strong><small>계정과 모든 데이터가 영구적으로 삭제됩니다.</small></div><button className="mini-button mini-button--danger" onClick={() => setDeleteOpen(true)}>계정 삭제하기</button></div></article></section>}
 
     {error && <p className="form-message form-message--error" role="alert">{error}</p>}
