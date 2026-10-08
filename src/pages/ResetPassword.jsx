@@ -1,15 +1,22 @@
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
+import { useLinkToken } from '../hooks/useLinkToken'
 import { confirmPasswordReset, requestPasswordReset } from '../services/authService'
 import { isEmail, validatePassword } from '../utils/validation'
 import '../styles/auth-dandy.css'
 
 // 비밀번호 재설정. 메일의 링크(/reset-password?token=...)로 들어오면 새 비밀번호를 받고,
-// 토큰 없이 들어오면(로그인 화면의 "비밀번호 찾기") 재설정 메일을 요청한다.
+// 토큰 없이 들어오면(로그인 화면의 "비밀번호 찾기") 재설정 메일을 요청한다. 토큰은 읽자마자 주소에서 지운다(useLinkToken).
+// 같은 화면으로 다시 이동해도(예: "재설정 메일 다시 받기") 토큰·만료 판단을 새로 하도록 방문마다 새로 만든다.
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams()
-  const token = searchParams.get('token')
+  const { key } = useLocation()
+  return <ResetPasswordPage key={key} />
+}
+
+function ResetPasswordPage() {
+  const { token, expired } = useLinkToken()
+  if (expired) return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>링크를 다시 열어주세요</h1><p>보안을 위해 주소에서 재설정 정보를 지웠어요. 메일의 재설정 링크를 다시 눌러주세요.</p></div></div><Link className="button button--block button--outline" to="/reset-password">재설정 메일 다시 받기</Link><Link className="button button--block" to="/login">로그인으로 이동</Link></AuthLayout>
   return token ? <NewPasswordForm token={token} /> : <RequestResetForm />
 }
 
