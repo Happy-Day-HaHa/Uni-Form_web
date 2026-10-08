@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import Modal from '../components/Modal'
 import ServiceShell, { ServiceHeading } from '../components/ServiceShell'
 import { useAuth } from '../hooks/useAuth'
 import { openTermsConsent } from '../components/TermsConsentGate'
 import { getProfile, saveProfile, withdrawAccount } from '../services/userService'
-import { logout } from '../services/authService'
+import { logoutAndReload, setPageNotice } from '../services/authService'
 import { validateNickname } from '../utils/validation'
 
 const tabs = [['account', '계정 및 보안'], ['notifications', '알림'], ['data', '데이터 관리']]
@@ -13,7 +13,6 @@ const noticeRows = [['email', '이메일 알림', '설문 참여, 결과 완료 
 
 export default function Settings() {
   const { user, refreshProfile } = useAuth()
-  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') || 'account'
   const [profile, setProfile] = useState({ nickname: '', gender: '응답하지 않음', grade: '해당 없음', major: '해당 없음', enrollment_status: '해당 없음' })
@@ -59,8 +58,9 @@ export default function Settings() {
     try {
       setDeleteError('')
       await withdrawAccount()
-      await logout()
-      navigate('/', { replace: true })
+      // 로그인 화면을 거치지 않고 홈으로 간다(돌아갈 주소·"로그인 후 이용" 안내를 남기지 않음). 안내는 홈에서 한 번만 보인다.
+      setPageNotice('home', '회원 탈퇴가 완료됐어요. 그동안 UniForm을 이용해 주셔서 감사합니다.')
+      logoutAndReload('/')
     } catch (reason) {
       setDeleteError(reason.message || '계정을 삭제하지 못했어요.')
     }

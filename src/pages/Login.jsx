@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { clearLoginNotice, login, peekLoginNotice } from '../services/authService'
+import { clearPageNotice, login, peekPageNotice } from '../services/authService'
 import { validateAuth } from '../utils/validation'
 import { redirectFromState, safeRedirectPath } from '../utils/safeRedirect'
 import AuthLayout from '../components/AuthLayout'
@@ -13,8 +13,8 @@ export default function Login() {
   // 로그인이 필요한 화면(예: 팀 초대 링크)에서 넘어왔으면 로그인 후 그 화면으로 돌아간다.
   const location = useLocation()
   // 로그아웃시키며 남긴 안내(약관 거절·세션 만료 등)는 한 번만 보여준다.
-  const [notice] = useState(() => location.state?.notice || peekLoginNotice())
-  useEffect(() => { clearLoginNotice() }, [])
+  const [notice] = useState(() => location.state?.notice || peekPageNotice('login'))
+  useEffect(() => { clearPageNotice('login') }, [])
   const { user, loading: authLoading } = useAuth()
   // 로그인이 필요한 화면에서 보내졌으면(PrivateRoute가 라우터 state.from을 넘김) 로그인 후 그 화면으로 돌아간다.
   // 같은 사이트 내부 경로만 따르고, 이상한 값이면 대시보드로 보낸다. from이 없으면(직접 로그인) 설문 목록으로.

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Modal from './Modal'
 import { useAuth } from '../hooks/useAuth'
-import { logout, setLoginNotice } from '../services/authService'
+import { logout, setPageNotice } from '../services/authService'
 import { agreeToTerms } from '../services/userService'
 
 // 약관이 바뀌어 재동의가 필요한 회원(GET /users/me의 needsTermsConsent)에게 닫을 수 없는 동의 창을 띄운다.
@@ -40,9 +40,9 @@ export default function TermsConsentGate() {
   const exempt = DOCUMENT_PATHS.includes(location.pathname) || (isWithdrawTab(location) && !reopenedHere)
   const open = Boolean(user?.needsTermsConsent) && !exempt
 
-  // 로그아웃하고 로그인 화면으로 보낸다. 안내 문구는 setLoginNotice로 넘긴다(로그아웃 직후 PrivateRoute의 이동이 state를 덮어쓸 수 있음).
+  // 로그아웃하고 로그인 화면으로 보낸다. 안내 문구는 setPageNotice로 넘긴다(로그아웃 직후 PrivateRoute의 이동이 state를 덮어쓸 수 있음).
   async function leave(notice, state = undefined) {
-    setLoginNotice(notice)
+    setPageNotice('login', notice)
     setError('')
     await logout()
     navigate('/login', { replace: true, state })
