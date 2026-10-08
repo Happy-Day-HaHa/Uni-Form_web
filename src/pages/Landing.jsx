@@ -1,7 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
 import { useAuth } from '../hooks/useAuth'
-import { logout } from '../services/authService'
+import { clearPageNotice, logout, peekPageNotice } from '../services/authService'
 import SurveyPainSection from '../components/SurveyPainSection'
 import { useReveal } from '../hooks/useReveal'
 import { getLeaderboardWeekLabel } from '../utils/leaderboardWeek'
@@ -75,8 +76,12 @@ export default function Landing() {
   const rootRef = useReveal([])
   // 로그인한 사용자가 로고로 돌아와도 로그아웃된 것처럼 보이지 않게, 로그인 상태에 맞는 버튼을 보여준다.
   const { user } = useAuth()
+  // 탈퇴 직후처럼 다른 화면에서 남긴 안내는 한 번만 보여준다.
+  const [notice, setNotice] = useState(() => peekPageNotice('home'))
+  useEffect(() => { clearPageNotice('home') }, [])
 
   return <main className="uf-landing motion-page" ref={rootRef}>
+    {notice && <div className="uf-flash" role="status"><p>{notice}</p><button type="button" aria-label="안내 닫기" onClick={() => setNotice('')}>×</button></div>}
     <nav className="uf-nav" aria-label="주요 메뉴"><Link className="uf-nav__brand" to="/"><BrandMark /></Link><div className="uf-nav__links"><a href="#formmate">FormMate</a><a href="#leaderboard">리더보드</a><a href="#team">팀 관리</a></div><div className="uf-nav__actions">{user ? <><button className="uf-nav__signup" type="button" onClick={() => logout()}>로그아웃</button><Link className="uf-button uf-button--primary" to="/surveys">서비스로 이동</Link></> : <><Link className="uf-nav__signup" to="/signup">회원가입</Link><Link className="uf-button uf-button--primary" to="/login">로그인</Link></>}</div></nav>
     <section className="uf-hero" aria-labelledby="hero-title"><div className="uf-hero__copy"><span className="uf-kicker" data-motion-reveal>UNIFORM</span><h1 id="hero-title" data-motion-reveal style={{ '--delay': '60ms' }}>설문에 재미를 더한<br /><em>AI 폼빌더</em></h1><p data-motion-reveal style={{ '--delay': '120ms' }}>FormMate와 대화해 설문을 만들고, <br />응답이 하나의 활동이 되는 UniForm에서 참여자를 만나보세요.</p><div className="uf-hero__actions" data-motion-reveal style={{ '--delay': '180ms' }}><Link className="uf-button uf-button--primary" to="/formmate">FormMate로 설문 만들기</Link><Link className="uf-button uf-button--secondary" to="/surveys">설문 둘러보기</Link></div></div><ProductFrame label="UniForm 설문 만들기" className="uf-hero__product" data-motion-reveal style={{ '--delay': '160ms' }}><FormMatePreview compact /></ProductFrame></section>
     <SurveyPainSection />

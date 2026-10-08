@@ -58,3 +58,23 @@ export async function logout() {
   clearTokens()
   emitAuthStateChange('SIGNED_OUT')
 }
+
+// 로그아웃시키며 다음 화면에 한 번만 보여줄 안내(page: 'login' | 'home'). 로그아웃되는 순간 PrivateRoute가 먼저
+// /login으로 보낼 수 있어 화면 이동 state 대신 sessionStorage로 넘기고, 받는 화면이 한 번 읽고 지운다.
+const NOTICE_KEYS = { login: 'uniform-login-notice', home: 'uniform-home-notice' }
+export function setPageNotice(page, text) {
+  try { sessionStorage.setItem(NOTICE_KEYS[page], text) } catch { /* 안내는 없어도 동작한다 */ }
+}
+export function peekPageNotice(page) {
+  try { return sessionStorage.getItem(NOTICE_KEYS[page]) || '' } catch { return '' }
+}
+export function clearPageNotice(page) {
+  try { sessionStorage.removeItem(NOTICE_KEYS[page]) } catch { /* 무시 */ }
+}
+
+// 탈퇴처럼 로그인 화면을 거치지 않고 끝내야 할 때: 토큰만 지우고 목적지를 새로 연다.
+// 앱에 로그아웃을 알리지 않으므로 PrivateRoute가 /login으로 보내거나 돌아갈 주소를 남기지 않고, 새로 열면서 로그인 상태도 초기화된다.
+export function logoutAndReload(path = '/') {
+  clearTokens()
+  window.location.replace(path)
+}
