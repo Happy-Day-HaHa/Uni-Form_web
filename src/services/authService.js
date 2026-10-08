@@ -58,3 +58,16 @@ export async function logout() {
   clearTokens()
   emitAuthStateChange('SIGNED_OUT')
 }
+
+// 로그아웃시키며 로그인 화면에 보여줄 안내(약관 거절·세션 만료 등). 로그아웃되는 순간 PrivateRoute가 먼저
+// /login으로 보낼 수 있어 화면 이동 state 대신 sessionStorage로 넘기고, 로그인 화면이 한 번 읽고 지운다.
+const LOGIN_NOTICE_KEY = 'uniform-login-notice'
+export function setLoginNotice(text) {
+  try { sessionStorage.setItem(LOGIN_NOTICE_KEY, text) } catch { /* 안내는 없어도 동작한다 */ }
+}
+export function peekLoginNotice() {
+  try { return sessionStorage.getItem(LOGIN_NOTICE_KEY) || '' } catch { return '' }
+}
+export function clearLoginNotice() {
+  try { sessionStorage.removeItem(LOGIN_NOTICE_KEY) } catch { /* 무시 */ }
+}

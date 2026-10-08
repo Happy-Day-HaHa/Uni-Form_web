@@ -36,3 +36,9 @@ export async function saveProfile(profile, original) {
 export async function withdrawAccount() {
   await apiClient.delete('/users/me')
 }
+
+// 약관 재동의(POST /users/me/terms-consent, 본문 없음). 응답은 갱신된 회원 정보(needsTermsConsent: false).
+// 비로그인 401, 탈퇴 계정 403.
+export async function agreeToTerms() {
+  return apiClient.post('/users/me/terms-consent')
+}
