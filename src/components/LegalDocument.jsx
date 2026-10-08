@@ -7,7 +7,7 @@ import '../styles/support.css'
 import '../styles/legal.css'
 
 // 이용약관·개인정보 처리방침 공통 레이아웃. 본문은 src/content/legal/*.md 원문을 그대로 그린다.
-// 원문의 "[배포일로 기재]"는 POLICY_EFFECTIVE_DATE로 바꾸고, 값이 없으면 "시행일 확정 예정"으로 표시한다.
+// 원문의 "[배포일로 기재]"(문서 버전·시행일)는 POLICY_EFFECTIVE_DATE로 바꾸고, 값이 없으면 "시행일 확정 예정"으로 표시한다.
 const EFFECTIVE_DATE_TOKEN = '[배포일로 기재]'
 
 export function Pending({ children = '내용 작성 예정' }) {
@@ -60,7 +60,7 @@ export default function LegalDocument({ source }) {
         <span>UNIFORM 정책</span>
         <h1 id="legal-title">{doc.title}</h1>
         {doc.preamble.length > 0 && <div className="legal-document__intro">{doc.preamble.map((block, index) => <Block key={index} block={block} />)}</div>}
-        <dl><div><dt>문서 버전</dt><dd>{doc.meta['문서 버전']}</dd></div><div><dt>시행일</dt><dd><EffectiveDate /></dd></div></dl>
+        <dl><div><dt>문서 버전</dt><dd><Inline text={doc.meta['문서 버전'] ?? ''} /></dd></div><div><dt>시행일</dt><dd><EffectiveDate /></dd></div></dl>
       </header>
       <nav className="legal-document__toc" aria-label="목차"><b>목차</b><ol>{doc.sections.map((section) => <li key={section.id}><a href={`#${section.id}`}>{section.heading}</a></li>)}</ol></nav>
       {doc.sections.map((section) => <section className="legal-document__section" id={section.id} key={section.id} aria-labelledby={`${section.id}-title`}><h2 id={`${section.id}-title`}>{section.heading}</h2>{section.blocks.map((block, index) => <Block key={index} block={block} />)}</section>)}
