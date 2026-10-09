@@ -5,7 +5,9 @@ import { SUPPORT_EMAIL } from '../constants'
 import { useAuth } from '../hooks/useAuth'
 import { submitInquiry } from '../services/supportService'
 import { isEmail } from '../utils/validation'
+import { getLeaderboardResetRule } from '../utils/leaderboardWeek'
 import '../styles/support.css'
+import '../styles/legal.css'
 
 const categories = ['회원가입 / 로그인', '설문 제작', 'FormMate', '설문 참여', '리더보드', '팀 관리', '기타 문의']
 const faqItems = [
@@ -13,7 +15,7 @@ const faqItems = [
   ['설문 제작', '만든 설문은 어디에서 관리하나요?', '내 설문에서 진행 상태와 응답 수를 확인하고 설문을 관리할 수 있습니다.'],
   ['FormMate', 'FormMate가 만든 문항을 수정할 수 있나요?', '설문 미리보기의 수정하기를 누르면 제목, 설명, 질문 유형과 선택지를 직접 수정할 수 있습니다.'],
   ['설문 참여', '설문 참여 기록은 어디에 반영되나요?', '제출이 완료된 응답은 이번 주 참여 횟수와 리더보드에 반영됩니다.'],
-  ['리더보드', '리더보드는 언제 초기화되나요?', '매주 월요일 00:00에 새로운 주간 순위가 시작됩니다.'],
+  ['리더보드', '리더보드는 언제 초기화되나요?', getLeaderboardResetRule()],
   ['팀 관리', '팀원과 설문을 함께 수정할 수 있나요?', '팀 관리에서 초대 링크를 공유하고 팀 초안과 응답 현황을 함께 관리할 수 있습니다.'],
 ]
 
@@ -80,6 +82,6 @@ export default function Support() {
         {submitted && <div className="support-ready" role="status"><div><b>문의가 접수되었습니다.</b><p>{user ? '가입한 이메일' : '입력한 이메일'}로 답변을 보내드릴게요.</p></div></div>}
       </form>
     </section>
-    <footer><span>{SUPPORT_EMAIL}</span><small>© 2026 UNIFORM</small></footer>
+    <footer><span>{SUPPORT_EMAIL}</span><nav className="legal-links" aria-label="정책 문서"><Link to="/terms">이용약관</Link><Link to="/privacy">개인정보 처리방침</Link></nav><small>© 2026 UNIFORM</small></footer>
   </main>
 }

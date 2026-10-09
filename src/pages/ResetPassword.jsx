@@ -1,15 +1,22 @@
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
+import { useLinkToken } from '../hooks/useLinkToken'
 import { confirmPasswordReset, requestPasswordReset } from '../services/authService'
 import { isEmail, validatePassword } from '../utils/validation'
 import '../styles/auth-dandy.css'
 
 // 비밀번호 재설정. 메일의 링크(/reset-password?token=...)로 들어오면 새 비밀번호를 받고,
-// 토큰 없이 들어오면(로그인 화면의 "비밀번호 찾기") 재설정 메일을 요청한다.
+// 토큰 없이 들어오면(로그인 화면의 "비밀번호 찾기") 재설정 메일을 요청한다. 토큰은 읽자마자 주소에서 지운다(useLinkToken).
+// 같은 화면으로 다시 이동해도(예: "재설정 메일 다시 받기") 토큰·만료 판단을 새로 하도록 방문마다 새로 만든다.
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams()
-  const token = searchParams.get('token')
+  const { key } = useLocation()
+  return <ResetPasswordPage key={key} />
+}
+
+function ResetPasswordPage() {
+  const { token, expired } = useLinkToken()
+  if (expired) return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>링크를 다시 열어주세요</h1><p>보안을 위해 주소에서 재설정 정보를 지웠어요. 메일의 재설정 링크를 다시 눌러주세요.</p></div></div><Link className="button button--block button--outline" to="/reset-password">재설정 메일 다시 받기</Link><Link className="button button--block" to="/login">로그인으로 이동</Link></AuthLayout>
   return token ? <NewPasswordForm token={token} /> : <RequestResetForm />
 }
 
@@ -40,16 +47,34 @@ function RequestResetForm() {
   return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>비밀번호 찾기</h1><p>가입한 이메일로 비밀번호 재설정 링크를 보내드려요.</p></div></div><form className="form-stack" onSubmit={handleSubmit}><label>이메일<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="hello@example.com" required /></label>{message && <p className="form-message form-message--error" role="alert">{message}</p>}<button className="button button--block" disabled={submitting}>{submitting ? '보내는 중...' : '재설정 메일 보내기'}</button></form><p className="auth-card__footer">비밀번호가 기억나셨나요? <Link to="/login">로그인</Link></p></AuthLayout>
 }
 
+// reset-confirm 400 구분(백엔드 #58).
+// - 새 비밀번호가 현재 비밀번호와 같음: 토큰은 그대로 유효 → 입력 화면에 머물며 비밀번호 칸 아래에 표시
+// - 입력값 검증 오류(ValidationPipe): 응답에 error 필드가 붙어 구조로 구분 → 입력 화면에 머묾
+// - 그 밖의 400(만료·이미 사용·없는 토큰): 링크 안내 화면
+// 지금 백엔드는 두 BusinessException(같은 비밀번호·잘못된 토큰)에 code를 주지 않아 구조로는 나눌 수 없다.
+// code가 생기면 그 값을 먼저 쓰고, 없으면 "같은 비밀번호" 메시지와 정확히 같을 때만 그렇게 본다(부분 일치는 쓰지 않음).
+const SAME_PASSWORD_CODE = 'SAME_AS_CURRENT_PASSWORD'
+const SAME_PASSWORD_MESSAGE = '현재 비밀번호와 다른 비밀번호를 입력해주세요'
+function classifyResetConfirmError(error) {
+  if (error?.status !== 400) return 'other'
+  if (error.code === SAME_PASSWORD_CODE || error.message?.trim() === SAME_PASSWORD_MESSAGE) return 'samePassword'
+  if (error.data?.error) return 'invalidInput'
+  return 'invalidLink'
+}
+
 function NewPasswordForm({ token }) {
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [message, setMessage] = useState('')
-  const [tokenInvalid, setTokenInvalid] = useState(false)
+  // 비밀번호 칸 바로 아래에 보여줄 오류(현재 비밀번호와 같음)
+  const [passwordError, setPasswordError] = useState('')
+  const [linkInvalid, setLinkInvalid] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(event) {
     event.preventDefault()
+    setPasswordError('')
     const passwordMessage = validatePassword(password)
     if (passwordMessage) return setMessage(passwordMessage)
     if (password !== confirm) return setMessage('새 비밀번호가 서로 일치하지 않아요.')
@@ -59,15 +84,16 @@ function NewPasswordForm({ token }) {
       await confirmPasswordReset(token, password)
       navigate('/login', { replace: true, state: { passwordReset: true } })
     } catch (error) {
-      // 만료·이미 사용·잘못된 토큰은 모두 같은 400으로 온다. 새 링크를 받게 안내한다.
-      if (error.status === 400 && error.message.includes('토큰')) setTokenInvalid(true)
-      setMessage(error.message)
+      const kind = classifyResetConfirmError(error)
+      if (kind === 'samePassword') setPasswordError(error.message)
+      else if (kind === 'invalidLink') setLinkInvalid(true)
+      else setMessage(error.messages?.length > 1 ? error.messages.join(' · ') : error.message)
     } finally {
       setSubmitting(false)
     }
   }
 
-  if (tokenInvalid) return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>링크를 다시 받아주세요</h1><p>재설정 링크가 올바르지 않거나, 만료됐거나, 이미 사용됐어요.</p></div></div><p className="form-message form-message--error" role="alert">{message}</p><Link className="button button--block" to="/reset-password">재설정 메일 다시 받기</Link></AuthLayout>
+  if (linkInvalid) return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>링크가 만료되었거나 이미 사용됐어요</h1><p>비밀번호 찾기에서 재설정 메일을 다시 받아주세요.</p></div></div><Link className="button button--block" to="/reset-password">비밀번호 찾기</Link></AuthLayout>
 
-  return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>새 비밀번호 설정</h1><p>로그인에 사용할 새 비밀번호를 입력해주세요.</p></div></div><form className="form-stack" onSubmit={handleSubmit}><label>새 비밀번호<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="영문, 숫자를 포함해 8자 이상" autoComplete="new-password" required /></label><label>새 비밀번호 확인<input type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} placeholder="한 번 더 입력해주세요." autoComplete="new-password" required /></label>{message && <p className="form-message form-message--error" role="alert">{message}</p>}<button className="button button--block" disabled={submitting}>{submitting ? '변경 중...' : '비밀번호 변경'}</button></form></AuthLayout>
+  return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>새 비밀번호 설정</h1><p>로그인에 사용할 새 비밀번호를 입력해주세요.</p></div></div><form className="form-stack" onSubmit={handleSubmit}><label>새 비밀번호<input type="password" value={password} onChange={(event) => { setPassword(event.target.value); setPasswordError('') }} placeholder="영문, 숫자를 포함해 8자 이상" autoComplete="new-password" aria-invalid={Boolean(passwordError)} aria-describedby={passwordError ? 'reset-password-error' : undefined} required />{passwordError && <span className="form-message form-message--error" id="reset-password-error" role="alert">{passwordError}</span>}</label><label>새 비밀번호 확인<input type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} placeholder="한 번 더 입력해주세요." autoComplete="new-password" required /></label>{message && <p className="form-message form-message--error" role="alert">{message}</p>}<button className="button button--block" disabled={submitting}>{submitting ? '변경 중...' : '비밀번호 변경'}</button></form></AuthLayout>
 }

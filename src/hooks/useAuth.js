@@ -37,6 +37,8 @@ export function AuthProvider({ children }) {
     profile: toProfile(user),
     loading,
     refreshProfile: async () => { if (user) setUser(await getCurrentUser()) },
+    // 회원 정보를 돌려주는 API(약관 재동의 등)의 응답으로 바로 갱신한다.
+    setCurrentUser: (me) => setUser(me),
   }), [user, loading])
   return createElement(AuthContext.Provider, { value }, children)
 }

@@ -312,3 +312,6 @@
 @media(max-width:1080px) and (min-width:781px){.service-shell:not(.service-shell--collapsed){grid-template-columns:220px minmax(0,1fr)}}
 /* 로그아웃 확인 창 */
 .service-logout-confirm{margin:0 0 4px;color:#64748b;font-size:.74rem;line-height:1.6}
+/* 설정: 아직 준비 중인 항목 */
+.mini-button:disabled{border-color:#e5e9f0;background:#f6f8fb;color:#9aa5b5;cursor:not-allowed}
+.settings-badge{display:inline-flex;align-items:center;margin-left:8px;padding:2px 8px;border-radius:999px;background:#eef2f7;color:#5b6576;font-size:.58rem;font-weight:750;vertical-align:middle}

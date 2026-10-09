@@ -10,6 +10,24 @@ function signatureOf(form) {
   return JSON.stringify({ title, description, targetCount: Number(targetCount), deadline, category: category ?? '', estimatedMinutes: estimatedMinutes ?? '', questions: questions.map(({ id: _id, serverId: _serverId, ...rest }) => rest) })
 }
 
+// 서버에 저장된 문항 상태(마지막 저장/불러오기 기준)에 맞춰 문항의 serverId를 바로잡는다.
+// - 화면 id → serverId 맵에 있으면 그 값을 쓴다(직전 저장의 setForm이 아직 렌더되기 전이어도 안전).
+// - 서버에 없는 serverId(되돌리기로 되살아난 삭제 문항 등)는 지워 새 문항으로 보낸다. 같은 serverId가 두 번 나오면 두 번째부터 지운다.
+// 바뀐 문항이 없으면 같은 배열을 돌려준다.
+function reconcileQuestions(questions, serverIdByLocalId, serverKeys) {
+  const used = new Set()
+  let changed = false
+  const next = questions.map((question) => {
+    let serverId = serverIdByLocalId.get(question.id) ?? question.serverId ?? null
+    if (serverId && (!serverKeys.has(serverId) || used.has(serverId))) serverId = null
+    if (serverId) used.add(serverId)
+    if ((question.serverId ?? null) === serverId) return question
+    changed = true
+    return { ...question, serverId }
+  })
+  return changed ? next : questions
+}
+
 function hasContent(form) {
   return Boolean(form.title.trim() || form.description.trim() || form.questions.some((question) => question.title.trim()))
 }
@@ -26,24 +44,39 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
   const formRef = useRef(form)
   const savedSignatureRef = useRef(signatureOf(form))
   const savingRef = useRef(null)
+  // 마지막으로 저장/불러온 서버 문항 stableKey 집합과 화면 문항 id → serverId 맵. 저장 직전 보정에 쓴다.
+  const serverKeysRef = useRef(new Set())
+  const serverIdByLocalIdRef = useRef(new Map())
   const callbacksRef = useRef({ onDraftCreated, onConflict })
   // 화면이 사라진 뒤 끝난 저장이 화면 콜백(주소 변경 등)을 부르지 않게 한다 — 이미 다른 화면으로 이동했을 수 있다.
   const mountedRef = useRef(true)
   formRef.current = form
   callbacksRef.current = { onDraftCreated, onConflict }
 
+  const rememberServerQuestions = useCallback((questions) => {
+    serverKeysRef.current = new Set(questions.map((question) => question.serverId).filter(Boolean))
+    serverIdByLocalIdRef.current = new Map(questions.filter((question) => question.serverId).map((question) => [question.id, question.serverId]))
+  }, [])
+
   // 서버 상태를 화면에 반영할 때는 그 내용이 곧 "저장된 상태"다.
   const loadFromServer = useCallback((draft) => {
     const next = draftToForm(draft)
     versionRef.current = draft.version
     savedSignatureRef.current = signatureOf(next)
-    // 예상 소요시간처럼 서버에 없는 화면 전용 필드는 유지하고, 이미 있던 문항은 화면 id를 그대로 둔다(선택 상태·React key 유지).
-    setForm((current) => {
-      const localIdByServerId = new Map(current.questions.filter((question) => question.serverId).map((question) => [question.serverId, question.id]))
-      return { ...current, ...next, questions: next.questions.map((question) => ({ ...question, id: localIdByServerId.get(question.serverId) ?? question.id })) }
-    })
+    // 이미 있던 문항은 화면 id를 그대로 둔다(선택 상태·React key 유지).
+    const localIdByServerId = new Map()
+    for (const question of formRef.current.questions) {
+      const serverId = serverIdByLocalIdRef.current.get(question.id) ?? question.serverId
+      if (serverId && !localIdByServerId.has(serverId)) localIdByServerId.set(serverId, question.id)
+    }
+    const questions = next.questions.map((question) => ({ ...question, id: localIdByServerId.get(question.serverId) ?? question.id }))
+    rememberServerQuestions(questions)
+    // formRef도 바로 바꿔 둔다. 렌더 전에 flush가 이어서 저장하면(버전 충돌 직후 등) 옛 편집을 다시 보내 방금 받은 최신 내용을 덮어쓰기 때문.
+    formRef.current = { ...formRef.current, ...next, questions }
+    // 예상 소요시간처럼 서버에 없는 화면 전용 필드는 유지한다.
+    setForm((current) => ({ ...current, ...next, questions }))
     return next
-  }, [setForm])
+  }, [rememberServerQuestions, setForm])
 
   useEffect(() => {
     if (!enabled || !initialDraftId) return undefined
@@ -60,8 +93,14 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
     return () => { active = false }
   }, [enabled, initialDraftId, loadFromServer])
 
+  // 전송할 form을 서버 문항 상태에 맞춘다(saveOnce와 keepalive 저장이 함께 쓴다).
+  const reconcileForm = useCallback((current) => {
+    const questions = reconcileQuestions(current.questions, serverIdByLocalIdRef.current, serverKeysRef.current)
+    return questions === current.questions ? current : { ...current, questions }
+  }, [])
+
   const saveOnce = useCallback(async () => {
-    const snapshot = formRef.current
+    const snapshot = reconcileForm(formRef.current)
     const signature = signatureOf(snapshot)
     if (draftIdRef.current && signature === savedSignatureRef.current) return
     if (!draftIdRef.current && !hasContent(snapshot)) return
@@ -71,6 +110,7 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
       const created = await createDraft({ title: snapshot.title, description: snapshot.description })
       draftIdRef.current = created.id
       versionRef.current = created.version
+      rememberServerQuestions([])
       setDraftId(created.id)
       if (mountedRef.current) callbacksRef.current.onDraftCreated?.(created.id)
     }
@@ -78,11 +118,13 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
       const saved = await updateDraft(draftIdRef.current, snapshot, versionRef.current)
       versionRef.current = saved.version
       savedSignatureRef.current = signature
-      // 새로 만든 문항에 서버가 붙인 id(stableKey)를 연결한다. 서버는 보낸 순서대로 문항을 저장한다.
-      const serverIds = new Map(snapshot.questions.map((question, index) => [question.id, saved.questions[index]?.id]))
-      if (snapshot.questions.some((question) => !question.serverId)) {
-        setForm((current) => ({ ...current, questions: current.questions.map((question) => question.serverId || !serverIds.get(question.id) ? question : { ...question, serverId: serverIds.get(question.id) }) }))
-      }
+      // 서버는 보낸 순서대로 문항을 저장하고 id(stableKey)를 돌려준다. 이번 저장 결과를 기준으로 ref를 갱신하고,
+      // 화면 문항의 serverId도 그 기준으로 맞춘다(이미 다른 serverId가 있어도 덮어쓰고, 서버에 없는 값은 지운다).
+      rememberServerQuestions(snapshot.questions.map((question, index) => ({ id: question.id, serverId: saved.questions[index]?.id ?? null })))
+      setForm((current) => {
+        const questions = reconcileQuestions(current.questions, serverIdByLocalIdRef.current, serverKeysRef.current)
+        return questions === current.questions ? current : { ...current, questions }
+      })
       setSaveStatus('자동 저장됨')
     } catch (reason) {
       if (!(reason instanceof SurveyVersionConflictError) || !reason.latestSurvey) throw reason
@@ -91,7 +133,7 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
       setSaveStatus('최신 내용으로 바뀜')
       if (mountedRef.current) callbacksRef.current.onConflict?.(mine, reason)
     }
-  }, [loadFromServer, setForm])
+  }, [loadFromServer, reconcileForm, rememberServerQuestions, setForm])
 
   // 저장은 한 번에 하나씩. 진행 중에 또 요청되면 끝난 뒤 최신 form으로 한 번 더 저장한다.
   const flush = useCallback(async () => {
@@ -152,7 +194,7 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
         event.returnValue = ''
         return
       }
-      const snapshot = formRef.current
+      const snapshot = reconcileForm(formRef.current)
       updateDraft(draftIdRef.current, snapshot, versionRef.current, { keepalive: true }).catch(() => {})
       savedSignatureRef.current = signatureOf(snapshot)
     }
@@ -162,7 +204,7 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [enabled, flush, hasUnsaved])
+  }, [enabled, flush, hasUnsaved, reconcileForm])
 
   // FormMate가 제목/설명을 바로 반영하면 서버 version이 1 오르지만 응답에 새 version은 없다.
   // 진행 중인 저장을 기다린 뒤 초안을 다시 받아 최신 version으로 맞춘다 — 이후 저장·제안 적용이 충돌하지 않게.
@@ -175,7 +217,10 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
     try {
       const latest = await getDraft(draftIdRef.current)
       versionRef.current = latest.version
-      savedSignatureRef.current = signatureOf(draftToForm(latest))
+      const latestForm = draftToForm(latest)
+      savedSignatureRef.current = signatureOf(latestForm)
+      // 제목/설명만 바뀌었지만 서버 문항 집합도 최신 값으로 맞춰 둔다(화면 id 맵은 그대로).
+      serverKeysRef.current = new Set(latestForm.questions.map((question) => question.serverId).filter(Boolean))
     } catch {
       // 다시 받지 못하면 서버가 올린 만큼 직접 올린다. 어긋나면 다음 저장의 충돌 처리가 최신 내용으로 맞춘다.
       versionRef.current += 1
@@ -191,6 +236,7 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
       const created = await createDraft({ title: formRef.current.title, description: formRef.current.description })
       draftIdRef.current = created.id
       versionRef.current = created.version
+      rememberServerQuestions([])
       setDraftId(created.id)
       if (mountedRef.current) callbacksRef.current.onDraftCreated?.(created.id)
       await flush()
@@ -198,7 +244,7 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
     const reply = await sendFormMateMessage(draftIdRef.current, message)
     if (reply.updatedTitle !== undefined || reply.updatedDescription !== undefined) await syncAutoUpdated(reply)
     return reply
-  }, [flush, syncAutoUpdated])
+  }, [flush, rememberServerQuestions, syncAutoUpdated])
 
   const applyChanges = useCallback(async (changeIds, { revert = false } = {}) => {
     await flush()
