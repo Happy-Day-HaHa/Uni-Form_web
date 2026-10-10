@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getDeadlineLabel, isSurveyOpen, isTargetReached } from '../../utils/surveyPolicy'
 
-export default function SurveyRow({ survey, index = 0, user, responded = false, isTeamSurvey = false, newSurveyId = '' }) {
+export default function SurveyRow({ survey, index = 0, user, responded = false, isTeamSurvey = false, newSurveyId = '', pinned = false }) {
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
   const isOwner = survey.is_owner ?? survey.creator_id === user?.id
@@ -20,9 +20,9 @@ export default function SurveyRow({ survey, index = 0, user, responded = false, 
   }
 
   return (
-    <article className={`catalog-row ${survey.id === newSurveyId ? 'catalog-row--new' : ''}`} data-catalog-reveal style={{ '--catalog-delay': `${Math.min(index, 3) * 35}ms` }}>
+    <article className={`catalog-row ${survey.id === newSurveyId ? 'catalog-row--new' : ''} ${pinned ? 'catalog-row--pinned' : ''}`} data-catalog-reveal style={{ '--catalog-delay': `${Math.min(index, 3) * 35}ms` }}>
       <div className="catalog-row__copy">
-        <div><h2>{survey.title}</h2><span className="catalog-row__badges">{survey.category && <em className="catalog-row__category">{survey.category}</em>}{isOwner && <em>내 설문</em>}{isTeamSurvey && <em>우리 팀</em>}{responded && <em>응답 완료</em>}{isTargetReached(survey) && <em>목표 달성</em>}{getDeadlineLabel(survey.deadline) && <em>{getDeadlineLabel(survey.deadline)}</em>}</span></div>
+        <div><h2>{survey.title}</h2><span className="catalog-row__badges">{pinned && <em className="catalog-row__pinned">고정</em>}{survey.category && <em className="catalog-row__category">{survey.category}</em>}{isOwner && <em>내 설문</em>}{isTeamSurvey && <em>우리 팀</em>}{responded && <em>응답 완료</em>}{isTargetReached(survey) && <em>목표 달성</em>}{getDeadlineLabel(survey.deadline) && <em>{getDeadlineLabel(survey.deadline)}</em>}</span></div>
         <p>{survey.description}</p>
         <ul>{survey.estimated_minutes ? <li>약 {survey.estimated_minutes}분</li> : <li>소요 시간 미입력</li>}{survey.question_count ? <li>{survey.question_count}개 문항</li> : null}{hasResponseCount && <li>{responses.toLocaleString()}명 참여 중</li>}</ul>
       </div>
