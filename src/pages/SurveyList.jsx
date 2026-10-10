@@ -4,9 +4,11 @@ import ServiceShell from '../components/ServiceShell'
 import SurveyFilters from '../components/survey/SurveyFilters'
 import SurveyRow from '../components/survey/SurveyRow'
 import { useAuth } from '../hooks/useAuth'
-import { getSurveys } from '../services/surveyService'
+import { PINNED_SURVEY_IDS } from '../config/beta'
+import { getSurvey, getSurveys } from '../services/surveyService'
 import { getRespondedSurveyIds } from '../services/responseService'
 import { getMyTeam } from '../services/teamService'
+import { isSurveyOpen } from '../utils/surveyPolicy'
 import '../styles/survey-catalog.css'
 
 // 화면의 예상 소요시간 선택지 → GET /surveys의 estimatedDuration 값. '전체 시간'은 보내지 않는다.
@@ -16,6 +18,8 @@ export default function SurveyList() {
   const { user } = useAuth()
   const [params, setParams] = useSearchParams()
   const [surveys, setSurveys] = useState([])
+  // 운영팀 고정 설문(config/beta.js). 목록 필터에 걸려 빠졌을 수도 있어 따로 불러온다.
+  const [pinnedSurveys, setPinnedSurveys] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [query, setQuery] = useState(params.get('q') || '')
@@ -50,6 +54,15 @@ export default function SurveyList() {
     return () => { active = false }
   }, [user, serverCategory, serverDuration])
 
+  useEffect(() => {
+    if (!PINNED_SURVEY_IDS.length) return undefined
+    let active = true
+    // 하나가 없어졌거나 못 불러와도 나머지는 보이게 하나씩 받는다. 마감된 설문은 고정하지 않는다.
+    Promise.all(PINNED_SURVEY_IDS.map((id) => getSurvey(id).catch(() => null)))
+      .then((items) => { if (active) setPinnedSurveys(items.filter((survey) => survey && isSurveyOpen(survey))) })
+    return () => { active = false }
+  }, [user])
+
   useEffect(() => { const timer = window.setTimeout(() => setDebouncedQuery(query), 260); return () => window.clearTimeout(timer) }, [query])
   useEffect(() => {
     const next = {}
@@ -59,12 +72,19 @@ export default function SurveyList() {
     setParams(next, { replace: true })
   }, [category, debouncedQuery, duration, setParams])
 
-  const visibleSurveys = useMemo(() => {
+  const matchesKeyword = (survey) => {
     const keyword = debouncedQuery.trim().toLocaleLowerCase('ko')
-    const filtered = surveys.filter((survey) => !keyword || `${survey.title} ${survey.description}`.toLocaleLowerCase('ko').includes(keyword))
+    return !keyword || `${survey.title} ${survey.description}`.toLocaleLowerCase('ko').includes(keyword)
+  }
+  // 고정 설문은 검색어와 맞을 때만 맨 위에 보이고, 아래 일반 목록에서는 빼서 두 번 나오지 않게 한다.
+  const visiblePinned = pinnedSurveys.filter(matchesKeyword)
+  const visibleSurveys = useMemo(() => {
+    const pinnedIds = new Set(pinnedSurveys.map((survey) => survey.id))
+    const keyword = debouncedQuery.trim().toLocaleLowerCase('ko')
+    const filtered = surveys.filter((survey) => !pinnedIds.has(survey.id) && (!keyword || `${survey.title} ${survey.description}`.toLocaleLowerCase('ko').includes(keyword)))
 
     return [...filtered].sort((a, b) => String(b.created_at || b.id).localeCompare(String(a.created_at || a.id)))
-  }, [category, debouncedQuery, duration, surveys])
+  }, [category, debouncedQuery, duration, surveys, pinnedSurveys])
 
   useEffect(() => { setVisibleCount(20) }, [category, debouncedQuery, duration])
   const pagedSurveys = visibleSurveys.slice(0, visibleCount)
@@ -111,8 +131,9 @@ export default function SurveyList() {
 
           {!loading && !error && (
             <section className="catalog-list" aria-live="polite">
+              {visiblePinned.length > 0 && <div className="catalog-pinned" aria-label="운영팀 고정 설문">{visiblePinned.map((survey, index) => <SurveyRow key={survey.id} survey={survey} index={index} user={user} responded={respondedIds.includes(survey.id)} isTeamSurvey={teamSurveyIds.includes(survey.id)} pinned />)}</div>}
               {pagedSurveys.map((survey, index) => <SurveyRow key={survey.id} survey={survey} index={index} user={user} responded={respondedIds.includes(survey.id)} isTeamSurvey={teamSurveyIds.includes(survey.id)} newSurveyId={newSurveyId} />)}
-              {!visibleSurveys.length && <div className="catalog-empty"><b>조건에 맞는 설문이 없습니다.</b><span>검색어나 필터를 바꿔보세요.</span><button className="ui-button ui-button--secondary" type="button" onClick={() => { setQuery(''); setCategory('전체'); setDuration('전체 시간') }}>필터 초기화</button></div>}
+              {!visibleSurveys.length && !visiblePinned.length && <div className="catalog-empty"><b>조건에 맞는 설문이 없습니다.</b><span>검색어나 필터를 바꿔보세요.</span><button className="ui-button ui-button--secondary" type="button" onClick={() => { setQuery(''); setCategory('전체'); setDuration('전체 시간') }}>필터 초기화</button></div>}
             </section>
           )}
           {!loading && !error && visibleCount < visibleSurveys.length && <button className="catalog-load-more" type="button" onClick={() => setVisibleCount((count) => count + 20)}>더 보기 ({visibleSurveys.length - visibleCount}개 더 있음)</button>}

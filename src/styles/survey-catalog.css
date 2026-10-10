@@ -285,3 +285,8 @@
 .catalog-row__badges em { padding: 4px 8px; border-radius: 999px; background: #eef7ff; color: #258bd9; font-size: 12px; font-style: normal; font-weight: 700; }
 .catalog-row__action:disabled { cursor: not-allowed; background: #edf1f5; color: #8290a5; box-shadow: none; }
 .catalog-row__badges .catalog-row__category{background:#eef4ff;color:#2f6fdb}
+
+/* 운영팀 고정 설문: 목록 맨 위, 옅은 파란 테두리와 '고정' 배지 */
+.catalog-pinned { display: grid; gap: 10px; }
+.catalog-row.catalog-row--pinned { border-color: #c9d8ff; background: linear-gradient(180deg, #f7f9ff, #fff); }
+.catalog-row__badges .catalog-row__pinned { border-color: transparent; background: #2957ff; color: #fff; }
