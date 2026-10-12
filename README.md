@@ -31,13 +31,12 @@ Node.js는 `^20.19.0` 또는 `>=22.12.0`이 필요합니다(Vite 8 요구 사항
 
 ```bash
 npm install
-# .env.local 파일을 만들고 API 주소를 적는다(아래 예시는 로컬 백엔드)
-echo "VITE_API_BASE_URL=http://localhost:3000" > .env.local
-npm run dev        # http://localhost:5173
+cp .env.example .env.local   # 예시 값은 로컬 백엔드 http://localhost:3000
+npm run dev                  # http://localhost:5173
 ```
 
 - 기본은 **로컬 백엔드(`http://localhost:3000`)** 를 함께 띄워서 씁니다. 백엔드 실행 방법은 백엔드 저장소 README를 보세요.
-- 개발 API(`api-dev.uniform-app.com`)는 CORS에서 develop 프리뷰 주소만 허용하므로, 로컬(`localhost:5173`)에서 바로 붙이면 브라우저가 요청을 막습니다.
+- 운영 API(`api.uniform-app.com`)는 CORS에서 운영 주소만, 개발 API(`api-dev.uniform-app.com`)는 develop 프리뷰 주소만 허용하므로, 로컬(`localhost:5173`)에서 바로 붙이면 브라우저가 요청을 막습니다.
 - `.env.local`은 커밋하지 않습니다(`.gitignore` 대상).
 
 그 밖의 명령:
@@ -69,7 +68,7 @@ npm run preview    # 빌드 결과를 로컬에서 미리 보기
 - `X-Content-Type-Options: nosniff` — 파일 형식 추측 방지
 - `Referrer-Policy: strict-origin-when-cross-origin` — 다른 사이트로 이동할 때 경로·쿼리를 보내지 않음
 - `Permissions-Policy` — 카메라·마이크·위치·결제 등 쓰지 않는 브라우저 기능 차단
-- `Content-Security-Policy-Report-Only` — **Report-Only**: 막지 않고 위반만 브라우저 콘솔에 남김. 확인이 끝나면 `Content-Security-Policy`로 바꿔 실제 적용
+- `Content-Security-Policy-Report-Only` — **Report-Only**: 막지 않고 위반만 브라우저 콘솔에 남김. API 연결은 운영·개발 API(`api.uniform-app.com`, `api-dev.uniform-app.com`)만 허용. 확인이 끝나면 `Content-Security-Policy`로 바꿔 실제 적용
 - HTML·`/assets/*`는 `Cache-Control: no-cache`로 항상 새 버전을 받음
 
 ## 작업 · 배포 흐름
