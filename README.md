@@ -20,10 +20,11 @@ Node.js는 `^20.19.0` 또는 `>=22.12.0`이 필요합니다(Vite 8 요구 사항
 
 | 브랜치 | 배포 | 주소 | API |
 |---|---|---|---|
-| `main` | Cloudflare Pages 운영 | `uni-form-go.pages.dev` | `api.uniform-app.com` |
+| `main` | Cloudflare Pages 운영 | `https://www.uniform-app.com` | `api.uniform-app.com` |
 | `develop` | Cloudflare Pages 프리뷰 | `develop.uni-form-go.pages.dev` | `api-dev.uniform-app.com` |
 | 그 밖의 브랜치 | Cloudflare Pages 프리뷰 | `<브랜치>.uni-form-go.pages.dev` | 프리뷰 환경변수 값 |
 
+- 운영 주소는 `https://www.uniform-app.com`입니다. 루트 도메인(`uniform-app.com`)과 예전 주소(`uni-form-go.pages.dev`)는 www로 301 리다이렉트됩니다.
 - `develop`을 포함한 모든 프리뷰 주소는 Cloudflare Access 뒤에 있어 팀원만 접속할 수 있습니다.
 - 브랜치에 push하면 Cloudflare Pages가 자동으로 빌드·배포합니다.
 
@@ -77,7 +78,7 @@ npm run preview    # 빌드 결과를 로컬에서 미리 보기
 2. 기능 브랜치 → `develop` PR, 머지하면 develop 프리뷰에 자동 배포
 3. develop 프리뷰에서 확인
 4. `develop` → `main` PR
-5. `main`에 머지하면 운영(`uni-form-go.pages.dev`)에 자동 배포
+5. `main`에 머지하면 운영(`https://www.uniform-app.com`)에 자동 배포
 
 ## 디렉터리 구조
 
