@@ -322,6 +322,9 @@
 @media(min-width:781px){
   .service-shell--collapsed{grid-template-columns:76px minmax(0,1fr)}
   .service-shell--collapsed .service-sidebar{width:76px;padding-inline:12px;overflow:visible;pointer-events:auto;transform:none}
+  /* 레일의 세로 테두리는 상단 헤더(64px) 아래부터만 그린다 — 헤더 영역까지 올라오면 로고 바로 왼쪽에 선이 붙어 보인다. */
+  .service-shell--collapsed .service-sidebar{border-right-color:transparent}
+  .service-shell--collapsed .service-sidebar::after{content:'';position:absolute;top:64px;right:-1px;bottom:0;width:1px;background:#e5e7eb;pointer-events:none}
   .service-shell--collapsed .service-sidebar nav a{position:relative;justify-content:center;gap:0;padding:0;overflow:visible}
   .service-shell--collapsed .service-sidebar nav a .service-nav-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   .service-shell--collapsed .service-sidebar nav a::after{content:attr(data-label);position:absolute;top:50%;left:calc(100% + 10px);z-index:1;padding:6px 10px;border-radius:6px;background:#14203f;color:#fff;font-size:.7rem;font-weight:650;white-space:nowrap;opacity:0;pointer-events:none;transform:translate(-4px,-50%);transition:opacity var(--motion-fast,130ms) ease-out,transform var(--motion-fast,130ms) ease-out}
