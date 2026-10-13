@@ -28,6 +28,11 @@ function reconcileQuestions(questions, serverIdByLocalId, serverKeys) {
   return changed ? next : questions
 }
 
+// "저장됨 · 14:05"
+function savedLabel(date = new Date()) {
+  return `저장됨 · ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
 function hasContent(form) {
   return Boolean(form.title.trim() || form.description.trim() || form.questions.some((question) => question.title.trim()))
 }
@@ -39,11 +44,15 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
   const [loading, setLoading] = useState(Boolean(enabled && initialDraftId))
   const [saveStatus, setSaveStatus] = useState('')
   const [error, setError] = useState('')
+  // 마지막 저장이 실패했는지. 다음 저장이 성공하거나 사용자가 알림을 닫을 때까지 유지한다.
+  const [saveFailed, setSaveFailed] = useState(false)
   const draftIdRef = useRef(initialDraftId)
   const versionRef = useRef(null)
   const formRef = useRef(form)
   const savedSignatureRef = useRef(signatureOf(form))
   const savingRef = useRef(null)
+  // 직전 저장이 버전 충돌로 서버 최신 내용에 덮였는지(수동 저장 결과 판단용).
+  const conflictedRef = useRef(false)
   // 마지막으로 저장/불러온 서버 문항 stableKey 집합과 화면 문항 id → serverId 맵. 저장 직전 보정에 쓴다.
   const serverKeysRef = useRef(new Set())
   const serverIdByLocalIdRef = useRef(new Map())
@@ -125,9 +134,10 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
         const questions = reconcileQuestions(current.questions, serverIdByLocalIdRef.current, serverKeysRef.current)
         return questions === current.questions ? current : { ...current, questions }
       })
-      setSaveStatus('자동 저장됨')
+      setSaveStatus(savedLabel())
     } catch (reason) {
       if (!(reason instanceof SurveyVersionConflictError) || !reason.latestSurvey) throw reason
+      conflictedRef.current = true
       const mine = formRef.current
       loadFromServer(reason.latestSurvey)
       setSaveStatus('최신 내용으로 바뀜')
@@ -142,10 +152,10 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
     savingRef.current = run
     try {
       await run
-      setError('')
+      setSaveFailed(false)
     } catch (reason) {
       setSaveStatus('저장 실패')
-      setError(reason.message)
+      setSaveFailed(true)
       throw reason
     } finally {
       if (savingRef.current === run) savingRef.current = null
@@ -161,6 +171,16 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
     const timer = window.setTimeout(() => { flush().catch(() => {}) }, AUTOSAVE_DELAY)
     return () => window.clearTimeout(timer)
   }, [enabled, loading, form, flush])
+
+  // 수동 저장: 'saved' | 'empty'(저장할 내용이 없어 초안을 만들지 않음) | 'conflict'(최신 내용으로 바뀜). 실패하면 throw.
+  const saveNow = useCallback(async () => {
+    conflictedRef.current = false
+    await flush()
+    if (conflictedRef.current) return 'conflict'
+    return draftIdRef.current ? 'saved' : 'empty'
+  }, [flush])
+
+  const dismissSaveError = useCallback(() => setSaveFailed(false), [])
 
   // ── 화면을 떠날 때 대기 중인 자동 저장을 버리지 않기 ─────────────────────
   const hasUnsaved = useCallback(() => {
@@ -255,7 +275,7 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
       })
     // apply 응답에는 새 version만 오므로 적용된 문항 내용을 다시 불러온다.
     loadFromServer(await getDraft(draftIdRef.current))
-    setSaveStatus('자동 저장됨')
+    setSaveStatus(savedLabel())
   }, [flush, loadFromServer])
 
   const publish = useCallback(async () => {
@@ -263,5 +283,5 @@ export function useSurveyDraft({ enabled, form, setForm, initialDraftId = '', on
     return publishDraft(draftIdRef.current)
   }, [flush])
 
-  return { draftId, loading, saveStatus, error, flush, sendMessage, applyChanges, publish }
+  return { draftId, loading, saveStatus, error, saveFailed, dismissSaveError, flush, saveNow, sendMessage, applyChanges, publish }
 }

@@ -43,3 +43,11 @@
   }
 }
 .auth-saas__options a{color:#168fda;font-weight:750}
+
+/* 비밀번호 조건 체크리스트(PasswordChecklist). 미충족은 빈 원 + 회색, 만족은 체크 원 + 진한 글자 — 빨간 오류색은 쓰지 않는다. */
+.password-checklist{display:flex;flex-wrap:wrap;gap:6px 16px;margin:-8px 0 0;padding:0;list-style:none;color:#8a8d86;font-size:.7rem;font-weight:650}
+.password-checklist li{display:inline-flex;align-items:center;gap:6px;transition:color 150ms ease-out}
+.password-checklist li.is-met{color:#24563d}
+.password-checklist__icon{flex:none}
+.password-checklist__state{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.form-stack .button:disabled:not([aria-busy=true]){cursor:not-allowed}
