@@ -16,6 +16,7 @@ const initialMessages = [{ role: 'assistant', text: '안녕하세요. 어떤 설
 const questionTypeLabels = { single: '단일 선택', multiple: '복수 선택', scale: '척도형', text: '단답형', long: '장문형' }
 const typeLabel = (type) => QUESTION_TYPES.find(([value]) => value === type)?.[1] || type
 const AUTO_UPDATE_HIGHLIGHT_MS = 1800
+const TOAST_MS = 2500
 const FORMMATE_OPEN_KEY = 'uniform-formmate-open'
 const isNarrow = () => window.matchMedia('(max-width: 900px)').matches
 // FormMate 패널이 멈춰 설 위치: 상단바(64px) + 작업 줄 높이 + 여백
@@ -66,6 +67,8 @@ export default function SurveyCreate() {
   const [applying, setApplying] = useState(false)
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [manualSaving, setManualSaving] = useState(false)
+  const [toast, setToast] = useState('')
   const [previewOpen, setPreviewOpen] = useState(false)
   const [respondentPreviewOpen, setRespondentPreviewOpen] = useState(false)
   const [selectedQuestionId, setSelectedQuestionId] = useState('')
@@ -98,6 +101,8 @@ export default function SurveyCreate() {
     const timer = window.setTimeout(() => setAutoUpdatedKeys([]), AUTO_UPDATE_HIGHLIGHT_MS)
     return () => window.clearTimeout(timer)
   }, [autoUpdatedKeys])
+
+  useEffect(() => { if (!toast) return undefined; const timer = window.setTimeout(() => setToast(''), TOAST_MS); return () => window.clearTimeout(timer) }, [toast])
 
   useEffect(() => {
     const query = window.matchMedia('(max-width: 900px)')
@@ -235,6 +240,21 @@ export default function SurveyCreate() {
     return sendToFormMate(value)
   }
 
+  // 수동 임시 저장만 토스트로 알린다(자동 저장은 버튼 옆 상태 문구로만). 실패는 draft.saveFailed 알림이 맡는다.
+  async function handleManualSave() {
+    if (manualSaving) return
+    setManualSaving(true)
+    try {
+      const result = await draft.saveNow()
+      if (result === 'saved') setToast('임시저장했어요')
+      else if (result === 'empty') setToast('저장할 내용이 아직 없어요')
+    } catch {
+      // 실패 알림은 draft.saveFailed로 띄운다. 작성 중인 내용은 그대로 둔다.
+    } finally {
+      setManualSaving(false)
+    }
+  }
+
   async function handleSubmit(event) {
     event?.preventDefault()
     setMessage('')
@@ -256,11 +276,12 @@ export default function SurveyCreate() {
   const publishIssues = previewOpen ? listSurveyIssues(form) : []
   return <ServiceShell activePath="/formmate"><div className="create-saas formmate-page sb-page motion-page">
     <header className="sb-toolbar">
-      <div className="sb-toolbar__title"><h1>설문 만들기</h1><span>{draft.saveStatus || '작성을 시작하면 자동 저장돼요'}</span></div>
+      <div className="sb-toolbar__title"><h1>설문 만들기</h1></div>
       <div className="sb-toolbar__actions">
+        <span className="sb-save-status" aria-live="polite">{draft.saveStatus || '작성을 시작하면 자동 저장돼요'}</span>
         <button className="sb-btn" type="button" onClick={() => setRespondentPreviewOpen(true)}>미리보기</button>
         <button className={`sb-btn sb-btn--formmate${formMateOpen ? ' is-on' : ''}`} type="button" aria-pressed={formMateOpen} onClick={() => toggleFormMate()}><span aria-hidden="true">✦</span> FormMate</button>
-        <button className="sb-btn" type="button" onClick={() => draft.flush().catch(() => {})}>임시 저장</button>
+        <button className="sb-btn" type="button" disabled={manualSaving} onClick={handleManualSave}>{manualSaving ? '저장 중…' : '임시 저장'}</button>
         <button className="sb-btn sb-btn--primary" type="button" onClick={() => setPreviewOpen(true)}>설문 등록하기</button>
       </div>
     </header>
@@ -275,6 +296,8 @@ export default function SurveyCreate() {
         <FormMatePanel value={aiPrompt} onChange={setAiPrompt} onSend={handleAgentSend} onUndo={handleUndo} onApplyChanges={handleApplyChanges} onRevertChanges={handleRevertChanges} busyLabel="FormMate가 작업하고 있어요." canUndo={history.length > 0 && !applying} selectedLabel={selectedIndex >= 0 ? `Q${selectedIndex + 1} 선택됨` : ''} messages={aiMessages} message={aiMessage} applying={applying} suggestions={[]} draftSummary={aiStep > 0 ? { title: form.title, count: filledCount || form.questions.length, minutes: form.estimatedMinutes, onOpen: () => window.scrollTo({ top: 0, behavior: 'smooth' }) } : null} />
       </div></div>}
     </div>
+    {toast && !draft.saveFailed && <div className="service-toast" role="status">✓ {toast}</div>}
+    {draft.saveFailed && <div className="service-toast service-toast--error" role="alert"><span>임시저장에 실패했어요. 다시 시도해 주세요.</span><button type="button" aria-label="알림 닫기" onClick={draft.dismissSaveError}>×</button></div>}
   </div><Modal open={respondentPreviewOpen} title="응답자 화면 미리보기" onClose={() => setRespondentPreviewOpen(false)}><div className="sb-respondent-preview"><FormMatePreview form={form} /></div></Modal><Modal className="sb-publish-modal" open={previewOpen} title="설문을 게시할까요?" onClose={() => setPreviewOpen(false)}><div className="sb-publish">
     <section className="sb-publish__summary">
       <b>{form.title.trim() || '제목 없는 설문'}</b>
