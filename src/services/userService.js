@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient'
+import { apiClient, setTokens } from './apiClient'
 import { ENROLLMENT_STATUS, GENDER, GRADE, MAJOR_FIELD } from './authService'
 
 const invert = (map) => Object.fromEntries(Object.entries(map).map(([label, value]) => [value, label]))
@@ -30,6 +30,13 @@ export async function saveProfile(profile, original) {
   if (!Object.keys(patch).length) return null
   await apiClient.patch('/users/me', patch)
   return getProfile()
+}
+
+// 비밀번호 변경(PATCH /users/me/password). 성공하면 그 전에 발급된 토큰(이 기기 포함)은 401이 되므로,
+// 응답의 새 토큰으로 바로 교체해야 로그인이 유지된다. 400 code: CURRENT_PASSWORD_MISMATCH / SAME_AS_CURRENT_PASSWORD.
+export async function changePassword(currentPassword, newPassword) {
+  const tokens = await apiClient.patch('/users/me/password', { currentPassword, newPassword })
+  setTokens(tokens)
 }
 
 // 회원 탈퇴(DELETE /users/me). 탈퇴 후 30일 동안은 같은 이메일로 다시 가입할 수 없다.

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Modal from '../components/Modal'
+import PasswordChecklist, { PasswordMatch } from '../components/PasswordChecklist'
 import ServiceShell, { ServiceHeading } from '../components/ServiceShell'
 import { useAuth } from '../hooks/useAuth'
 import { openTermsConsent } from '../components/TermsConsentGate'
-import { getProfile, saveProfile, withdrawAccount } from '../services/userService'
+import { changePassword, getProfile, saveProfile, withdrawAccount } from '../services/userService'
 import { logoutAndReload, setPageNotice } from '../services/authService'
-import { validateNickname } from '../utils/validation'
+import { isStrongPassword, validateNickname } from '../utils/validation'
 
 const tabs = [['account', '계정 및 보안'], ['notifications', '알림'], ['data', '데이터 관리']]
 const noticeRows = [['email', '이메일 알림', '설문 참여, 결과 완료 등 주요 알림을 이메일로 받습니다.'], ['push', '푸시 알림', '서비스 내 알림을 실시간으로 받습니다.'], ['marketing', '마케팅 알림', '새로운 기능, 이벤트, 유용한 팁을 받아보세요.']]
@@ -26,6 +27,7 @@ export default function Settings() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [passwordOpen, setPasswordOpen] = useState(false)
 
   useEffect(() => {
     // 늦게 도착한 이전 요청이 사용자가 이미 바꾼 입력을 덮어쓰지 않게 한다.
@@ -79,7 +81,7 @@ export default function Settings() {
 
     {tab === 'account' && <section className="settings-tab-panel settings-sections">
       <article className="settings-section"><header><h2>프로필 정보</h2><p>설문 참여와 결과에 표시되는 기본 정보입니다.</p></header><div className="settings-fields"><label>닉네임<input value={profile.nickname || ''} onChange={(event) => setProfile({ ...profile, nickname: event.target.value })} /></label><label>성별<select value={profile.gender || '응답하지 않음'} onChange={(event) => setProfile({ ...profile, gender: event.target.value })}>{['남성', '여성', '응답하지 않음'].map((value) => <option key={value}>{value}</option>)}</select></label><label>학년<select value={profile.grade || '해당 없음'} onChange={(event) => setProfile({ ...profile, grade: event.target.value })}>{['1학년', '2학년', '3학년', '4학년 이상', '대학원', '해당 없음'].map((value) => <option key={value}>{value}</option>)}</select></label><label>전공 계열<select value={profile.major || '해당 없음'} onChange={(event) => setProfile({ ...profile, major: event.target.value })}>{['인문사회', '상경', '공학', '자연과학', '의약', '예체능', '교육', '해당 없음'].map((value) => <option key={value}>{value}</option>)}</select></label><label>재학 상태<select value={profile.enrollment_status || '해당 없음'} onChange={(event) => setProfile({ ...profile, enrollment_status: event.target.value })}>{['재학', '휴학', '졸업', '해당 없음'].map((value) => <option key={value}>{value}</option>)}</select></label></div></article>
-      <article className="settings-section"><header><h2>계정 및 보안</h2><p>로그인과 계정 보안 설정을 관리합니다.</p></header>{/* 아직 기능이 없는 항목은 눌러도 반응이 없어 고장처럼 보이지 않게 비활성화하고 "준비 중"을 단다(비밀번호 변경은 백엔드 API가 생기면 연결). */}{[['비밀번호', '변경하기'], ['2단계 인증', '설정하기'], ['로그인 기록', '확인하기']].map(([label, action]) => <div className="settings-row" key={label}><strong>{label}<span className="settings-badge">준비 중</span></strong><button className="mini-button" type="button" disabled title="준비 중인 기능이에요">{action}</button></div>)}</article>
+      <article className="settings-section"><header><h2>계정 및 보안</h2><p>로그인과 계정 보안 설정을 관리합니다.</p></header><div className="settings-row"><strong>비밀번호</strong><button className="mini-button" type="button" onClick={() => setPasswordOpen(true)}>변경하기</button></div>{/* 아직 기능이 없는 항목은 눌러도 반응이 없어 고장처럼 보이지 않게 비활성화하고 "준비 중"을 단다. */}{[['2단계 인증', '설정하기'], ['로그인 기록', '확인하기']].map(([label, action]) => <div className="settings-row" key={label}><strong>{label}<span className="settings-badge">준비 중</span></strong><button className="mini-button" type="button" disabled title="준비 중인 기능이에요">{action}</button></div>)}</article>
     </section>}
 
     {tab === 'notifications' && <section className="settings-tab-panel settings-sections"><article className="settings-section"><header><h2>알림 설정</h2><p>중요한 활동을 놓치지 않도록 알림을 설정하세요.</p></header>{noticeRows.map(([key, title, copy]) => <div className="settings-row" key={key}><div><strong>{title}</strong><small>{copy}</small></div><button className={`toggle ${notices[key] ? 'is-on' : ''}`} disabled={pending === key} aria-busy={pending === key} aria-pressed={notices[key]} aria-label={`${title} ${notices[key] ? '끄기' : '켜기'}`} onClick={() => toggle(key)} /></div>)}</article></section>}
@@ -90,6 +92,57 @@ export default function Settings() {
     {error && <p className="form-message form-message--error" role="alert">{error}</p>}
     <div className="settings-save"><button className="ui-button ui-button--secondary" type="button" onClick={() => { if (original) setProfile(original); setError('') }}>변경사항 취소</button><button className="ui-button" type="button" disabled={saving || !original} onClick={save}>{saving ? '저장 중…' : '변경사항 저장'}</button></div>
     <Modal open={deleteOpen} title="계정을 삭제할까요?" onClose={closeDeleteModal}><p>이 작업은 되돌릴 수 없습니다. 탈퇴 후 30일 동안은 같은 이메일로 다시 가입할 수 없어요. 계속하려면 아래에 <b>삭제</b>를 입력하세요.</p>{deleteError && <p className="form-message form-message--error" role="alert">{deleteError}</p>}<input className="service-input" value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="삭제" /><div className="modal-actions"><button className="ui-button ui-button--secondary" onClick={closeDeleteModal}>취소</button><button className="ui-button ui-button--danger" disabled={deleteText !== '삭제'} onClick={withdraw}>계정 삭제</button></div></Modal>
+    <PasswordChangeModal open={passwordOpen} onClose={() => setPasswordOpen(false)} onChanged={() => { setPasswordOpen(false); setToast('비밀번호를 변경했어요. 다른 기기에서는 다시 로그인해야 해요.') }} />
     {toast && <div className="service-toast" role="status">✓ {toast}</div>}
   </div></ServiceShell>
+}
+
+// 비밀번호 변경 모달. 닫히면 내용을 지워(언마운트), 다시 열면 빈 칸에서 시작한다.
+function PasswordChangeModal({ open, onClose, onChanged }) {
+  const [submitting, setSubmitting] = useState(false)
+  const close = () => { if (!submitting) onClose() }
+  return <Modal open={open} title="비밀번호 변경" onClose={close}>{open && <PasswordChangeForm submitting={submitting} setSubmitting={setSubmitting} onCancel={close} onChanged={onChanged} />}</Modal>
+}
+
+const PASSWORD_ERROR_FIELD = { CURRENT_PASSWORD_MISMATCH: 'current', SAME_AS_CURRENT_PASSWORD: 'next' }
+const PASSWORD_ERROR_TEXT = { current: '현재 비밀번호가 올바르지 않아요.', next: '현재 비밀번호와 다른 비밀번호를 입력해주세요.' }
+
+function PasswordChangeForm({ submitting, setSubmitting, onCancel, onChanged }) {
+  const [current, setCurrent] = useState('')
+  const [next, setNext] = useState('')
+  const [confirm, setConfirm] = useState('')
+  // 오류 코드에 맞는 입력칸(current/next) 아래 문구, 그 밖의 오류는 general
+  const [fieldError, setFieldError] = useState({ current: '', next: '' })
+  const [generalError, setGeneralError] = useState('')
+  // 조건(PASSWORD_RULES)·일치 여부는 체크리스트로 보여주고, 모두 만족해야 제출할 수 있다. 서버 검증은 그대로 받는다.
+  const canSubmit = Boolean(current) && isStrongPassword(next) && next === confirm
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    if (!canSubmit || submitting) return
+    setFieldError({ current: '', next: '' })
+    setGeneralError('')
+    setSubmitting(true)
+    try {
+      await changePassword(current, next)
+      setSubmitting(false)
+      onChanged()
+    } catch (error) {
+      setSubmitting(false)
+      const field = PASSWORD_ERROR_FIELD[error.code]
+      if (field) setFieldError({ current: '', next: '', [field]: PASSWORD_ERROR_TEXT[field] })
+      else setGeneralError('비밀번호를 변경하지 못했어요. 잠시 후 다시 시도해 주세요.')
+    }
+  }
+
+  const describedBy = (...ids) => ids.filter(Boolean).join(' ') || undefined
+  return <form className="password-change" onSubmit={handleSubmit}>
+    <label>현재 비밀번호<input className="service-input" type="password" value={current} onChange={(event) => { setCurrent(event.target.value); setFieldError((value) => ({ ...value, current: '' })) }} autoComplete="current-password" aria-invalid={Boolean(fieldError.current)} aria-describedby={describedBy(fieldError.current && 'password-change-current-error')} required />{fieldError.current && <span className="form-message form-message--error" id="password-change-current-error" role="alert">{fieldError.current}</span>}</label>
+    <label>새 비밀번호<input className="service-input" type="password" value={next} onChange={(event) => { setNext(event.target.value); setFieldError((value) => ({ ...value, next: '' })) }} autoComplete="new-password" aria-invalid={Boolean(fieldError.next)} aria-describedby={describedBy('password-change-rules', fieldError.next && 'password-change-next-error')} required />{fieldError.next && <span className="form-message form-message--error" id="password-change-next-error" role="alert">{fieldError.next}</span>}</label>
+    <PasswordChecklist id="password-change-rules" password={next} />
+    <label>새 비밀번호 확인<input className="service-input" type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} autoComplete="new-password" aria-describedby="password-change-match" required /></label>
+    <PasswordMatch id="password-change-match" password={next} confirm={confirm} />
+    {generalError && <p className="form-message form-message--error" role="alert">{generalError}</p>}
+    <div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" disabled={submitting} onClick={onCancel}>취소</button><button className="ui-button" type="submit" disabled={submitting || !canSubmit} aria-busy={submitting}>{submitting ? '변경 중…' : '비밀번호 변경'}</button></div>
+  </form>
 }

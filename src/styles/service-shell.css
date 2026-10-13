@@ -331,3 +331,8 @@
   .service-shell--collapsed .service-sidebar nav a::after{content:attr(data-label);position:absolute;top:50%;left:calc(100% + 10px);z-index:1;padding:6px 10px;border-radius:6px;background:#14203f;color:#fff;font-size:.7rem;font-weight:650;white-space:nowrap;opacity:0;pointer-events:none;transform:translate(-4px,-50%);transition:opacity var(--motion-fast,130ms) ease-out,transform var(--motion-fast,130ms) ease-out}
   .service-shell--collapsed .service-sidebar nav a:hover::after,.service-shell--collapsed .service-sidebar nav a:focus-visible::after{opacity:1;transform:translate(0,-50%)}
 }
+/* 설정 > 비밀번호 변경 모달 */
+.password-change{display:grid;gap:18px;margin-top:8px}
+.password-change label{display:grid;gap:8px;color:#374151;font-size:.74rem;font-weight:700}
+.password-change .service-input{width:100%}
+.password-change .modal-actions{margin-top:6px}
