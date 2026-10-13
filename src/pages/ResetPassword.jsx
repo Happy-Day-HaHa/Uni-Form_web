@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
 import { useLinkToken } from '../hooks/useLinkToken'
 import { confirmPasswordReset, requestPasswordReset } from '../services/authService'
-import { isEmail, validatePassword } from '../utils/validation'
+import PasswordChecklist, { PasswordMatch } from '../components/PasswordChecklist'
+import { isEmail, isStrongPassword } from '../utils/validation'
 import '../styles/auth-dandy.css'
 
 // 비밀번호 재설정. 메일의 링크(/reset-password?token=...)로 들어오면 새 비밀번호를 받고,
@@ -71,13 +72,13 @@ function NewPasswordForm({ token }) {
   const [passwordError, setPasswordError] = useState('')
   const [linkInvalid, setLinkInvalid] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  // 조건·일치 여부는 입력 칸 아래 체크리스트로 보여주고, 모두 만족해야 제출 버튼이 켜진다.
+  const canSubmit = isStrongPassword(password) && password === confirm
 
   async function handleSubmit(event) {
     event.preventDefault()
+    if (!canSubmit) return
     setPasswordError('')
-    const passwordMessage = validatePassword(password)
-    if (passwordMessage) return setMessage(passwordMessage)
-    if (password !== confirm) return setMessage('새 비밀번호가 서로 일치하지 않아요.')
     try {
       setSubmitting(true)
       setMessage('')
@@ -95,5 +96,5 @@ function NewPasswordForm({ token }) {
 
   if (linkInvalid) return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>링크가 만료되었거나 이미 사용됐어요</h1><p>비밀번호 찾기에서 재설정 메일을 다시 받아주세요.</p></div></div><Link className="button button--block" to="/reset-password">비밀번호 찾기</Link></AuthLayout>
 
-  return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>새 비밀번호 설정</h1><p>로그인에 사용할 새 비밀번호를 입력해주세요.</p></div></div><form className="form-stack" onSubmit={handleSubmit}><label>새 비밀번호<input type="password" value={password} onChange={(event) => { setPassword(event.target.value); setPasswordError('') }} placeholder="영문, 숫자를 포함해 8자 이상" autoComplete="new-password" aria-invalid={Boolean(passwordError)} aria-describedby={passwordError ? 'reset-password-error' : undefined} required />{passwordError && <span className="form-message form-message--error" id="reset-password-error" role="alert">{passwordError}</span>}</label><label>새 비밀번호 확인<input type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} placeholder="한 번 더 입력해주세요." autoComplete="new-password" required /></label>{message && <p className="form-message form-message--error" role="alert">{message}</p>}<button className="button button--block" disabled={submitting}>{submitting ? '변경 중...' : '비밀번호 변경'}</button></form></AuthLayout>
+  return <AuthLayout mode="login"><div className="auth-saas__title"><div><h1>새 비밀번호 설정</h1><p>로그인에 사용할 새 비밀번호를 입력해주세요.</p></div></div><form className="form-stack" onSubmit={handleSubmit}><label>새 비밀번호<input type="password" value={password} onChange={(event) => { setPassword(event.target.value); setPasswordError('') }} placeholder="영문, 숫자를 포함해 8자 이상" autoComplete="new-password" aria-invalid={Boolean(passwordError)} aria-describedby={passwordError ? 'reset-password-rules reset-password-error' : 'reset-password-rules'} required />{passwordError && <span className="form-message form-message--error" id="reset-password-error" role="alert">{passwordError}</span>}</label><PasswordChecklist id="reset-password-rules" password={password} /><label>새 비밀번호 확인<input type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} placeholder="한 번 더 입력해주세요." autoComplete="new-password" aria-describedby="reset-password-match" required /></label><PasswordMatch id="reset-password-match" password={password} confirm={confirm} />{message && <p className="form-message form-message--error" role="alert">{message}</p>}<button className="button button--block" disabled={submitting || !canSubmit} aria-busy={submitting}>{submitting ? '변경 중...' : '비밀번호 변경'}</button></form></AuthLayout>
 }

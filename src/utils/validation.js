@@ -1,6 +1,14 @@
 export const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 
-const isStrongPassword = (password) => password.length >= 8 && /[A-Za-z]/.test(password) && /[0-9]/.test(password)
+// 새 비밀번호 규칙. 백엔드(IsValidPassword: MinLength(8) + /^(?=.*[A-Za-z])(?=.*\d).+$/)와 정확히 같아야 한다 — 바꾸면 백엔드도 함께 바꾼다.
+// 회원가입·비밀번호 재설정의 체크리스트(PasswordChecklist)와 제출 가능 여부가 모두 이 목록을 쓴다.
+export const PASSWORD_RULES = [
+  { id: 'length', label: '8자 이상', test: (password) => password.length >= 8 },
+  { id: 'letter', label: '영문 포함', test: (password) => /[A-Za-z]/.test(password) },
+  { id: 'digit', label: '숫자 포함', test: (password) => /\d/.test(password) },
+]
+
+export const isStrongPassword = (password) => PASSWORD_RULES.every((rule) => rule.test(password))
 
 // Login only: intentionally returns one generic message regardless of which
 // field is wrong, so a failed attempt never reveals whether the email exists.
@@ -9,15 +17,10 @@ export function validateAuth({ email, password }) {
   return ''
 }
 
-// 새 비밀번호(회원가입·비밀번호 재설정 공통 규칙)
-export function validatePassword(password) {
-  return isStrongPassword(password) ? '' : '비밀번호는 영문과 숫자를 포함해 8자 이상이어야 합니다.'
-}
-
 // Signup: field-specific messages are fine here, there is no account to leak information about yet.
-export function validateSignup({ email, password, nickname }) {
+// 비밀번호 규칙은 입력 칸 아래 체크리스트가 보여주고, 규칙을 모두 만족해야 제출 버튼이 켜지므로 여기서는 다루지 않는다.
+export function validateSignup({ email, nickname }) {
   if (!isEmail(email)) return '올바른 이메일 주소를 입력해주세요.'
-  if (!isStrongPassword(password)) return '비밀번호는 영문과 숫자를 포함해 8자 이상이어야 합니다.'
   return validateNickname(nickname)
 }
 
