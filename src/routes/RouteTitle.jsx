@@ -13,7 +13,6 @@ const titles = [
   ['/support', '고객센터'],
   ['/terms', '이용약관'],
   ['/privacy', '개인정보 처리방침'],
-  ['/versions', '랜딩 버전 기록'],
   ['/restricted', '이용 제한 안내'],
   ['/dashboard', '대시보드'],
   ['/surveys', '설문 목록'],
