@@ -1,4 +1,5 @@
 import { PASSWORD_RULES } from '../utils/validation'
+import './PasswordChecklist.css'
 
 // 만족: 체크 표시가 든 원, 미충족: 비어 있는 원 — 색만이 아니라 모양으로도 구분한다.
 function StatusIcon({ met }) {
