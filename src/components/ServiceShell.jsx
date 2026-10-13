@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { ClipboardCheck, FilePlus, FileText, LayoutDashboard, List, Settings, ShieldCheck, Trophy, Users } from 'lucide-react'
 import BrandMark from './BrandMark'
 import Modal from './Modal'
 import { useAuth } from '../hooks/useAuth'
@@ -7,15 +8,25 @@ import { logout } from '../services/authService'
 import '../styles/service-shell.css'
 
 const navItems = [
-  ['/dashboard', '대시보드'],
-  ['/my-surveys', '내 설문'],
-  ['/my-responses', '내 응답'],
-  ['/formmate', '설문 만들기'],
-  ['/surveys', '설문 목록'],
-  ['/team', '팀 관리'],
-  ['/leaderboard', '리더보드'],
-  ['/settings', '설정'],
+  ['/dashboard', '대시보드', LayoutDashboard],
+  ['/my-surveys', '내 설문', FileText],
+  ['/my-responses', '내 응답', ClipboardCheck],
+  ['/formmate', '설문 만들기', FilePlus],
+  ['/surveys', '설문 목록', List],
+  ['/team', '팀 관리', Users],
+  ['/leaderboard', '리더보드', Trophy],
+  ['/settings', '설정', Settings],
 ]
+const SIDEBAR_COLLAPSED_KEY = 'uniform-sidebar-collapsed'
+
+// 메뉴 아이콘 + 이름. 접힌 레일에서는 이름을 시각적으로 숨기고 data-label 툴팁으로 보여준다(아이콘 크기·선 굵기는 모두 같게).
+function NavLabel({ icon: Icon, label }) {
+  return <><span className="service-nav-icon"><Icon size={20} strokeWidth={1.8} aria-hidden="true" focusable="false" /></span><b className="service-nav-label">{label}</b></>
+}
+
+function readCollapsed() {
+  try { return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1' } catch { return false }
+}
 
 function useCountUp(value) {
   const target = Number(value) || 0
@@ -51,12 +62,14 @@ export default function ServiceShell({ children, activePath }) {
     }
   }
   const location = useLocation()
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('uniform-sidebar-collapsed') === '1')
+  const [collapsed, setCollapsed] = useState(readCollapsed)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 780px)').matches)
   const sidebarOpen = isMobile ? mobileOpen : !collapsed
 
-  useEffect(() => { localStorage.setItem('uniform-sidebar-collapsed', collapsed ? '1' : '0') }, [collapsed])
+  useEffect(() => {
+    try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0') } catch { /* 저장 못 해도 이번 방문 동안은 동작한다 */ }
+  }, [collapsed])
   useEffect(() => {
     const query = window.matchMedia('(max-width: 780px)')
     const sync = () => setIsMobile(query.matches)
@@ -82,10 +95,10 @@ export default function ServiceShell({ children, activePath }) {
     {/* 토글 + 로고는 사이드바 열림/닫힘과 관계없이 왼쪽 위 같은 자리에 고정한다. */}
     <div className="service-corner"><button className="service-menu-button" type="button" aria-label={sidebarOpen ? '사이드바 닫기' : '사이드바 열기'} aria-expanded={sidebarOpen} onClick={toggleMenu}><span className="service-menu-button__icon" aria-hidden="true"><i /><i /></span></button><Link className="service-corner__brand" to="/" onClick={() => setMobileOpen(false)}><BrandMark /></Link></div>
     <aside className="service-sidebar" aria-label="서비스 사이드바">
-      <nav aria-label="서비스 메뉴">{navItems.map(([to, label]) => {
+      <nav aria-label="서비스 메뉴">{navItems.map(([to, label, icon]) => {
         const currentPath = activePath || location.pathname
-        return <NavLink key={to} to={to} end onClick={() => setMobileOpen(false)} className={() => currentPath === to ? 'active' : ''}>{label}</NavLink>
-      })}{profile?.role === 'ADMIN' && <NavLink to="/admin" className="service-sidebar__admin">관리자</NavLink>}</nav>
+        return <NavLink key={to} to={to} end aria-label={label} data-label={label} onClick={() => setMobileOpen(false)} className={() => currentPath === to ? 'active' : ''}><NavLabel icon={icon} label={label} /></NavLink>
+      })}{profile?.role === 'ADMIN' && <NavLink to="/admin" className="service-sidebar__admin" aria-label="관리자" data-label="관리자"><NavLabel icon={ShieldCheck} label="관리자" /></NavLink>}</nav>
     </aside>
     <div className="service-stage"><header className="service-topbar"><Link className="service-help" to="/support">고객센터</Link><button className="service-logout" type="button" onClick={() => setLogoutConfirmOpen(true)}>로그아웃</button></header><main className="service-content motion-page">{children}</main></div>
     <Modal open={logoutConfirmOpen} title="로그아웃할까요?" onClose={() => !loggingOut && setLogoutConfirmOpen(false)}><p className="service-logout-confirm">로그아웃하면 다시 로그인해야 서비스를 이용할 수 있어요.</p><div className="modal-actions"><button className="ui-button ui-button--secondary" type="button" disabled={loggingOut} onClick={() => setLogoutConfirmOpen(false)}>취소</button><button className="ui-button ui-button--danger" type="button" disabled={loggingOut} onClick={handleLogout}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button></div></Modal>
